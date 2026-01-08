@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
@@ -10,10 +10,13 @@ const AdminProfile: React.FC = () => {
   const { profile, user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     displayName: '',
     email: '',
     phone: '',
+    avatar_url: '',
   });
 
   useEffect(() => {
@@ -22,9 +25,35 @@ const AdminProfile: React.FC = () => {
         displayName: profile.displayName || '',
         email: profile.email || '',
         phone: (profile as any).phone || '',
+        avatar_url: profile.avatar_url || '',
       });
     }
   }, [profile]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Em ambiente SaaS real usaríamos Firebase Storage. 
+    // Para esta demo, usamos FileReader para gerar uma dataURL e simular o upload.
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({ ...prev, avatar_url: base64String }));
+      
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, { avatar_url: base64String });
+      } catch (err) {
+        console.error("Erro ao guardar avatar:", err);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,10 +103,24 @@ const AdminProfile: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm text-center flex flex-col items-center">
             <div className="relative group mb-6">
-              <div className="w-24 h-24 rounded-[2rem] bg-[#1c2d51] text-white flex items-center justify-center text-3xl font-black shadow-xl">
-                {formData.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+              <div className="w-24 h-24 rounded-[2rem] bg-[#1c2d51] text-white flex items-center justify-center text-3xl font-black shadow-xl overflow-hidden">
+                {formData.avatar_url ? (
+                  <img src={formData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  formData.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()
+                )}
               </div>
-              <button className="absolute -bottom-2 -right-2 bg-white w-10 h-10 rounded-xl shadow-lg border border-slate-50 flex items-center justify-center text-slate-400 hover:text-[#1c2d51] transition-all">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/*" 
+              />
+              <button 
+                onClick={handleAvatarClick}
+                className="absolute -bottom-2 -right-2 bg-white w-10 h-10 rounded-xl shadow-lg border border-slate-50 flex items-center justify-center text-slate-400 hover:text-[#1c2d51] transition-all"
+              >
                 <Camera size={18} />
               </button>
             </div>

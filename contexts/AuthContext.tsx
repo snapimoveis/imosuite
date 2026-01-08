@@ -4,13 +4,14 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.ts';
 
-// Added 'super_admin' to role type to ensure type safety in role comparisons throughout the app
+// Added 'super_admin' to role type and 'avatar_url' to support user profile pictures
 interface UserProfile {
   id: string;
   role: 'admin' | 'user' | 'super_admin';
   tenantId: string;
   displayName: string;
   email: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
@@ -32,8 +33,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(currentUser);
       
       if (currentUser) {
-        // Usar onSnapshot em vez de getDoc para o perfil ser reativo
-        // Isto resolve o problema do perfil não aparecer logo após o registo
         const profileRef = doc(db, 'users', currentUser.uid);
         
         const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
@@ -41,7 +40,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setProfile(docSnap.data() as UserProfile);
             setLoading(false);
           } else {
-            // Se o doc não existe, definimos um estado temporário mas não bloqueamos o loading para sempre
             setProfile({
               id: currentUser.uid,
               email: currentUser.email || '',
@@ -49,8 +47,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               role: 'admin',
               tenantId: 'pending'
             });
-            // Damos uma chance de o documento ser criado (ex: no Register.tsx)
-            // Se após 5 segundos não existir, paramos o loading
             setTimeout(() => setLoading(false), 5000);
           }
         }, (error) => {

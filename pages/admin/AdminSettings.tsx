@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // Added Link to react-router-dom imports to fix 'Cannot find name Link'
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
@@ -24,6 +24,7 @@ const AdminSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [localTenant, setLocalTenant] = useState(tenant);
   const [success, setSuccess] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   
   // Detetar aba a partir do URL (ex: ?tab=branding)
   const queryParams = new URLSearchParams(location.search);
@@ -34,6 +35,22 @@ const AdminSettings: React.FC = () => {
       setLocalTenant(tenant);
     }
   }, [tenant, tenantLoading]);
+
+  const handleLogoClick = () => {
+    logoInputRef.current?.click();
+  };
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      setLocalTenant(prev => ({ ...prev, logo_url: base64String }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async () => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
@@ -47,6 +64,7 @@ const AdminSettings: React.FC = () => {
         telefone: localTenant.telefone || '',
         morada: (localTenant as any).morada || '',
         nif: (localTenant as any).nif || '',
+        logo_url: localTenant.logo_url || '',
         cor_primaria: localTenant.cor_primaria,
         cor_secundaria: localTenant.cor_secundaria || localTenant.cor_primaria,
         template_id: (localTenant as any).template_id || 'heritage',
@@ -182,10 +200,28 @@ const AdminSettings: React.FC = () => {
                 </div>
 
                 <div className="bg-slate-50 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-200">
-                  <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center text-slate-300 mb-4"><Palette size={32}/></div>
+                  <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center text-slate-300 mb-4 overflow-hidden">
+                    {localTenant.logo_url ? (
+                      <img src={localTenant.logo_url} alt="Logo" className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <Palette size={32}/>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={logoInputRef} 
+                    onChange={handleLogoChange} 
+                    className="hidden" 
+                    accept="image/*" 
+                  />
                   <h4 className="font-black text-[#1c2d51] text-xs uppercase mb-2">Logótipo da Marca</h4>
                   <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed max-w-[150px] mb-6">Ficheiro SVG ou PNG transparente (Máx. 2MB)</p>
-                  <button className="bg-white text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all">Upload Logo</button>
+                  <button 
+                    onClick={handleLogoClick}
+                    className="bg-white text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all"
+                  >
+                    Upload Logo
+                  </button>
                 </div>
               </div>
             </div>

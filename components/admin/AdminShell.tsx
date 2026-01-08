@@ -46,7 +46,12 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {/* Sidebar */}
       <aside className={`bg-white border-r transition-all duration-500 flex flex-col z-40 ${isCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="p-6 border-b flex items-center justify-between h-16">
-          {!isCollapsed && <span className="font-black text-lg text-[#1c2d51] truncate">{tenant.nome}</span>}
+          {!isCollapsed && (
+            <div className="flex items-center gap-2 truncate">
+              {tenant.logo_url && <img src={tenant.logo_url} alt="Logo" className="w-6 h-6 object-contain" />}
+              <span className="font-black text-lg text-[#1c2d51] truncate">{tenant.nome}</span>
+            </div>
+          )}
           <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-300 transition-colors">
             {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -104,8 +109,12 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   <div className="text-[11px] font-black text-[#1c2d51] leading-none mb-0.5">{tenant.nome}</div>
                   <div className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">{profile?.role === 'admin' ? 'Administrador' : 'Equipa'}</div>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-[#1c2d51] text-white flex items-center justify-center font-black shadow-lg shadow-[#1c2d51]/20 relative">
-                  {user?.email?.charAt(0).toUpperCase()}
+                <div className="w-9 h-9 rounded-xl bg-[#1c2d51] text-white flex items-center justify-center font-black shadow-lg shadow-[#1c2d51]/20 relative overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    user?.email?.charAt(0).toUpperCase()
+                  )}
                   <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-3 h-3 rounded-full border-2 border-white"></div>
                 </div>
                 <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`} />
@@ -116,8 +125,12 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 <div className="absolute right-0 mt-3 w-72 bg-white rounded-[2rem] shadow-2xl shadow-slate-900/10 border border-slate-100 py-6 px-2 animate-in fade-in zoom-in-95 duration-200">
                   <div className="px-6 pb-6 border-b border-slate-50 mb-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-50 text-[#1c2d51] flex items-center justify-center font-black text-lg border border-slate-100">
-                        {user?.email?.charAt(0).toUpperCase()}
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 text-[#1c2d51] flex items-center justify-center font-black text-lg border border-slate-100 overflow-hidden">
+                        {profile?.avatar_url ? (
+                          <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          user?.email?.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div>
                         <div className="font-black text-sm text-[#1c2d51]">{profile?.displayName || 'Utilizador'}</div>
