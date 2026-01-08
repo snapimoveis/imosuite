@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.ts';
 
 interface UserProfile {
@@ -27,37 +27,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
-        try {
-          const profileRef = doc(db, 'users', currentUser.uid);
-          const profileSnap = await getDoc(profileRef);
-          
-          if (profileSnap.exists()) {
-            setProfile(profileSnap.data() as UserProfile);
+        // Usar onSnapshot em vez de getDoc para o perfil ser reativo
+        // Isto resolve o problema do perfil não aparecer logo após o registo
+        const profileRef = doc(db, 'users', currentUser.uid);
+        
+        const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setProfile(docSnap.data() as UserProfile);
+            setLoading(false);
           } else {
-            // Perfil temporário com indicação de pendente
+            // Se o doc não existe, definimos um estado temporário mas não bloqueamos o loading para sempre
             setProfile({
               id: currentUser.uid,
               email: currentUser.email || '',
               displayName: currentUser.displayName || 'Utilizador',
               role: 'admin',
-              tenantId: 'pending' // Alterado de default para pending
+              tenantId: 'pending'
             });
+            // Damos uma chance de o documento ser criado (ex: no Register.tsx)
+            // Se após 5 segundos não existir, paramos o loading
+            setTimeout(() => setLoading(false), 5000);
           }
-        } catch (err: any) {
-          console.error("Erro ao sincronizar perfil:", err);
-        }
+        }, (error) => {
+          console.error("Erro ao escutar perfil:", error);
+          setLoading(false);
+        });
+
+        return () => unsubscribeProfile();
       } else {
         setProfile(null);
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   const logout = async () => {

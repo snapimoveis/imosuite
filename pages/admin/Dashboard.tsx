@@ -4,11 +4,12 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase.ts';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Building2, MessageSquare, TrendingUp, Users, Eye, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
+import { Building2, MessageSquare, TrendingUp, Users, Eye, ArrowUpRight, ArrowDownRight, Loader2, AlertCircle } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState([
     { name: 'Imóveis Ativos', value: '0', change: '0%', trend: 'up', icon: <Building2 className="text-blue-600" /> },
     { name: 'Leads (Mês)', value: '0', change: '0%', trend: 'up', icon: <MessageSquare className="text-emerald-600" /> },
@@ -18,10 +19,16 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchRealStats = async () => {
-      // Importante: Só executa se o tenantId for válido e não for 'pending'
+      // Se ainda está a carregar o Auth, esperamos
+      if (authLoading) return;
+
+      // Se não há perfil ou o tenantId é inválido/pendente
       if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
-        if (profile?.tenantId === 'default' || !profile) setIsLoading(false);
-        return;
+        // Se já passou algum tempo e continua pendente, paramos o loading para mostrar estado vazio
+        const timeout = setTimeout(() => {
+          setIsLoading(false);
+        }, 2000);
+        return () => clearTimeout(timeout);
       }
 
       try {
@@ -41,30 +48,43 @@ const Dashboard: React.FC = () => {
           { ...prev[2], value: 'N/A' },
           { ...prev[3], value: teamSnap.size.toString() }
         ]);
-      } catch (err) {
+        setError(null);
+      } catch (err: any) {
         console.error("Erro ao carregar stats do dashboard:", err);
+        setError("Não foi possível carregar todos os dados.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRealStats();
-  }, [profile]);
+  }, [profile, authLoading]);
 
-  if (isLoading || profile?.tenantId === 'pending') {
+  // Se o Auth ainda está a carregar ou se estamos no estado inicial de fetch
+  if (authLoading || (isLoading && profile?.tenantId === 'pending')) {
     return (
-      <div className="h-96 flex flex-col items-center justify-center text-slate-300">
-        <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-xs font-black uppercase tracking-widest text-center">A sintonizar os seus dados...<br/><span className="opacity-50 text-[8px]">Aguarde um momento</span></p>
+      <div className="h-[60vh] flex flex-col items-center justify-center text-slate-300">
+        <Loader2 className="animate-spin mb-4 text-[#1c2d51]" size={32} />
+        <p className="text-xs font-black uppercase tracking-widest text-center animate-pulse">
+          A sintonizar os seus dados...<br/>
+          <span className="opacity-50 text-[8px]">Aguarde um momento</span>
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 font-brand">
-      <div>
-        <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Olá, {profile?.displayName?.split(' ')[0]}</h1>
-        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Visão geral da sua imobiliária</p>
+    <div className="space-y-8 font-brand animate-in fade-in duration-500">
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Olá, {profile?.displayName?.split(' ')[0] || 'Utilizador'}</h1>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Visão geral da sua imobiliária</p>
+        </div>
+        {error && (
+          <div className="bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-[10px] font-bold flex items-center gap-2 border border-amber-100">
+            <AlertCircle size={14} /> {error}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -89,7 +109,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={[{name: 'Base', leads: 0}, {name: 'Hoje', leads: parseInt(stats[1].value)}]}>
+              <AreaChart data={[{name: 'Base', leads: 0}, {name: 'Hoje', leads: parseInt(stats[1].value) || 0}]}>
                 <defs>
                   <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#1c2d51" stopOpacity={0.1}/>
@@ -113,7 +133,13 @@ const Dashboard: React.FC = () => {
             </div>
             <h3 className="text-xl font-black text-[#1c2d51] mb-2 tracking-tighter">Inventário Online</h3>
             <p className="text-slate-400 text-sm font-medium mb-8 max-w-xs">Os seus imóveis estão agora visíveis no portal público da sua agência.</p>
-            <a href={`#/agencia/${profile?.tenantId || ''}`} target="_blank" className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-[#1c2d51]/20">Ver Portal</a>
+            <a 
+              href={`#/agencia/${profile?.tenantId === 'pending' ? '' : profile?.tenantId || ''}`} 
+              target="_blank" 
+              className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-[#1c2d51]/20 hover:scale-105 transition-all"
+            >
+              Ver Portal
+            </a>
         </div>
       </div>
     </div>
