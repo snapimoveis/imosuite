@@ -1,10 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.ts';
 
-// Added 'super_admin' to role type and 'avatar_url' to support user profile pictures
 interface UserProfile {
   id: string;
   role: 'admin' | 'user' | 'super_admin';
@@ -40,6 +39,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setProfile(docSnap.data() as UserProfile);
             setLoading(false);
           } else {
+            // Se o documento não existe, definimos um perfil básico para não travar a UI
+            // mas mantemos o tenantId como 'pending' para forçar a inicialização se necessário
             setProfile({
               id: currentUser.uid,
               email: currentUser.email || '',
@@ -47,7 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               role: 'admin',
               tenantId: 'pending'
             });
-            setTimeout(() => setLoading(false), 5000);
+            setLoading(false); // Definimos logo como false para permitir a interação
           }
         }, (error) => {
           console.error("Erro ao escutar perfil:", error);

@@ -22,7 +22,7 @@ const TEMPLATE_OPTIONS = [
 
 const AdminSettings: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const location = useLocation();
   const [isSaving, setIsSaving] = useState(false);
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
@@ -33,9 +33,9 @@ const AdminSettings: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
-  // Sincronizar dados locais quando o tenant global carregar
+  // Sincronizar dados locais quando o tenant global carregar ou mudar
   useEffect(() => {
-    if (!tenantLoading) {
+    if (!tenantLoading && tenant.id !== 'default-tenant-uuid') {
       setLocalTenant(tenant);
     }
   }, [tenant, tenantLoading]);
@@ -57,15 +57,22 @@ const AdminSettings: React.FC = () => {
   };
 
   const handleSave = async () => {
-    const tId = profile?.tenantId;
+    // Lógica de recuperação de ID robusta
+    let tId = profile?.tenantId;
     
+    // Fallback: Se o tenantId for 'pending' mas temos um utilizador,
+    // tentamos usar o tnt_ID baseado no UID ou o ID local se já estiver preenchido
+    if ((!tId || tId === 'pending') && localTenant.id && localTenant.id !== 'default-tenant-uuid') {
+      tId = localTenant.id;
+    }
+
     if (!tId || tId === 'pending') {
-      setErrorMessage("Identificador de conta pendente. Aguarde um momento.");
+      setErrorMessage("Identificador de conta pendente. Por favor, recarregue a página.");
       return;
     }
 
     if (tId === 'default-tenant-uuid') {
-      setErrorMessage("O modo demonstração é apenas de leitura. Registe a sua conta para gerir os seus dados.");
+      setErrorMessage("O modo demonstração é apenas de leitura. Registe a sua conta para gerir dados próprios.");
       return;
     }
 
@@ -91,17 +98,20 @@ const AdminSettings: React.FC = () => {
         updated_at: serverTimestamp()
       };
       
-      // setDoc com merge garante a criação do documento caso este não exista (evita erro de No document to update)
       await setDoc(tenantRef, updates, { merge: true });
       
-      // Atualizar estado global
+      // Se o perfil do utilizador não estiver vinculado a este tenant, vinculamos agora
+      if (user && profile?.tenantId === 'pending') {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, { tenantId: tId }, { merge: true });
+      }
+
       setTenant({ ...tenant, ...updates });
-      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error("Erro ao guardar definições:", err);
-      setErrorMessage("Erro ao comunicar com a base de dados. Verifique a sua ligação.");
+      setErrorMessage("Erro de permissão ou rede ao guardar.");
     } finally {
       setIsSaving(false);
     }
