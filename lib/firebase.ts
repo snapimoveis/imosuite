@@ -14,22 +14,19 @@ const firebaseConfig = {
   measurementId: "G-SG8GBG1NR5"
 };
 
-// Singleton check to prevent multiple initializations
+// Singleton: Inicializa apenas se não houver instâncias ativas
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Accessing components ensures they are registered to this specific 'app' instance
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Exporta instâncias já vinculadas ao app central para evitar erro de registro
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-// Initialize analytics optionally
-let analytics: any = null;
-isSupported().then(yes => {
-  if (yes) {
-    analytics = getAnalytics(app);
+// Analytics opcional
+export const initAnalytics = async () => {
+  if (await isSupported()) {
+    return getAnalytics(app);
   }
-}).catch(err => {
-  console.debug("Firebase Analytics support check failed:", err);
-});
+  return null;
+};
 
-export { app, auth, db, analytics };
 export default app;

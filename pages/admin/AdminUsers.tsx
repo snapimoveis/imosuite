@@ -2,18 +2,19 @@
 import React from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Users, UserPlus, MoreVertical, Shield, Mail, Clock } from 'lucide-react';
+import { Users, UserPlus, MoreVertical, Shield, Mail, Clock, AlertCircle } from 'lucide-react';
 
 const AdminUsers: React.FC = () => {
   const { tenant } = useTenant();
-  const { user: currentUser } = useAuth();
+  const { user, profile } = useAuth();
 
+  // Utilizadores mockados, mas agora incluindo o utilizador logado real
   const mockUsers = [
     { 
-      id: currentUser?.uid || '1', 
-      name: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Administrador Principal', 
-      email: currentUser?.email || 'admin@empresa.pt',
-      role: 'Dono',
+      id: user?.uid || '1', 
+      name: profile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Administrador', 
+      email: user?.email || 'admin@empresa.pt',
+      role: profile?.role === 'admin' ? 'Dono' : 'Membro',
       status: 'Ativo',
       lastLogin: 'Agora'
     },
@@ -66,6 +67,14 @@ const AdminUsers: React.FC = () => {
             <div className="text-2xl font-black text-[#1c2d51]">1</div>
             <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Administrador</div>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-100 p-6 rounded-[2rem] flex items-start gap-4">
+        <AlertCircle className="text-amber-600 mt-1" size={20} />
+        <div>
+          <h4 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-1">Nota de Desenvolvimento</h4>
+          <p className="text-xs text-amber-800 font-medium">A listagem de utilizadores requer integração com o Firebase Admin SDK ou uma coleção 'users' espelhada no Firestore. No momento, a lista abaixo combina o seu utilizador logado com dados de demonstração.</p>
         </div>
       </div>
 

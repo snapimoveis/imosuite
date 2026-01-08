@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { Building2, ArrowRight, Check, Loader2, AlertCircle } from 'lucide-react';
 
@@ -30,15 +31,44 @@ const Register: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Criação real no Firebase Auth
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      // 1. Criar utilizador no Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      // 2. Atualizar nome no perfil do Auth
+      await updateProfile(user, { displayName: formData.agencyName });
+
+      // 3. Criar dados do Tenant e Perfil no Firestore
+      const tenantId = `tnt_${Date.now()}`;
+      const slug = formData.slug || formData.agencyName.toLowerCase().replace(/\s+/g, '-');
+
+      // Salvar o Tenant
+      await setDoc(doc(db, 'tenants', tenantId), {
+        nome: formData.agencyName,
+        slug: slug,
+        email: formData.email,
+        cor_primaria: formData.color,
+        owner_id: user.uid,
+        created_at: serverTimestamp()
+      });
+
+      // Salvar o perfil do utilizador
+      await setDoc(doc(db, 'users', user.uid), {
+        id: user.uid,
+        displayName: formData.agencyName,
+        email: formData.email,
+        role: 'admin',
+        tenantId: tenantId,
+        created_at: serverTimestamp()
+      });
       
-      // Atualizar dados do tenant (contexto local)
+      // 4. Atualizar estado local
       setTenant({
         ...tenant,
+        id: tenantId,
         nome: formData.agencyName,
         email: formData.email,
-        slug: formData.slug || formData.agencyName.toLowerCase().replace(/\s+/g, '-'),
+        slug: slug,
         cor_primaria: formData.color
       });
 
@@ -47,8 +77,10 @@ const Register: React.FC = () => {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
         setError('Este email já está em uso.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('A palavra-passe deve ter pelo menos 6 caracteres.');
       } else {
-        setError('Erro ao criar conta. Tente novamente.');
+        setError('Erro ao criar conta. Verifique a sua ligação.');
       }
     } finally {
       setIsLoading(false);
