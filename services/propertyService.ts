@@ -14,33 +14,42 @@ export const PropertyService = {
         ...propertyDoc.data() 
       } as Imovel));
     } catch (error) {
-      console.error("Firebase fetch error:", error);
+      console.error("Erro ao listar imóveis:", error);
       return [];
     }
   },
 
   async createProperty(tenantId: string, property: Partial<Imovel>) {
-    if (!tenantId || tenantId === 'pending') throw new Error("ID da agência inválido");
+    // Validação crítica: Impedir gravação se o tenantId não estiver carregado
+    if (!tenantId || tenantId === 'pending' || tenantId === 'default') {
+      console.error("Tentativa de criar imóvel com ID inválido:", tenantId);
+      throw new Error("O ID da sua agência ainda não foi carregado. Aguarde um momento.");
+    }
     
-    const propertiesRef = collection(db, "tenants", tenantId, "properties");
-    const data = {
-      ...property,
-      tenant_id: tenantId,
-      created_at: serverTimestamp(),
-      visualizacoes: 0,
-      publicado: property.publicado ?? true,
-      destaque: property.destaque ?? false,
-      estado: 'disponivel',
-      media: property.media || [],
-      caracteristicas: property.caracteristicas || [],
-      garagem: property.garagem || 0,
-      casas_banho: property.casas_banho || 0,
-      quartos: property.quartos || 0,
-      area_util_m2: property.area_util_m2 || 0,
-      tipologia: property.tipologia || 'N/A',
-      distrito: property.distrito || 'Lisboa'
-    };
-    return await addDoc(propertiesRef, data);
+    try {
+      const propertiesRef = collection(db, "tenants", tenantId, "properties");
+      const data = {
+        ...property,
+        tenant_id: tenantId,
+        created_at: serverTimestamp(),
+        visualizacoes: 0,
+        publicado: property.publicado ?? true,
+        destaque: property.destaque ?? false,
+        estado: 'disponivel',
+        media: property.media || [],
+        caracteristicas: property.caracteristicas || [],
+        garagem: property.garagem || 0,
+        casas_banho: property.casas_banho || 0,
+        quartos: property.quartos || 0,
+        area_util_m2: property.area_util_m2 || 0,
+        tipologia: property.tipologia || 'N/A',
+        distrito: property.distrito || 'Lisboa'
+      };
+      return await addDoc(propertiesRef, data);
+    } catch (error: any) {
+      console.error("Erro Firestore ao criar imóvel:", error);
+      throw error;
+    }
   },
 
   async updateProperty(tenantId: string, propertyId: string, updates: Partial<Imovel>) {

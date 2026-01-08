@@ -4,7 +4,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase.ts';
-// Fix: Added missing import for useTenant
 import { useTenant } from '../../contexts/TenantContext.tsx';
 import { Building2, ArrowRight, Check, Loader2, AlertCircle } from 'lucide-react';
 
@@ -32,26 +31,18 @@ const Register: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Criar no Firebase Auth usando createUserWithEmailAndPassword
+      // 1. Criar no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      // 2. Definir nome no perfil usando updateProfile
+      // 2. Definir nome no perfil do Auth
       await updateProfile(user, { displayName: formData.agencyName });
 
-      // 3. Criar documentos no Firestore
+      // 3. Gerar IDs
       const tenantId = `tnt_${Date.now()}`;
-      const slug = formData.slug || formData.agencyName.toLowerCase().replace(/\s+/g, '-');
+      const slug = formData.slug.trim().toLowerCase().replace(/\s+/g, '-') || formData.agencyName.toLowerCase().replace(/\s+/g, '-');
 
-      await setDoc(doc(db, 'tenants', tenantId), {
-        nome: formData.agencyName,
-        slug: slug,
-        email: formData.email,
-        cor_primaria: formData.color,
-        owner_id: user.uid,
-        created_at: serverTimestamp()
-      });
-
+      // 4. CRIAR UTILIZADOR PRIMEIRO (Para as regras do Firebase reconhecerem o vínculo)
       await setDoc(doc(db, 'users', user.uid), {
         id: user.uid,
         displayName: formData.agencyName,
@@ -60,8 +51,19 @@ const Register: React.FC = () => {
         tenantId: tenantId,
         created_at: serverTimestamp()
       });
+
+      // 5. CRIAR TENANT
+      await setDoc(doc(db, 'tenants', tenantId), {
+        id: tenantId,
+        nome: formData.agencyName,
+        slug: slug,
+        email: formData.email,
+        cor_primaria: formData.color,
+        owner_id: user.uid,
+        created_at: serverTimestamp()
+      });
       
-      // 4. Sincronizar contexto local
+      // 6. Sincronizar contexto local
       setTenant({
         ...tenant,
         id: tenantId,
@@ -73,9 +75,10 @@ const Register: React.FC = () => {
 
       navigate('/onboarding');
     } catch (err: any) {
-      console.error(err);
+      console.error("Erro detalhado no registo:", err);
       if (err.code === 'auth/email-already-in-use') setError('Este email já está em uso.');
-      else setError('Erro ao criar conta. Verifique os dados.');
+      else if (err.code === 'permission-denied') setError('Erro de permissão no base de dados. Verifique as regras.');
+      else setError(`Erro: ${err.message || 'Verifique os seus dados.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +97,7 @@ const Register: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold">
+          <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold border border-red-100 animate-in shake duration-300">
             <AlertCircle size={18} /> {error}
           </div>
         )}

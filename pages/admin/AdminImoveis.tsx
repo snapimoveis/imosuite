@@ -13,6 +13,7 @@ const AdminImoveis: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     titulo: '',
@@ -28,7 +29,10 @@ const AdminImoveis: React.FC = () => {
   });
 
   const loadProperties = async () => {
-    if (!profile?.tenantId || profile.tenantId === 'default') return;
+    if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
+      if (profile?.tenantId !== 'pending') setIsLoading(false);
+      return;
+    }
     try {
       const data = await PropertyService.getProperties(profile.tenantId);
       setProperties(data);
@@ -43,8 +47,10 @@ const AdminImoveis: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.tenantId || profile.tenantId === 'default') {
-      alert("Erro de autenticação.");
+    setSaveError(null);
+
+    if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
+      setSaveError("O ID da sua agência não foi detectado. Tente recarregar a página.");
       return;
     }
     
@@ -77,7 +83,7 @@ const AdminImoveis: React.FC = () => {
       loadProperties();
       setFormData({ titulo: '', tipo_imovel: 'Apartamento', preco: '', concelho: '', distrito: 'Lisboa', tipologia: 'T2', quartos: '2', area: '90', imagemUrl: '', descricao: '' });
     } catch (err: any) {
-      alert(`Erro: ${err.message}`);
+      setSaveError(err.message || "Erro ao salvar o imóvel.");
     } finally {
       setIsSaving(false);
     }
@@ -95,7 +101,11 @@ const AdminImoveis: React.FC = () => {
           <h1 className="text-2xl font-black text-[#1c2d51]">Gestão de Imóveis</h1>
           <p className="text-sm text-slate-400 font-medium uppercase tracking-widest mt-1">Inventário da Agência</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-slate-900/10">
+        <button 
+          onClick={() => setIsModalOpen(true)} 
+          disabled={profile?.tenantId === 'pending'}
+          className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+        >
           <Plus size={20} /> Novo Imóvel
         </button>
       </div>
@@ -103,8 +113,15 @@ const AdminImoveis: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
            <div className="bg-white w-full max-w-2xl rounded-[3rem] p-12 relative shadow-2xl overflow-y-auto max-h-[90vh]">
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900"><X size={24}/></button>
+              <button onClick={() => { setIsModalOpen(false); setSaveError(null); }} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900"><X size={24}/></button>
               <h3 className="text-3xl font-black text-[#1c2d51] mb-8">Novo Imóvel</h3>
+              
+              {saveError && (
+                <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold mb-6 border border-red-100">
+                  <AlertCircle size={18} /> {saveError}
+                </div>
+              )}
+
               <form onSubmit={handleSave} className="space-y-6">
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Título Comercial</label>
