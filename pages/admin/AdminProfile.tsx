@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
 import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Phone, Camera, Smartphone } from 'lucide-react';
@@ -38,8 +38,6 @@ const AdminProfile: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Em ambiente SaaS real usaríamos Firebase Storage. 
-    // Para esta demo, usamos FileReader para gerar uma dataURL e simular o upload.
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result as string;
@@ -47,7 +45,11 @@ const AdminProfile: React.FC = () => {
       
       try {
         const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, { avatar_url: base64String });
+        // Usamos setDoc com merge para criar o documento se ele não existir
+        await setDoc(userRef, { 
+          avatar_url: base64String,
+          updated_at: serverTimestamp() 
+        }, { merge: true });
       } catch (err) {
         console.error("Erro ao guardar avatar:", err);
       }
@@ -66,19 +68,23 @@ const AdminProfile: React.FC = () => {
       // 1. Atualizar Profile no Firebase Auth
       await updateProfile(user, { displayName: formData.displayName });
 
-      // 2. Atualizar documento do utilizador no Firestore
+      // 2. Atualizar ou Criar documento do utilizador no Firestore
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
+        id: user.uid,
+        email: user.email,
         displayName: formData.displayName,
         phone: formData.phone,
+        role: profile.role || 'admin',
+        tenantId: profile.tenantId || 'pending',
         updated_at: serverTimestamp(),
-      });
+      }, { merge: true });
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
-      alert("Erro ao guardar alterações.");
+      alert("Erro ao guardar alterações. Verifique a sua ligação.");
     } finally {
       setIsSaving(false);
     }
@@ -99,7 +105,6 @@ const AdminProfile: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Cartão de Identidade Visual */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm text-center flex flex-col items-center">
             <div className="relative group mb-6">
@@ -152,7 +157,6 @@ const AdminProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Formulário de Dados */}
         <div className="lg:col-span-2 space-y-6">
           <form onSubmit={handleSave} className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
             <div className="flex items-center gap-4">
@@ -205,7 +209,6 @@ const AdminProfile: React.FC = () => {
             </div>
           </form>
 
-          {/* Secção de Segurança */}
           <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-red-50 text-red-400 rounded-2xl flex items-center justify-center"><Lock size={24}/></div>

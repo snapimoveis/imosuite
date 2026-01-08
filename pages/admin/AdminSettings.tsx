@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-// Added Link to react-router-dom imports to fix 'Cannot find name Link'
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-// Added CheckCircle2 and Settings to lucide-react imports to fix missing icon component errors
 import { Palette, Globe, Mail, Phone, Save, Layout, Check, Loader2, Star, Building2, Zap, Brush, MapPin, Hash, CreditCard, Languages, ShieldCheck, CheckCircle2, Settings } from 'lucide-react';
 
 const TEMPLATE_OPTIONS = [
@@ -26,7 +24,6 @@ const AdminSettings: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
-  // Detetar aba a partir do URL (ex: ?tab=branding)
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
@@ -59,6 +56,7 @@ const AdminSettings: React.FC = () => {
     try {
       const tenantRef = doc(db, 'tenants', profile.tenantId);
       const updates = {
+        id: profile.tenantId,
         nome: localTenant.nome,
         email: localTenant.email,
         telefone: localTenant.telefone || '',
@@ -71,13 +69,14 @@ const AdminSettings: React.FC = () => {
         updated_at: serverTimestamp()
       };
       
-      await updateDoc(tenantRef, updates);
+      // setDoc com merge resolve o erro de "No document to update"
+      await setDoc(tenantRef, updates, { merge: true });
       setTenant({ ...tenant, ...updates });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error(err);
-      alert("Erro ao guardar.");
+      alert("Erro ao guardar definições.");
     } finally {
       setIsSaving(false);
     }
@@ -120,7 +119,6 @@ const AdminSettings: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-        {/* Sidebar Mini Nav */}
         <div className="lg:col-span-1 space-y-2">
           <TabLink active={activeTab === 'general'} icon={<Building2 size={18}/>} label="Empresa" sub="NIF e Localização" tab="general" />
           <TabLink active={activeTab === 'branding'} icon={<Brush size={18}/>} label="Branding" sub="Cores e Logótipo" tab="branding" />
@@ -128,7 +126,6 @@ const AdminSettings: React.FC = () => {
           <TabLink active={activeTab === 'system'} icon={<Settings size={18}/>} label="Sistema" sub="Moeda e Idioma" tab="system" />
         </div>
 
-        {/* Content Area */}
         <div className="lg:col-span-3 space-y-8">
           {activeTab === 'general' && (
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
