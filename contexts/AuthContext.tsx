@@ -27,20 +27,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged is correctly imported from firebase/auth
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
         try {
-          // Tenta carregar dados estendidos do Firestore
+          // Carregar perfil do Firestore
           const profileRef = doc(db, 'users', currentUser.uid);
           const profileSnap = await getDoc(profileRef);
           
           if (profileSnap.exists()) {
             setProfile(profileSnap.data() as UserProfile);
           } else {
-            // Caso o doc ainda não exista (registo em curso), cria um perfil básico temporário
+            // Se o doc não existir (ex: durante o onboarding), definimos um perfil temporário
             setProfile({
               id: currentUser.uid,
               email: currentUser.email || '',
@@ -49,8 +48,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               tenantId: 'default'
             });
           }
-        } catch (err) {
-          console.error("Erro ao sincronizar perfil:", err);
+        } catch (err: any) {
+          // Silenciamos o erro de permissões insuficiente para não quebrar a UI,
+          // pois isso costuma ser temporário durante o fluxo de registo
+          if (err?.code !== 'permission-denied') {
+            console.error("Erro ao sincronizar perfil:", err);
+          }
         }
       } else {
         setProfile(null);
@@ -63,7 +66,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const logout = async () => {
-    // signOut is correctly imported from firebase/auth
     await signOut(auth);
   };
 
