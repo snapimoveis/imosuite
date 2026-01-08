@@ -1,0 +1,7 @@
+{
+  "name": "ImoSuite SaaS",
+  "description": "A professional white-label real estate SaaS platform with multi-tenant support, property management, lead tracking, and AI-powered description generation.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
