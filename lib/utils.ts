@@ -24,7 +24,7 @@ export function cn(...classes: (string | boolean | undefined)[]) {
 }
 
 /**
- * Converte uma string num slug URL-friendly
+ * Gera um slug normalizado: lowercase, sem acentos, sem caracteres especiais.
  */
 export function generateSlug(text: string): string {
   return text
@@ -34,15 +34,17 @@ export function generateSlug(text: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')                // Substitui espaços por hífens
-    .replace(/[^\w-]+/g, '')             // Remove caracteres não alfanuméricos (exceto hífens)
-    .replace(/--+/g, '-');               // Remove hífens duplos
+    .replace(/[^\w-]+/g, '')             // Remove tudo o que não é letra, número ou hífen
+    .replace(/--+/g, '-')                // Evita hífens duplos
+    .replace(/^-+/, '')                  // Remove hífen no início
+    .replace(/-+$/, '');                 // Remove hífen no fim
 }
 
 /**
- * Garante que um slug é único na coleção de tenants, 
- * adicionando sufixos numéricos se necessário (-2, -3...)
+ * Consulta o Firestore para garantir um slug único.
+ * Se existir, adiciona -2, -3, etc.
  */
-export async function getUniqueTenantSlug(baseName: string): Promise<string> {
+export async function generateUniqueSlug(baseName: string): Promise<string> {
   const baseSlug = generateSlug(baseName);
   let slug = baseSlug;
   let counter = 1;
