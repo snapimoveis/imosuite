@@ -1,108 +1,144 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
-import { Palette, Globe, Mail, Phone, Save, Upload } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { Palette, Globe, Mail, Phone, Save, Upload, Layout, Check, Loader2, Star, Building2, Zap, Brush } from 'lucide-react';
+
+const TEMPLATE_OPTIONS = [
+  { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal' },
+  { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Clean e Moderno' },
+  { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo' },
+  { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico' },
+  { id: 'luxe', name: 'Luxe', icon: <Brush size={20}/>, desc: 'Artístico e Lifestyle' },
+];
 
 const AdminSettings: React.FC = () => {
   const { tenant, setTenant } = useTenant();
+  const { profile } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
+  const [localTenant, setLocalTenant] = useState(tenant);
 
-  const handleUpdate = (updates: any) => {
-    setTenant({ ...tenant, ...updates });
+  const handleSave = async () => {
+    if (!profile?.tenantId || profile.tenantId === 'pending') {
+      alert("Erro: ID da agência não carregado.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const tenantRef = doc(db, 'tenants', profile.tenantId);
+      const updates = {
+        nome: localTenant.nome,
+        email: localTenant.email,
+        telefone: localTenant.telefone || '',
+        cor_primaria: localTenant.cor_primaria,
+        template_id: (localTenant as any).template_id || 'heritage',
+        updated_at: serverTimestamp()
+      };
+      
+      await updateDoc(tenantRef, updates);
+      setTenant({ ...tenant, ...updates });
+      alert("Configurações guardadas com sucesso!");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao guardar definições.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-5xl space-y-8 font-brand">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Configurações da Imobiliária</h1>
-        <p className="text-gray-500">Personalize a identidade visual e dados de contacto do seu portal.</p>
+        <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Configurações do Portal</h1>
+        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Personalize a sua identidade digital</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Branding Sidebar */}
-        <div className="space-y-4">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
-            <div className="w-24 h-24 mx-auto bg-gray-100 rounded-2xl mb-4 flex items-center justify-center border-2 border-dashed border-gray-200">
-               <Upload className="text-gray-400" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Templates Selector */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+            <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest mb-8 flex items-center gap-2">
+              <Layout size={18} className="text-blue-500" /> Selecionar Template Ativo
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {TEMPLATE_OPTIONS.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id } as any)}
+                  className={`flex items-start gap-4 p-5 rounded-3xl border-2 transition-all text-left ${
+                    (localTenant as any).template_id === tmpl.id 
+                    ? 'border-[#1c2d51] bg-slate-50 shadow-inner' 
+                    : 'border-slate-50 hover:border-slate-200'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                    (localTenant as any).template_id === tmpl.id ? 'bg-[#1c2d51] text-white' : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    {tmpl.icon}
+                  </div>
+                  <div>
+                    <div className="font-black text-sm text-[#1c2d51]">{tmpl.name}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">{tmpl.desc}</div>
+                  </div>
+                  {(localTenant as any).template_id === tmpl.id && (
+                    <div className="ml-auto text-emerald-500"><Check size={20} /></div>
+                  )}
+                </button>
+              ))}
             </div>
-            <button className="text-sm font-bold text-[var(--primary)]">Mudar Logótipo</button>
-            <p className="text-xs text-gray-400 mt-2">Recomendado: 512x512px (PNG)</p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-             <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Palette size={18} className="text-gray-400" /> Cores da Marca
-             </h3>
-             <div className="space-y-4">
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+             <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest mb-8">Dados da Agência</h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Cor Primária</label>
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="color" 
-                      value={tenant.cor_primaria} 
-                      onChange={(e) => handleUpdate({ cor_primaria: e.target.value })}
-                      className="w-10 h-10 rounded-lg border-none cursor-pointer"
-                    />
-                    <input 
-                      type="text" 
-                      value={tenant.cor_primaria}
-                      className="flex-1 bg-gray-50 border-none rounded-lg px-3 py-2 text-sm outline-none"
-                    />
-                  </div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Nome Comercial</label>
+                  <input type="text" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Email Público</label>
+                  <input type="email" value={localTenant.email} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold" />
                 </div>
              </div>
           </div>
         </div>
 
-        {/* Form Main */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-               <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Imobiliária</label>
-                  <input 
-                    type="text" 
-                    value={tenant.nome}
-                    onChange={(e) => handleUpdate({ nome: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] transition-all"
-                  />
-               </div>
-               <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email de Contacto</label>
-                  <input 
-                    type="email" 
-                    value={tenant.email}
-                    onChange={(e) => handleUpdate({ email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] transition-all"
-                  />
-               </div>
-               <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                  <input 
-                    type="text" 
-                    value={tenant.telefone}
-                    onChange={(e) => handleUpdate({ telefone: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] transition-all"
-                  />
-               </div>
-            </div>
-
-            <div className="pt-6 border-t border-gray-50">
-               <button className="w-full bg-[var(--primary)] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-teal-900/10">
-                  <Save size={20} />
-                  Guardar Alterações
-               </button>
-            </div>
-          </div>
-
-          <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100">
-             <div className="flex gap-3">
-                <Globe className="text-amber-600 flex-shrink-0" size={24} />
-                <div>
-                  <h4 className="font-bold text-amber-900">Domínio Personalizado</h4>
-                  <p className="text-sm text-amber-800 mt-1">O seu site está atualmente em <strong>{tenant.slug}.imosuite.pt</strong>. Para usar um domínio próprio (ex: www.minhaagencia.pt), faça o upgrade para o plano Pro Business.</p>
-                  <button className="mt-4 text-sm font-bold text-amber-900 underline">Fazer Upgrade</button>
+        {/* Sidebar: Brand & Colors */}
+        <div className="space-y-6">
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+             <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest mb-8">Cores da Marca</h3>
+             <div className="space-y-4">
+                <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg shadow-sm" style={{ backgroundColor: localTenant.cor_primaria }}></div>
+                      <span className="text-xs font-black uppercase">{localTenant.cor_primaria}</span>
+                   </div>
+                   <input type="color" value={localTenant.cor_primaria} onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value})} className="w-8 h-8 opacity-0 absolute cursor-pointer" />
+                   <button className="text-[10px] font-black uppercase text-blue-500">Mudar</button>
                 </div>
              </div>
+          </div>
+
+          <div className="bg-[#1c2d51] p-8 rounded-[3rem] text-white shadow-xl shadow-slate-900/20">
+             <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-4">Ações do Sistema</p>
+             <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="w-full bg-white text-[#1c2d51] py-5 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50"
+             >
+                {isSaving ? <Loader2 className="animate-spin" /> : <><Save size={20} /> Guardar Tudo</>}
+             </button>
+             <a 
+              href={`#/agencia/${tenant.slug}`} 
+              target="_blank" 
+              className="w-full mt-4 border border-white/20 text-white py-5 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-white/5 transition-all"
+             >
+                <Globe size={20} /> Ver Portal Público
+             </a>
           </div>
         </div>
       </div>

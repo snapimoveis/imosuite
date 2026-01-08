@@ -32,28 +32,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       if (currentUser) {
         try {
-          // Carregar perfil do Firestore
           const profileRef = doc(db, 'users', currentUser.uid);
           const profileSnap = await getDoc(profileRef);
           
           if (profileSnap.exists()) {
             setProfile(profileSnap.data() as UserProfile);
           } else {
-            // Se o doc não existir (ex: durante o onboarding), definimos um perfil temporário
+            // Perfil temporário com indicação de pendente
             setProfile({
               id: currentUser.uid,
               email: currentUser.email || '',
               displayName: currentUser.displayName || 'Utilizador',
               role: 'admin',
-              tenantId: 'default'
+              tenantId: 'pending' // Alterado de default para pending
             });
           }
         } catch (err: any) {
-          // Silenciamos o erro de permissões insuficiente para não quebrar a UI,
-          // pois isso costuma ser temporário durante o fluxo de registo
-          if (err?.code !== 'permission-denied') {
-            console.error("Erro ao sincronizar perfil:", err);
-          }
+          console.error("Erro ao sincronizar perfil:", err);
         }
       } else {
         setProfile(null);
