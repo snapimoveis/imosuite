@@ -14,7 +14,7 @@ const AdminUsers: React.FC = () => {
 
   useEffect(() => {
     const fetchTeam = async () => {
-      if (!profile?.tenantId) return;
+      if (!profile?.tenantId || profile.tenantId === 'pending') return;
       try {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("tenantId", "==", profile.tenantId));
@@ -28,6 +28,10 @@ const AdminUsers: React.FC = () => {
     };
     fetchTeam();
   }, [profile]);
+
+  if (profile?.tenantId === 'pending') {
+    return <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-slate-200" size={40} /></div>;
+  }
 
   return (
     <div className="space-y-6 font-brand">
@@ -58,6 +62,12 @@ const AdminUsers: React.FC = () => {
                 <tr>
                   <td colSpan={4} className="px-8 py-20 text-center">
                     <Loader2 className="animate-spin mx-auto text-slate-300" size={32} />
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-8 py-10 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">
+                    Apenas você na equipa por enquanto.
                   </td>
                 </tr>
               ) : users.map((u) => (

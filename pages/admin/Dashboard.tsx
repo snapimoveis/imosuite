@@ -18,24 +18,26 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchRealStats = async () => {
-      if (!profile?.tenantId || profile.tenantId === 'default') {
-        setIsLoading(false);
+      // Importante: Só executa se o tenantId for válido e não for 'pending'
+      if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
+        if (profile?.tenantId === 'default' || !profile) setIsLoading(false);
         return;
       }
 
       try {
-        // 1. Contar Imóveis (Leitura da sub-coleção específica do tenant)
         const propsRef = collection(db, "tenants", profile.tenantId, "properties");
         const propsSnap = await getDocs(propsRef);
         
-        // 2. Contar Membros da Equipa (Usando Query para evitar erro de permissão na coleção root)
         const usersRef = collection(db, "users");
         const teamQuery = query(usersRef, where("tenantId", "==", profile.tenantId));
         const teamSnap = await getDocs(teamQuery);
 
+        const leadsRef = collection(db, "tenants", profile.tenantId, "leads");
+        const leadsSnap = await getDocs(leadsRef);
+
         setStats(prev => [
           { ...prev[0], value: propsSnap.size.toString() },
-          { ...prev[1], value: '0' },
+          { ...prev[1], value: leadsSnap.size.toString() },
           { ...prev[2], value: 'N/A' },
           { ...prev[3], value: teamSnap.size.toString() }
         ]);
@@ -49,16 +51,11 @@ const Dashboard: React.FC = () => {
     fetchRealStats();
   }, [profile]);
 
-  const data = [
-    { name: 'Jan', leads: 0, views: 0 },
-    { name: 'Hoje', leads: 5, views: 42 },
-  ];
-
-  if (isLoading) {
+  if (isLoading || profile?.tenantId === 'pending') {
     return (
       <div className="h-96 flex flex-col items-center justify-center text-slate-300">
         <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-xs font-black uppercase tracking-widest">A carregar o seu ecossistema...</p>
+        <p className="text-xs font-black uppercase tracking-widest text-center">A sintonizar os seus dados...<br/><span className="opacity-50 text-[8px]">Aguarde um momento</span></p>
       </div>
     );
   }
@@ -92,7 +89,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
+              <AreaChart data={[{name: 'Base', leads: 0}, {name: 'Hoje', leads: parseInt(stats[1].value)}]}>
                 <defs>
                   <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#1c2d51" stopOpacity={0.1}/>
@@ -116,7 +113,7 @@ const Dashboard: React.FC = () => {
             </div>
             <h3 className="text-xl font-black text-[#1c2d51] mb-2 tracking-tighter">Inventário Online</h3>
             <p className="text-slate-400 text-sm font-medium mb-8 max-w-xs">Os seus imóveis estão agora visíveis no portal público da sua agência.</p>
-            <button className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-[#1c2d51]/20">Ver Portal</button>
+            <a href={`#/agencia/${profile?.tenantId || ''}`} target="_blank" className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-[#1c2d51]/20">Ver Portal</a>
         </div>
       </div>
     </div>

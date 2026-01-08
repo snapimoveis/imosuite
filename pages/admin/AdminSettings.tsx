@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -20,10 +20,14 @@ const AdminSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [localTenant, setLocalTenant] = useState(tenant);
 
+  // Sincroniza o estado local quando o tenant do contexto muda (ex: após carregar do Firebase)
+  useEffect(() => {
+    setLocalTenant(tenant);
+  }, [tenant]);
+
   const handleSave = async () => {
     if (!profile?.tenantId || profile.tenantId === 'pending') {
-      alert("Erro: ID da agência não carregado.");
-      return;
+      return; // Prevenção silenciosa se ainda estiver a carregar
     }
 
     setIsSaving(true);
@@ -48,6 +52,15 @@ const AdminSettings: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  if (profile?.tenantId === 'pending') {
+    return (
+      <div className="h-96 flex flex-col items-center justify-center text-slate-300">
+        <Loader2 className="animate-spin mb-4" size={32} />
+        <p className="text-xs font-black uppercase tracking-widest">A carregar definições...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl space-y-8 font-brand">
