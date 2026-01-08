@@ -1,13 +1,14 @@
 
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase.ts';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Building2, MessageSquare, TrendingUp, Users, Eye, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Building2, MessageSquare, TrendingUp, Users, Eye, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { profile } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([
     { name: 'Imóveis Ativos', value: '0', change: '0%', trend: 'up', icon: <Building2 className="text-blue-600" /> },
     { name: 'Leads (Mês)', value: '0', change: '0%', trend: 'up', icon: <MessageSquare className="text-emerald-600" /> },
@@ -17,25 +18,31 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchRealStats = async () => {
-      if (!profile?.tenantId) return;
+      if (!profile?.tenantId || profile.tenantId === 'default') {
+        setIsLoading(false);
+        return;
+      }
 
       try {
-        // 1. Contar Imóveis
+        // 1. Contar Imóveis (Leitura da sub-coleção específica do tenant)
         const propsRef = collection(db, "tenants", profile.tenantId, "properties");
         const propsSnap = await getDocs(propsRef);
         
-        // 2. Contar Membros da Equipa
-        const usersSnap = await getDocs(collection(db, "users"));
-        const teamCount = usersSnap.docs.filter(d => d.data().tenantId === profile.tenantId).length;
+        // 2. Contar Membros da Equipa (Usando Query para evitar erro de permissão na coleção root)
+        const usersRef = collection(db, "users");
+        const teamQuery = query(usersRef, where("tenantId", "==", profile.tenantId));
+        const teamSnap = await getDocs(teamQuery);
 
         setStats(prev => [
           { ...prev[0], value: propsSnap.size.toString() },
-          { ...prev[1], value: '0' }, // Lead service coming soon
+          { ...prev[1], value: '0' },
           { ...prev[2], value: 'N/A' },
-          { ...prev[3], value: teamCount.toString() }
+          { ...prev[3], value: teamSnap.size.toString() }
         ]);
       } catch (err) {
         console.error("Erro ao carregar stats do dashboard:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -46,6 +53,15 @@ const Dashboard: React.FC = () => {
     { name: 'Jan', leads: 0, views: 0 },
     { name: 'Hoje', leads: 5, views: 42 },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="h-96 flex flex-col items-center justify-center text-slate-300">
+        <Loader2 className="animate-spin mb-4" size={32} />
+        <p className="text-xs font-black uppercase tracking-widest">A carregar o seu ecossistema...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 font-brand">
@@ -98,9 +114,9 @@ const Dashboard: React.FC = () => {
             <div className="w-16 h-16 bg-blue-50 text-[#357fb2] rounded-2xl flex items-center justify-center mb-6">
                <TrendingUp size={32} />
             </div>
-            <h3 className="text-xl font-black text-[#1c2d51] mb-2 tracking-tighter">Comece a Publicar</h3>
-            <p className="text-slate-400 text-sm font-medium mb-8 max-w-xs">Adicione os seus primeiros imóveis para começar a receber métricas de visualização reais.</p>
-            <button className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-[#1c2d51]/20">Adicionar Imóvel</button>
+            <h3 className="text-xl font-black text-[#1c2d51] mb-2 tracking-tighter">Inventário Online</h3>
+            <p className="text-slate-400 text-sm font-medium mb-8 max-w-xs">Os seus imóveis estão agora visíveis no portal público da sua agência.</p>
+            <button className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-[#1c2d51]/20">Ver Portal</button>
         </div>
       </div>
     </div>
