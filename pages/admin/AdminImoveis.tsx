@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { PropertyService } from '../../services/propertyService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Imovel } from '../../types';
-import { Plus, Search, Filter, Edit2, Trash2, Eye, X, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Search, Filter, Edit2, Trash2, Eye, X, Loader2, AlertCircle, ImageIcon } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 
 const AdminImoveis: React.FC = () => {
@@ -22,7 +22,9 @@ const AdminImoveis: React.FC = () => {
     distrito: 'Lisboa',
     tipologia: 'T2',
     quartos: '2',
-    area: '90'
+    area: '90',
+    imagemUrl: '',
+    descricao: ''
   });
 
   const loadProperties = async () => {
@@ -42,7 +44,7 @@ const AdminImoveis: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile?.tenantId || profile.tenantId === 'default') {
-      alert("Erro: ID da agência não identificado. Tente fazer logout e login novamente.");
+      alert("Erro de autenticação.");
       return;
     }
     
@@ -62,19 +64,20 @@ const AdminImoveis: React.FC = () => {
         tipologia: formData.tipologia,
         quartos: Number(formData.quartos),
         area_util_m2: Number(formData.area),
+        descricao_md: formData.descricao,
         tipo_negocio: 'venda',
         referencia: `REF-${Math.floor(1000 + Math.random() * 9000)}`,
         slug: slug,
+        media: formData.imagemUrl ? [{ id: '1', imovel_id: '', url: formData.imagemUrl, tipo: 'foto', ordem: 0, principal: true }] : [],
         caracteristicas: ['Excelente estado', 'Luminosidade natural'],
         garagem: 1
       });
       
       setIsModalOpen(false);
       loadProperties();
-      setFormData({ titulo: '', tipo_imovel: 'Apartamento', preco: '', concelho: '', distrito: 'Lisboa', tipologia: 'T2', quartos: '2', area: '90' });
+      setFormData({ titulo: '', tipo_imovel: 'Apartamento', preco: '', concelho: '', distrito: 'Lisboa', tipologia: 'T2', quartos: '2', area: '90', imagemUrl: '', descricao: '' });
     } catch (err: any) {
-      console.error("Erro detalhado ao guardar:", err);
-      alert(`Erro ao guardar imóvel: ${err.message || 'Verifique as permissões do Firebase'}`);
+      alert(`Erro: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -99,13 +102,13 @@ const AdminImoveis: React.FC = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-           <div className="bg-white w-full max-w-xl rounded-[3rem] p-12 relative shadow-2xl overflow-y-auto max-h-[90vh]">
+           <div className="bg-white w-full max-w-2xl rounded-[3rem] p-12 relative shadow-2xl overflow-y-auto max-h-[90vh]">
               <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-900"><X size={24}/></button>
               <h3 className="text-3xl font-black text-[#1c2d51] mb-8">Novo Imóvel</h3>
               <form onSubmit={handleSave} className="space-y-6">
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Título Comercial</label>
-                  <input required value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold" placeholder="Ex: T2 Moderno com Garagem" />
+                  <input required value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -121,15 +124,16 @@ const AdminImoveis: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Localidade</label>
-                    <input required value={formData.concelho} onChange={e => setFormData({...formData, concelho: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold" />
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">URL da Imagem Principal</label>
+                  <div className="relative">
+                     <ImageIcon size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                     <input placeholder="https://..." value={formData.imagemUrl} onChange={e => setFormData({...formData, imagemUrl: e.target.value})} className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold" />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Área (m²)</label>
-                    <input required type="number" value={formData.area} onChange={e => setFormData({...formData, area: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold" />
-                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Descrição Detalhada</label>
+                  <textarea rows={4} value={formData.descricao} onChange={e => setFormData({...formData, descricao: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-medium"></textarea>
                 </div>
                 <button type="submit" disabled={isSaving} className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-2 shadow-xl">
                   {isSaving ? <Loader2 className="animate-spin" /> : 'Confirmar e Publicar'}
@@ -145,7 +149,7 @@ const AdminImoveis: React.FC = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input 
               type="text" 
-              placeholder="Pesquisar..." 
+              placeholder="Pesquisar por título ou referência..." 
               className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl outline-none text-sm font-bold"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -169,7 +173,7 @@ const AdminImoveis: React.FC = () => {
                    <td colSpan={2} className="px-8 py-20 text-center">
                       <div className="flex flex-col items-center gap-2 text-slate-300">
                          <AlertCircle size={32} />
-                         <p className="font-bold">Nenhum imóvel encontrado.</p>
+                         <p className="font-bold uppercase text-[10px] tracking-widest">Nenhum imóvel no inventário.</p>
                       </div>
                    </td>
                 </tr>
@@ -177,17 +181,18 @@ const AdminImoveis: React.FC = () => {
                 <tr key={imovel.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-300 font-black border border-slate-200">
-                        {imovel.media?.[0]?.url ? <img src={imovel.media[0].url} className="w-full h-full object-cover rounded-2xl" /> : imovel.titulo.charAt(0)}
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-300 font-black border border-slate-200 overflow-hidden">
+                        {imovel.media?.[0]?.url ? <img src={imovel.media[0].url} className="w-full h-full object-cover" /> : imovel.titulo.charAt(0)}
                       </div>
                       <div>
                         <div className="font-black text-[#1c2d51] text-sm">{imovel.titulo}</div>
-                        <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{imovel.concelho} • {formatCurrency(imovel.preco)}</div>
+                        <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Ref: {imovel.referencia} • {formatCurrency(imovel.preco)}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-5 text-right">
                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a href={`#/agencia/${profile?.tenantId}/imovel/${imovel.slug}`} target="_blank" className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-white rounded-xl border border-slate-100 shadow-sm"><Eye size={16}/></a>
                       <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-[#1c2d51] bg-white rounded-xl border border-slate-100 shadow-sm"><Edit2 size={16}/></button>
                       <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 bg-white rounded-xl border border-slate-100 shadow-sm"><Trash2 size={16}/></button>
                     </div>

@@ -14,10 +14,12 @@ import Login from './pages/Login.tsx';
 import OnboardingFlow from './pages/onboarding/OnboardingFlow.tsx';
 import Dashboard from './pages/admin/Dashboard.tsx';
 import AdminImoveis from './pages/admin/AdminImoveis.tsx';
+import AdminLeads from './pages/admin/AdminLeads.tsx';
 import AdminSettings from './pages/admin/AdminSettings.tsx';
 import AdminUsers from './pages/admin/AdminUsers.tsx';
 import AdminShell from './components/admin/AdminShell.tsx';
 import PublicPortal from './pages/PublicPortal.tsx';
+import PublicImovelDetails from './pages/PublicImovelDetails.tsx';
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -51,8 +53,10 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
             </Route>
 
-            {/* Portais das Agências (imobiliaria.pt/nome-da-agencia) */}
+            {/* Portais das Agências */}
             <Route path="/agencia/:slug" element={<PublicPortal />} />
+            <Route path="/agencia/:slug/imovel/:imovelSlug" element={<PublicImovelDetails />} />
+            <Route path="/imovel/:slug" element={<PublicImovelDetails />} /> {/* Redir context handled inside component */}
             <Route path="/demo" element={<Navigate to="/agencia/demo-imosuite" replace />} />
 
             {/* Admin & Onboarding */}
@@ -60,6 +64,7 @@ const App: React.FC = () => {
             <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="imoveis" element={<AdminImoveis />} />
+              <Route path="leads" element={<AdminLeads />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
