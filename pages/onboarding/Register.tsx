@@ -1,26 +1,39 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
-import { Building2, ArrowRight, Check } from 'lucide-react';
+import { Building2, ArrowRight, Check, Loader2, AlertCircle } from 'lucide-react';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { tenant, setTenant } = useTenant();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     agencyName: '',
     email: '',
+    password: '',
     slug: '',
     color: '#1c2d51'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
       setStep(2);
-    } else {
-      // Simular criação de tenant
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Criação real no Firebase Auth
+      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      
+      // Atualizar dados do tenant (contexto local)
       setTenant({
         ...tenant,
         nome: formData.agencyName,
@@ -28,8 +41,17 @@ const Register: React.FC = () => {
         slug: formData.slug || formData.agencyName.toLowerCase().replace(/\s+/g, '-'),
         cor_primaria: formData.color
       });
-      // Redirect to onboarding flow instead of dashboard
+
       navigate('/onboarding');
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Este email já está em uso.');
+      } else {
+        setError('Erro ao criar conta. Tente novamente.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -47,6 +69,13 @@ const Register: React.FC = () => {
             Sem cartão de crédito • 14 dias grátis
           </p>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold">
+            <AlertCircle size={18} />
+            {error}
+          </div>
+        )}
 
         <form className="mt-10 space-y-8" onSubmit={handleSubmit}>
           {step === 1 ? (
@@ -71,6 +100,18 @@ const Register: React.FC = () => {
                   placeholder="contato@empresa.pt"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-black text-[#1c2d51] mb-2 uppercase tracking-widest">Palavra-passe</label>
+                <input
+                  required
+                  type="password"
+                  minLength={6}
+                  className="mt-1 block w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#1c2d51] outline-none font-bold text-lg transition-all"
+                  placeholder="Mínimo 6 caracteres"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
               </div>
             </div>
@@ -114,15 +155,21 @@ const Register: React.FC = () => {
           <div className="pt-4">
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-6 px-4 border border-transparent text-xl font-black rounded-2xl text-white bg-[#1c2d51] hover:opacity-95 shadow-xl shadow-[#1c2d51]/20 transition-all hover:-translate-y-1"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-6 px-4 border border-transparent text-xl font-black rounded-2xl text-white bg-[#1c2d51] hover:opacity-95 shadow-xl shadow-[#1c2d51]/20 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:translate-y-0"
             >
-              {step === 1 ? 'Continuar' : 'Criar Conta'}
-              <ArrowRight className="ml-3 group-hover:translate-x-1 transition-transform" size={24} />
+              {isLoading ? <Loader2 className="animate-spin" size={24} /> : (
+                <>
+                  {step === 1 ? 'Continuar' : 'Criar Conta'}
+                  <ArrowRight className="ml-3 group-hover:translate-x-1 transition-transform" size={24} />
+                </>
+              )}
             </button>
           </div>
         </form>
 
-        <div className="text-center">
+        <div className="text-center flex flex-col gap-4">
+          <Link to="/login" className="text-sm font-bold text-[#357fb2] hover:underline">Já tem uma conta? Inicie sessão</Link>
           <Link to="/" className="text-sm font-bold text-slate-400 hover:text-[#1c2d51] transition-colors">Voltar para a página inicial</Link>
         </div>
       </div>

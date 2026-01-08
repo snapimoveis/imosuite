@@ -1,22 +1,35 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { ADMIN_NAV_ITEMS } from '../../constants.tsx';
-import { LogOut, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, Bell, ChevronLeft, ChevronRight, User as UserIcon } from 'lucide-react';
 
-const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Fixed potential TypeScript error by making children optional
+const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { tenant } = useTenant();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error("Erro ao sair:", error);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 font-brand">
       {/* Sidebar */}
       <aside className={`bg-white border-r transition-all duration-300 flex flex-col ${isCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="p-6 border-b flex items-center justify-between">
-          {!isCollapsed && <span className="font-bold text-lg text-[var(--primary)] truncate">{tenant.nome}</span>}
-          <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-1 hover:bg-gray-100 rounded text-gray-500">
+          {!isCollapsed && <span className="font-black text-lg text-[#1c2d51] truncate">{tenant.nome}</span>}
+          <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors">
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </button>
         </div>
@@ -28,48 +41,55 @@ const AdminShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
                   isActive 
-                    ? 'bg-[var(--primary)] text-white shadow-md' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-[#1c2d51] text-white shadow-xl shadow-[#1c2d51]/20' 
+                    : 'text-slate-400 hover:text-[#1c2d51] hover:bg-slate-50'
                 }`}
               >
                 {item.icon}
-                {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                {!isCollapsed && <span className="font-bold text-sm">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
         <div className="p-4 border-t">
-          <Link to="/" className="flex items-center gap-3 p-3 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+          >
             <LogOut size={20} />
-            {!isCollapsed && <span className="font-medium">Sair</span>}
-          </Link>
+            {!isCollapsed && <span className="font-bold text-sm">Sair da Conta</span>}
+          </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <header className="h-16 bg-white border-b flex items-center justify-between px-8">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <span className="hover:text-gray-600 cursor-pointer">Painel de Controlo</span>
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300">
+            <span className="hover:text-slate-500 cursor-pointer">Backoffice</span>
             <span>/</span>
-            <span className="text-gray-600 font-medium">Dashboard</span>
+            <span className="text-[#1c2d51]">
+              {ADMIN_NAV_ITEMS.find(i => i.path === location.pathname)?.name || 'Painel'}
+            </span>
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative p-2 text-gray-400 hover:text-gray-600">
+            <button className="relative p-2 text-slate-300 hover:text-[#1c2d51] transition-colors">
               <Bell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-bold text-gray-900">Admin User</div>
-                <div className="text-xs text-gray-500 capitalize">Administrador</div>
+                <div className="text-xs font-black text-[#1c2d51] truncate max-w-[150px]">
+                  {user?.displayName || user?.email?.split('@')[0] || 'Administrador'}
+                </div>
+                <div className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Acesso Gestor</div>
               </div>
-              <div className="w-9 h-9 rounded-full bg-gray-200 border border-gray-100 flex items-center justify-center font-bold text-gray-500">
-                A
+              <div className="w-9 h-9 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-[#1c2d51] shadow-sm">
+                {user?.email?.charAt(0).toUpperCase() || <UserIcon size={18} />}
               </div>
             </div>
           </div>

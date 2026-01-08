@@ -1,6 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 
+// Generate a professional property description based on provided details
 export const generatePropertyDescription = async (property: any): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
@@ -10,7 +11,7 @@ export const generatePropertyDescription = async (property: any): Promise<string
     Tipo: ${property.tipo_imovel}
     Tipologia: ${property.tipologia}
     Localização: ${property.concelho}, ${property.distrito}
-    Características: ${property.caracteristicas.join(', ')}
+    Características: ${property.caracteristicas ? property.caracteristicas.join(', ') : 'Não especificadas'}
     Preço: ${property.preco ? property.preco + '€' : 'Sob consulta'}
     
     A descrição deve ser em Português de Portugal (PT-PT), focada em benefícios, e dividida em 3 parágrafos:
@@ -24,6 +25,7 @@ export const generatePropertyDescription = async (property: any): Promise<string
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
+    // Access the .text property directly as per SDK guidelines
     return response.text || "Não foi possível gerar a descrição automática neste momento.";
   } catch (error) {
     console.error("AI Generation Error:", error);
@@ -31,6 +33,7 @@ export const generatePropertyDescription = async (property: any): Promise<string
   }
 };
 
+// Generate a short and memorable commercial slogan for the agency
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
@@ -45,6 +48,7 @@ export const generateAgencySlogan = async (agencyName: string): Promise<string> 
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
+    // Access the .text property directly as per SDK guidelines
     return response.text?.trim() || "A chave do seu futuro.";
   } catch (error) {
     console.error("AI Slogan Generation Error:", error);

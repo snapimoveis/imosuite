@@ -1,11 +1,9 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-// Use modular exports from firebase/firestore and firebase/analytics
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
-// Configuração oficial do ImoSuite
 const firebaseConfig = {
   apiKey: "AIzaSyAv_79arQMs-2v5RU2pzdaTvYHT4XJ5_lU",
   authDomain: "imosuite-350d6.firebaseapp.com",
@@ -16,21 +14,21 @@ const firebaseConfig = {
   measurementId: "G-SG8GBG1NR5"
 };
 
-// Singleton para evitar múltiplas inicializações
+// Singleton check to prevent multiple initializations
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Inicialização dos serviços usando a API modular (v9+)
+// Accessing components ensures they are registered to this specific 'app' instance
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Inicialização de Analytics (opcional, apenas se suportado pelo browser)
+// Initialize analytics optionally
 let analytics: any = null;
 isSupported().then(yes => {
   if (yes) {
     analytics = getAnalytics(app);
   }
 }).catch(err => {
-  console.debug("Analytics not supported in this environment", err);
+  console.debug("Firebase Analytics support check failed:", err);
 });
 
 export { app, auth, db, analytics };
