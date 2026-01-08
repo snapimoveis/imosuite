@@ -1,6 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase.ts';
 import { Tenant, Imovel } from '../types';
@@ -8,12 +8,13 @@ import { LeadService } from '../services/leadService';
 import { 
   MapPin, Bed, Bath, Square, Loader2, Phone, Mail, ChevronLeft, 
   Check, Send, Sparkles, Building, ShieldCheck, Download, ArrowRight, 
-  ChevronRight, Quote, Heart, Camera, Zap, Award, X
+  ChevronRight, Quote, Heart, Camera, Zap, Award, X, MessageSquare
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
 const PublicImovelDetails: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,8 @@ const PublicImovelDetails: React.FC = () => {
   const [sent, setSent] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [formData, setFormData] = useState({ nome: '', email: '', telefone: '', mensagem: '' });
+  
+  const contactSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,6 +54,21 @@ const PublicImovelDetails: React.FC = () => {
     fetchData();
   }, [slug]);
 
+  // Efeito para fazer scroll automático até ao contacto
+  useEffect(() => {
+    if (!loading && imovel) {
+      const searchParams = new URLSearchParams(location.search);
+      if (searchParams.get('contact') === 'true') {
+        setTimeout(() => {
+          const element = document.getElementById('contact-section');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500); // Pequeno atraso para garantir o render
+      }
+    }
+  }, [loading, imovel, location.search]);
+
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant || !imovel) return;
@@ -78,7 +96,7 @@ const PublicImovelDetails: React.FC = () => {
       <nav className="h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FAF9F6]/80 backdrop-blur-xl border-b border-[#2D2926]/5">
         <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-4 italic text-lg hover:opacity-50 transition-all"><ChevronLeft size={24} /> Coleção</Link>
         <span className="font-bold italic text-2xl tracking-tighter">{tenant.nome}</span>
-        <button className="bg-[#2D2926] text-white px-8 py-3 rounded-full text-[9px] font-black uppercase tracking-widest shadow-2xl">Solicitar Dossier</button>
+        <button onClick={() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#2D2926] text-white px-8 py-3 rounded-full text-[9px] font-black uppercase tracking-widest shadow-2xl">Solicitar Dossier</button>
       </nav>
       <main className="max-w-7xl mx-auto px-12 pt-24 pb-60">
         <div className="max-w-4xl space-y-12 mb-32">
@@ -114,7 +132,7 @@ const PublicImovelDetails: React.FC = () => {
              </div>
           </div>
           <div className="space-y-12">
-             <div className="bg-white p-16 rounded-[6rem] border border-[#2D2926]/5 shadow-3xl sticky top-40 text-center">
+             <div id="contact-section" className="bg-white p-16 rounded-[6rem] border border-[#2D2926]/5 shadow-3xl sticky top-40 text-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.6em] text-[#2D2926]/20 mb-10">Investimento Ativo</p>
                 <div className="text-7xl font-bold mb-24 tracking-tighter">{formatCurrency(imovel.preco)}</div>
                 {sent ? (
@@ -161,16 +179,16 @@ const PublicImovelDetails: React.FC = () => {
             </div>
             <p className="text-4xl italic leading-relaxed text-white/70 font-light">{imovel.descricao_md || 'Um refúgio de design contemporâneo onde a luz é o elemento estruturante.'}</p>
          </div>
-         <div className="bg-white/5 p-20 backdrop-blur-3xl border border-white/10 sticky top-40 text-center">
+         <div id="contact-section" className="bg-white/5 p-20 backdrop-blur-3xl border border-white/10 sticky top-40 text-center">
             <h4 className="text-3xl font-bold mb-12 uppercase tracking-widest italic">Interesse Reservado</h4>
             <form onSubmit={handleContact} className="space-y-10 text-left">
                <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.5em] text-white/30 ml-2">Nome</label>
-                  <input required className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl" />
+                  <input required className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl text-white" onChange={e => setFormData({...formData, nome: e.target.value})} />
                </div>
                <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.5em] text-white/30 ml-2">Email</label>
-                  <input required type="email" className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl" />
+                  <input required type="email" className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl text-white" onChange={e => setFormData({...formData, email: e.target.value})} />
                </div>
                <button className="w-full bg-white text-black py-8 font-black uppercase tracking-[0.4em] text-xs hover:bg-white/80 transition-all shadow-2xl">Solicitar Consultoria</button>
             </form>
@@ -209,7 +227,7 @@ const PublicImovelDetails: React.FC = () => {
                    <span className="flex flex-col gap-2 items-center"><Square size={20} className="text-slate-900" /> {imovel.area_util_m2} m²</span>
                 </div>
                 <p className="text-slate-500 leading-relaxed font-medium text-lg">{imovel.descricao_md || 'Descrição profissional em preparação.'}</p>
-                <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100">
+                <div id="contact-section" className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100">
                    <h4 className="font-black text-[#1c2d51] uppercase text-[10px] tracking-[0.2em] mb-8">Contactar Agência</h4>
                    <form onSubmit={handleContact} className="space-y-4">
                       <input required placeholder="Nome" className="w-full p-5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 font-bold transition-all" onChange={e => setFormData({...formData, nome: e.target.value})} />

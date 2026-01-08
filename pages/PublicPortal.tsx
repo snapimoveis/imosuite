@@ -1,18 +1,19 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase.ts';
 import { Tenant, Imovel } from '../types';
 import { 
   Search, MapPin, Bed, Bath, Square, Loader2, Building2, ArrowRight, 
   Heart, Instagram, Linkedin, ArrowUpRight, Menu, X, ChevronRight, 
-  LayoutGrid, List, Sparkles, Filter, Quote, Camera
+  LayoutGrid, List, Sparkles, Filter, Quote, Camera, MessageSquare
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
 const PublicPortal: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [properties, setProperties] = useState<Imovel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,13 +33,10 @@ const PublicPortal: React.FC = () => {
 
           const pRef = collection(db, "tenants", tData.id, "properties");
           
-          // LÓGICA DE CARREGAMENTO INTELIGENTE:
-          // Primeiro tentamos os destaques. Se não houver, pegamos os mais recentes.
           const highlightQuery = query(pRef, where("destaque", "==", true), where("publicado", "==", true), limit(9));
           let pSnap = await getDocs(highlightQuery);
           
           if (pSnap.empty) {
-            // Fallback: Mostrar os últimos publicados se nenhum estiver em destaque
             const recentQuery = query(pRef, where("publicado", "==", true), orderBy("created_at", "desc"), limit(9));
             pSnap = await getDocs(recentQuery);
           }
@@ -54,12 +52,18 @@ const PublicPortal: React.FC = () => {
     fetchData();
   }, [slug]);
 
+  const handleContactClick = (e: React.MouseEvent, propertySlug: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/agencia/${tenant?.slug}/imovel/${propertySlug}?contact=true`);
+  };
+
   if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-white"><Loader2 className="animate-spin text-slate-200 mb-4" size={48} /><p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A sintonizar experiência...</p></div>;
   if (!tenant) return <div className="h-screen flex flex-col items-center justify-center p-10 text-center"><Building2 size={48} className="text-slate-200 mb-4"/><h2 className="text-2xl font-black text-slate-900 mb-2">Portal Indisponível</h2><Link to="/" className="text-blue-600 font-bold underline">Voltar para o ImoSuite</Link></div>;
 
   const templateId = tenant.template_id || 'heritage';
 
-  // --- 1. LAYOUT HERITAGE (Tradicional e Equilibrado) ---
+  // --- 1. LAYOUT HERITAGE ---
   const renderHeritage = () => (
     <div className="bg-[#FDFCFB] font-brand min-h-screen">
       <nav className="h-20 px-8 flex items-center justify-between border-b border-slate-100 bg-white sticky top-0 z-50">
@@ -84,32 +88,31 @@ const PublicPortal: React.FC = () => {
         </div>
       </header>
       <main className="max-w-7xl mx-auto py-24 px-8">
-        {properties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {properties.map(p => (
-              <Link key={p.id} to={`/agencia/${tenant.slug}/imovel/${p.slug}`} className="bg-white rounded-3xl overflow-hidden border border-slate-100 group shadow-sm hover:shadow-2xl transition-all">
-                <div className="h-64 overflow-hidden relative">
-                  <img src={p.media[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[8px] font-black uppercase">{p.tipo_negocio}</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          {properties.map(p => (
+            <Link key={p.id} to={`/agencia/${tenant.slug}/imovel/${p.slug}`} className="bg-white rounded-3xl overflow-hidden border border-slate-100 group shadow-sm hover:shadow-2xl transition-all flex flex-col h-full">
+              <div className="h-64 overflow-hidden relative">
+                <img src={p.media[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[8px] font-black uppercase">{p.tipo_negocio}</div>
+              </div>
+              <div className="p-8 flex-1 flex flex-col">
+                <h3 className="text-lg font-black text-[#1c2d51] mb-4 flex-1">{p.titulo}</h3>
+                <div className="flex justify-between items-center py-6 border-t border-slate-50">
+                  <span className="text-xl font-black text-[#1c2d51]">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
+                  <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#1c2d51] group-hover:text-white transition-all"><ChevronRight size={18}/></div>
                 </div>
-                <div className="p-8">
-                  <h3 className="text-lg font-black text-[#1c2d51] mb-4">{p.titulo}</h3>
-                  <div className="flex justify-between items-center pt-6 border-t border-slate-50">
-                    <span className="text-xl font-black text-[#1c2d51]">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
-                    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#1c2d51] group-hover:text-white transition-all"><ChevronRight size={18}/></div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 opacity-30 font-black uppercase text-xs tracking-widest">Aguardando catálogo de imóveis...</div>
-        )}
+                <button onClick={(e) => handleContactClick(e, p.slug)} className="w-full bg-slate-50 text-[#1c2d51] py-3 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-[#1c2d51] hover:text-white transition-all flex items-center justify-center gap-2">
+                  <MessageSquare size={14} /> Contactar Agente
+                </button>
+              </div>
+            </Link>
+          ))}
+        </div>
       </main>
     </div>
   );
 
-  // --- 2. LAYOUT PRESTIGE (Luxo, Dark, Full-Bleed) ---
+  // --- 2. LAYOUT PRESTIGE ---
   const renderPrestige = () => (
     <div className="bg-[#080808] text-white font-heritage min-h-screen">
       <nav className="h-24 px-12 flex items-center justify-between absolute top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent">
@@ -139,6 +142,9 @@ const PublicPortal: React.FC = () => {
                    <p className="text-white/40 text-xl italic font-light max-w-md">Uma residência singular que redefine os limites da arquitetura contemporânea.</p>
                    <div className="pt-10 flex items-center gap-10">
                       <span className="text-4xl font-bold">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
+                      <button onClick={(e) => handleContactClick(e, p.slug)} className="p-4 rounded-full border border-white/10 hover:bg-white hover:text-black transition-all">
+                        <MessageSquare size={24} />
+                      </button>
                       <ArrowUpRight size={40} strokeWidth={1} className="text-white/20 group-hover:text-white transition-all group-hover:translate-x-4" />
                    </div>
                 </div>
@@ -149,7 +155,7 @@ const PublicPortal: React.FC = () => {
     </div>
   );
 
-  // --- 3. LAYOUT SKYLINE (Urbano, Tech, Feed-style) ---
+  // --- 3. LAYOUT SKYLINE ---
   const renderSkyline = () => (
     <div className="bg-slate-50 font-brand min-h-screen text-slate-900">
       <nav className="h-20 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-50">
@@ -179,21 +185,14 @@ const PublicPortal: React.FC = () => {
          </div>
       </header>
       <main className="max-w-7xl mx-auto py-16 px-6">
-        <div className="flex items-center justify-between mb-10">
-           <h2 className="text-2xl font-black tracking-tighter">Feed de Oportunidades</h2>
-           <div className="flex bg-white rounded-lg p-1 border border-slate-200">
-              <button className="p-2 bg-slate-100 rounded-md"><LayoutGrid size={18}/></button>
-              <button className="p-2 text-slate-300"><List size={18}/></button>
-           </div>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
            {properties.map(p => (
-             <Link key={p.id} to={`/agencia/${tenant.slug}/imovel/${p.slug}`} className="bg-white rounded-2xl p-3 border border-slate-200 hover:border-blue-500 hover:shadow-2xl transition-all group">
+             <Link key={p.id} to={`/agencia/${tenant.slug}/imovel/${p.slug}`} className="bg-white rounded-2xl p-3 border border-slate-200 hover:border-blue-500 hover:shadow-2xl transition-all group flex flex-col">
                 <div className="aspect-square rounded-xl overflow-hidden mb-4 relative">
                    <img src={p.media[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" />
                    <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm font-black text-blue-600 text-xs">{formatCurrency(p.preco || p.preco_arrendamento)}</div>
                 </div>
-                <div className="px-2 space-y-1">
+                <div className="px-2 space-y-1 flex-1">
                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">{p.concelho}</p>
                    <h3 className="font-black text-sm text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">{p.titulo}</h3>
                    <div className="flex gap-4 pt-3 text-[10px] font-bold text-slate-400">
@@ -201,6 +200,9 @@ const PublicPortal: React.FC = () => {
                       <span className="flex items-center gap-1"><Square size={12}/> {p.area_util_m2}m²</span>
                    </div>
                 </div>
+                <button onClick={(e) => handleContactClick(e, p.slug)} className="mt-4 w-full bg-slate-50 text-[#1c2d51] py-2 rounded-lg font-black text-[9px] uppercase tracking-tighter flex items-center justify-center gap-2 hover:bg-blue-600 hover:text-white transition-all">
+                  <MessageSquare size={12} /> Contactar Agente
+                </button>
              </Link>
            ))}
         </div>
@@ -208,7 +210,7 @@ const PublicPortal: React.FC = () => {
     </div>
   );
 
-  // --- 4. LAYOUT LUXE (Editorial, Assimétrico, Lifestyle) ---
+  // --- 4. LAYOUT LUXE ---
   const renderLuxe = () => (
     <div className="bg-[#FAF9F6] text-[#2D2926] font-heritage min-h-screen">
       <nav className="h-24 px-12 flex items-center justify-between bg-transparent absolute top-0 w-full z-50">
@@ -242,21 +244,11 @@ const PublicPortal: React.FC = () => {
                     <h3 className="text-5xl font-bold tracking-tighter leading-tight group-hover:translate-x-4 transition-transform duration-700">{p.titulo}</h3>
                     <div className="pt-10 border-t border-[#2D2926]/5 flex justify-between items-center">
                        <span className="text-3xl font-bold">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
-                       <span className="text-xs italic opacity-40 group-hover:opacity-100 transition-opacity">Ver Detalhes</span>
+                       <button onClick={(e) => handleContactClick(e, p.slug)} className="text-[10px] font-black uppercase tracking-widest italic border-b border-[#2D2926]/20 pb-1 hover:border-[#2D2926] transition-all">Solicitar Contacto</button>
                     </div>
                  </div>
               </Link>
             ))}
-          </div>
-          
-          <div className="bg-white p-20 rounded-[5rem] flex flex-col md:flex-row items-center gap-20 shadow-sm border border-[#2D2926]/5">
-             <div className="flex-1 space-y-8">
-                <Quote size={60} className="text-[#2D2926]/10" />
-                <h2 className="text-6xl font-bold tracking-tighter leading-none italic">"A arquitetura é o jogo sábio, correto e magnífico dos volumes sob a luz."</h2>
-             </div>
-             <div className="w-72 h-72 bg-slate-100 rounded-full overflow-hidden grayscale">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" className="w-full h-full object-cover" />
-             </div>
           </div>
         </div>
       </main>
