@@ -7,11 +7,17 @@ export interface Tenant {
   nome: string;
   email: string;
   telefone?: string;
+  morada?: string;
+  nif?: string;
   logo_url?: string;
+  slogan?: string;
+  template_id?: string;
   cor_primaria: string;
   cor_secundaria: string;
   ativo: boolean;
+  onboarding_completed?: boolean;
   created_at: string;
+  updated_at?: any;
 }
 
 export interface Imovel {

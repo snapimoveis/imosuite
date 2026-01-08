@@ -1,11 +1,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { useTenant } from '../../contexts/TenantContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { useTenant } from '../../contexts/TenantContext.tsx';
+import { useAuth } from '../../contexts/AuthContext.tsx';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
-import { Palette, Globe, Mail, Phone, Save, Layout, Check, Loader2, Star, Building2, Zap, Brush, MapPin, Hash, CreditCard, Languages, ShieldCheck, CheckCircle2, Settings } from 'lucide-react';
+import { db } from '../../lib/firebase.ts';
+import { 
+  Palette, Globe, Mail, Phone, Save, Layout, Check, 
+  Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
+  CreditCard, Languages, ShieldCheck, CheckCircle2, Settings, AlertTriangle 
+} from 'lucide-react';
+import { Tenant } from '../../types.ts';
 
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal' },
@@ -20,15 +25,17 @@ const AdminSettings: React.FC = () => {
   const { profile } = useAuth();
   const location = useLocation();
   const [isSaving, setIsSaving] = useState(false);
-  const [localTenant, setLocalTenant] = useState(tenant);
+  const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
+  // Sincronizar dados locais quando o tenant global carregar
   useEffect(() => {
-    if (!tenantLoading && tenant.id !== 'default-tenant-uuid') {
+    if (!tenantLoading) {
       setLocalTenant(tenant);
     }
   }, [tenant, tenantLoading]);
@@ -50,33 +57,51 @@ const AdminSettings: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!profile?.tenantId || profile.tenantId === 'pending') return;
+    const tId = profile?.tenantId;
+    
+    if (!tId || tId === 'pending') {
+      setErrorMessage("Identificador de conta pendente. Aguarde um momento.");
+      return;
+    }
+
+    if (tId === 'default-tenant-uuid') {
+      setErrorMessage("O modo demonstração é apenas de leitura. Registe a sua conta para gerir os seus dados.");
+      return;
+    }
+
     setIsSaving(true);
     setSuccess(false);
+    setErrorMessage(null);
+
     try {
-      const tenantRef = doc(db, 'tenants', profile.tenantId);
+      const tenantRef = doc(db, 'tenants', tId);
+      
       const updates = {
-        id: profile.tenantId,
-        nome: localTenant.nome,
-        email: localTenant.email,
+        id: tId,
+        nome: localTenant.nome || '',
+        email: localTenant.email || '',
         telefone: localTenant.telefone || '',
-        morada: (localTenant as any).morada || '',
-        nif: (localTenant as any).nif || '',
+        morada: localTenant.morada || '',
+        nif: localTenant.nif || '',
         logo_url: localTenant.logo_url || '',
-        cor_primaria: localTenant.cor_primaria,
-        cor_secundaria: localTenant.cor_secundaria || localTenant.cor_primaria,
-        template_id: (localTenant as any).template_id || 'heritage',
+        slogan: localTenant.slogan || '',
+        cor_primaria: localTenant.cor_primaria || '#1c2d51',
+        cor_secundaria: localTenant.cor_secundaria || localTenant.cor_primaria || '#1c2d51',
+        template_id: localTenant.template_id || 'heritage',
         updated_at: serverTimestamp()
       };
       
-      // setDoc com merge resolve o erro de "No document to update"
+      // setDoc com merge garante a criação do documento caso este não exista (evita erro de No document to update)
       await setDoc(tenantRef, updates, { merge: true });
+      
+      // Atualizar estado global
       setTenant({ ...tenant, ...updates });
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao guardar definições.");
+    } catch (err: any) {
+      console.error("Erro ao guardar definições:", err);
+      setErrorMessage("Erro ao comunicar com a base de dados. Verifique a sua ligação.");
     } finally {
       setIsSaving(false);
     }
@@ -93,7 +118,7 @@ const AdminSettings: React.FC = () => {
 
   return (
     <div className="max-w-6xl space-y-8 font-brand animate-in fade-in duration-500 pb-20">
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Configuração de Conta</h1>
           <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
@@ -102,10 +127,15 @@ const AdminSettings: React.FC = () => {
              activeTab === 'website' ? 'Website e Templates' : 'Preferências de Sistema'}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
           {success && (
             <div className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest animate-in slide-in-from-top-4">
               <CheckCircle2 size={16} /> Alterações Guardadas
+            </div>
+          )}
+          {errorMessage && (
+            <div className="bg-amber-50 text-amber-600 px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-amber-100 animate-in shake duration-300">
+              <AlertTriangle size={14} /> {errorMessage}
             </div>
           )}
           <button 
@@ -119,6 +149,7 @@ const AdminSettings: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+        {/* Sidebar Mini Nav */}
         <div className="lg:col-span-1 space-y-2">
           <TabLink active={activeTab === 'general'} icon={<Building2 size={18}/>} label="Empresa" sub="NIF e Localização" tab="general" />
           <TabLink active={activeTab === 'branding'} icon={<Brush size={18}/>} label="Branding" sub="Cores e Logótipo" tab="branding" />
@@ -126,6 +157,7 @@ const AdminSettings: React.FC = () => {
           <TabLink active={activeTab === 'system'} icon={<Settings size={18}/>} label="Sistema" sub="Moeda e Idioma" tab="system" />
         </div>
 
+        {/* Content Area */}
         <div className="lg:col-span-3 space-y-8">
           {activeTab === 'general' && (
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
@@ -140,23 +172,23 @@ const AdminSettings: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2">Nome Comercial</label>
-                  <input type="text" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51]" />
+                  <input type="text" value={localTenant.nome || ''} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Hash size={12}/> NIF / Contribuinte</label>
-                  <input type="text" value={(localTenant as any).nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value} as any)} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51]" placeholder="500 000 000" />
+                  <input type="text" value={localTenant.nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" placeholder="500 000 000" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Mail size={12}/> Email Geral</label>
-                  <input type="email" value={localTenant.email} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51]" />
+                  <input type="email" value={localTenant.email || ''} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Phone size={12}/> Telefone</label>
-                  <input type="text" value={localTenant.telefone || ''} onChange={e => setLocalTenant({...localTenant, telefone: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51]" />
+                  <input type="text" value={localTenant.telefone || ''} onChange={e => setLocalTenant({...localTenant, telefone: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><MapPin size={12}/> Morada Completa</label>
-                  <input type="text" value={(localTenant as any).morada || ''} onChange={e => setLocalTenant({...localTenant, morada: e.target.value} as any)} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51]" placeholder="Rua de Exemplo, 123, Lisboa" />
+                  <input type="text" value={localTenant.morada || ''} onChange={e => setLocalTenant({...localTenant, morada: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" placeholder="Rua de Exemplo, 123, Lisboa" />
                 </div>
               </div>
             </div>
@@ -197,7 +229,7 @@ const AdminSettings: React.FC = () => {
                 </div>
 
                 <div className="bg-slate-50 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-200">
-                  <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center text-slate-300 mb-4 overflow-hidden">
+                  <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center text-slate-300 mb-4 overflow-hidden border border-slate-100">
                     {localTenant.logo_url ? (
                       <img src={localTenant.logo_url} alt="Logo" className="w-full h-full object-contain p-2" />
                     ) : (
@@ -215,7 +247,7 @@ const AdminSettings: React.FC = () => {
                   <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed max-w-[150px] mb-6">Ficheiro SVG ou PNG transparente (Máx. 2MB)</p>
                   <button 
                     onClick={handleLogoClick}
-                    className="bg-white text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all"
+                    className="bg-white text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all active:scale-95"
                   >
                     Upload Logo
                   </button>
@@ -230,33 +262,49 @@ const AdminSettings: React.FC = () => {
                 <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center"><Globe size={24}/></div>
                 <div>
                   <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Website Público</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Escolha o template e o domínio</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Escolha o template e o slogan</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {TEMPLATE_OPTIONS.map((tmpl) => (
-                  <button
-                    key={tmpl.id}
-                    onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id } as any)}
-                    className={`flex items-start gap-4 p-6 rounded-3xl border-2 transition-all text-left ${
-                      (localTenant as any).template_id === tmpl.id 
-                      ? 'border-[#1c2d51] bg-slate-50 shadow-inner' 
-                      : 'border-slate-50 hover:border-slate-200'
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      (localTenant as any).template_id === tmpl.id ? 'bg-[#1c2d51] text-white' : 'bg-slate-100 text-slate-400'
-                    }`}>
-                      {tmpl.icon}
-                    </div>
-                    <div>
-                      <div className="font-black text-xs text-[#1c2d51] uppercase tracking-tighter">{tmpl.name}</div>
-                      <div className="text-[9px] text-slate-400 font-bold mt-0.5">{tmpl.desc}</div>
-                    </div>
-                    {(localTenant as any).template_id === tmpl.id && <Check className="ml-auto text-emerald-500" size={16} strokeWidth={4} />}
-                  </button>
-                ))}
+              <div className="space-y-8">
+                 <div>
+                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Zap size={12}/> Slogan do Website</label>
+                   <input 
+                    type="text" 
+                    value={localTenant.slogan || ''} 
+                    onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} 
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" 
+                    placeholder="Ex: A chave do seu novo lar." 
+                   />
+                 </div>
+
+                 <div>
+                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-4 ml-2">Templates de Design</label>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {TEMPLATE_OPTIONS.map((tmpl) => (
+                      <button
+                        key={tmpl.id}
+                        onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id })}
+                        className={`flex items-start gap-4 p-6 rounded-3xl border-2 transition-all text-left group ${
+                          localTenant.template_id === tmpl.id 
+                          ? 'border-[#1c2d51] bg-[#1c2d51]/5 shadow-inner' 
+                          : 'border-slate-50 hover:border-slate-200'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                          localTenant.template_id === tmpl.id ? 'bg-[#1c2d51] text-white' : 'bg-white text-slate-300 border border-slate-100'
+                        }`}>
+                          {tmpl.icon}
+                        </div>
+                        <div>
+                          <div className={`font-black text-xs uppercase tracking-tighter ${localTenant.template_id === tmpl.id ? 'text-[#1c2d51]' : 'text-slate-500'}`}>{tmpl.name}</div>
+                          <div className="text-[9px] text-slate-400 font-bold mt-0.5">{tmpl.desc}</div>
+                        </div>
+                        {localTenant.template_id === tmpl.id && <Check className="ml-auto text-[#1c2d51]" size={16} strokeWidth={4} />}
+                      </button>
+                    ))}
+                  </div>
+                 </div>
               </div>
             </div>
           )}
@@ -274,7 +322,7 @@ const AdminSettings: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Languages size={12}/> Idioma Base</label>
-                  <select className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51]">
+                  <select className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all">
                     <option>Português (Portugal)</option>
                     <option disabled>English (Soon)</option>
                     <option disabled>Español (Soon)</option>
@@ -282,7 +330,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><CreditCard size={12}/> Moeda</label>
-                  <select className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51]">
+                  <select className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all">
                     <option>Euro (€)</option>
                     <option>Dólar ($)</option>
                   </select>
@@ -290,10 +338,10 @@ const AdminSettings: React.FC = () => {
                 <div className="bg-blue-50/50 p-6 rounded-3xl md:col-span-2 border border-blue-100/50 flex gap-4">
                    <div className="text-blue-500 mt-1"><ShieldCheck size={20}/></div>
                    <div>
-                     <p className="text-[10px] font-black text-[#1c2d51] uppercase tracking-widest mb-1">Privacidade & RGPD</p>
-                     <p className="text-[9px] text-slate-500 font-bold uppercase leading-relaxed">
+                     <p className="text-[10px] font-black text-[#1c2d51] uppercase tracking-widest mb-1 text-blue-800">Privacidade & RGPD</p>
+                     <p className="text-[9px] text-blue-600/70 font-bold uppercase leading-relaxed">
                        Os seus dados e os dos seus clientes estão protegidos sob a lei europeia. 
-                       Garantimos o isolamento total da sua base de dados.
+                       Garantimos o isolamento total da sua base de dados no ecossistema ImoSuite.
                      </p>
                    </div>
                 </div>
@@ -316,9 +364,9 @@ const TabLink = ({ active, icon, label, sub, tab }: { active: boolean, icon: any
     }`}
   >
     <div className={active ? 'text-white' : 'text-slate-300'}>{icon}</div>
-    <div>
-      <div className={`font-black text-[11px] uppercase tracking-tighter leading-none mb-1 ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
-      <div className={`text-[8px] font-bold uppercase tracking-widest ${active ? 'text-white/60' : 'text-slate-400'}`}>{sub}</div>
+    <div className="overflow-hidden">
+      <div className={`font-black text-[11px] uppercase tracking-tighter leading-none mb-1 truncate ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
+      <div className={`text-[8px] font-bold uppercase tracking-widest truncate ${active ? 'text-white/60' : 'text-slate-400'}`}>{sub}</div>
     </div>
   </Link>
 );
