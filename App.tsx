@@ -1,23 +1,24 @@
-
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
-import { TenantProvider } from './contexts/TenantContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import Marketing from './pages/Marketing';
-import PricingPage from './pages/Pricing';
-import Register from './pages/onboarding/Register';
-import Login from './pages/Login';
-import OnboardingFlow from './pages/onboarding/OnboardingFlow';
-import Dashboard from './pages/admin/Dashboard';
-import AdminImoveis from './pages/admin/AdminImoveis';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminShell from './components/admin/AdminShell';
 
-// Protected Route Component - Made children optional to fix TypeScript "property children is missing" errors
+// ADICIONADO .tsx EM TODAS AS IMPORTAÇÕES LOCAIS ABAIXO:
+import { TenantProvider } from './contexts/TenantContext.tsx';
+import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
+import Navbar from './components/Navbar.tsx';
+import Footer from './components/Footer.tsx';
+import Home from './pages/Home.tsx';
+import Marketing from './pages/Marketing.tsx';
+import PricingPage from './pages/Pricing.tsx';
+import Register from './pages/onboarding/Register.tsx';
+import Login from './pages/Login.tsx';
+import OnboardingFlow from './pages/onboarding/OnboardingFlow.tsx';
+import Dashboard from './pages/admin/Dashboard.tsx';
+import AdminImoveis from './pages/admin/AdminImoveis.tsx';
+import AdminSettings from './pages/admin/AdminSettings.tsx';
+import AdminUsers from './pages/admin/AdminUsers.tsx';
+import AdminShell from './components/admin/AdminShell.tsx';
+
+// Protected Route Component
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
@@ -32,7 +33,7 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Main Brand Layout (Marketing, Pricing, Onboarding)
+// Main Brand Layout
 const BrandLayout = () => (
   <div className="min-h-screen flex flex-col">
     <Navbar />
@@ -43,7 +44,7 @@ const BrandLayout = () => (
   </div>
 );
 
-// Onboarding Layout (No Nav/Footer for focus)
+// Onboarding Layout
 const OnboardingLayout = () => (
   <div className="min-h-screen flex flex-col bg-slate-50">
     <main className="flex-1">
@@ -59,7 +60,7 @@ const AdminLayout = () => (
   </AdminShell>
 );
 
-// Placeholder Component - Made children optional to fix TypeScript "property children is missing" errors on lines 90 and 95
+// Placeholder Component
 const Placeholder = ({ title, children }: { title: string; children?: React.ReactNode }) => (
   <div className="p-20 text-center bg-white rounded-[2rem] border border-slate-100 mx-4 my-10 max-w-4xl mx-auto shadow-sm font-brand">
     <h2 className="text-3xl font-black text-[#1c2d51] mb-4 tracking-tighter">{title}</h2>
