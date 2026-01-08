@@ -2,7 +2,6 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const generatePropertyDescription = async (property: any): Promise<string> => {
-  // Always initialize right before use as per guidelines
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `
@@ -25,10 +24,30 @@ export const generatePropertyDescription = async (property: any): Promise<string
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    // .text is a property getter, not a function
     return response.text || "Não foi possível gerar a descrição automática neste momento.";
   } catch (error) {
     console.error("AI Generation Error:", error);
     return "Não foi possível gerar a descrição automática neste momento.";
+  }
+};
+
+export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const prompt = `
+    Crie um slogan comercial curto, memorável e profissional para uma imobiliária chamada "${agencyName}".
+    O slogan deve ser em Português de Portugal (PT-PT), focado em confiança, sonhos e excelência no serviço imobiliário.
+    Retorne apenas a frase do slogan, sem aspas.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+    return response.text?.trim() || "A chave do seu futuro.";
+  } catch (error) {
+    console.error("AI Slogan Generation Error:", error);
+    return "A chave do seu futuro.";
   }
 };
