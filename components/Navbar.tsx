@@ -18,7 +18,7 @@ const Navbar: React.FC = () => {
         
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-10">
-          <a href="/#funcionalidades" className="text-sm font-bold text-slate-600 hover:text-[#1c2d51]">Funcionalidades</a>
+          <Link to="/funcionalidades" className={`text-sm font-bold ${location.pathname === '/funcionalidades' ? 'text-[#1c2d51]' : 'text-slate-600 hover:text-[#1c2d51]'}`}>Funcionalidades</Link>
           <Link to="/planos" className={`text-sm font-bold ${location.pathname === '/planos' ? 'text-[#1c2d51]' : 'text-slate-600 hover:text-[#1c2d51]'}`}>Planos</Link>
           <Link to="/demo" className={`text-sm font-bold ${isDemo ? 'text-[#1c2d51]' : 'text-slate-600 hover:text-[#1c2d51]'}`}>Demo</Link>
         </div>
@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="absolute top-20 left-0 right-0 bg-white border-b border-slate-100 p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300 shadow-xl md:hidden">
-          <a href="/#funcionalidades" onClick={() => setIsOpen(false)} className="text-lg font-bold text-[#1c2d51]">Funcionalidades</a>
+          <Link to="/funcionalidades" onClick={() => setIsOpen(false)} className="text-lg font-bold text-[#1c2d51]">Funcionalidades</Link>
           <Link to="/planos" onClick={() => setIsOpen(false)} className="text-lg font-bold text-[#1c2d51]">Planos</Link>
           <Link to="/demo" onClick={() => setIsOpen(false)} className="text-lg font-bold text-[#1c2d51]">Demo</Link>
           <hr className="border-slate-100" />

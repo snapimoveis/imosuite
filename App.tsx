@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import Navbar from './components/Navbar.tsx';
 import Footer from './components/Footer.tsx';
 import Marketing from './pages/Marketing.tsx';
+import FeaturesPage from './pages/Features.tsx';
 import PricingPage from './pages/Pricing.tsx';
 import Register from './pages/onboarding/Register.tsx';
 import Login from './pages/Login.tsx';
@@ -44,6 +45,7 @@ const App: React.FC = () => {
             {/* SaaS Marketing */}
             <Route element={<BrandLayout />}>
               <Route path="/" element={<Marketing />} />
+              <Route path="/funcionalidades" element={<FeaturesPage />} />
               <Route path="/planos" element={<PricingPage />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />

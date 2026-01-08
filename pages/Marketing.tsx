@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Shield, Zap, TrendingUp, Globe, Smartphone, ArrowRight, Star, Building2, Users } from 'lucide-react';
+import { Check, Shield, Zap, TrendingUp, Globe, Smartphone, ArrowRight, Star, Building2, Users, MessageSquare, ShieldCheck } from 'lucide-react';
 import { DashboardMockup } from '../components/DashboardMockup';
 
 const Marketing: React.FC = () => {
@@ -31,88 +31,120 @@ const Marketing: React.FC = () => {
                 Ver Site Demo
               </Link>
             </div>
-            
-            <div className="mt-12 flex items-center gap-6">
-              <div className="flex -space-x-3">
-                {[1,2,3,4].map(i => <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 shadow-sm" />)}
-              </div>
-              <p className="text-sm text-slate-400 font-bold tracking-tight">+500 imobiliárias já utilizam o ImoSuite</p>
-            </div>
           </div>
           
           <div className="relative">
              <div className="absolute -top-10 -right-10 w-64 h-64 bg-blue-100 rounded-full blur-3xl opacity-50"></div>
              <div className="relative rotate-1 transition-transform hover:rotate-0 duration-500">
                 <DashboardMockup />
-                <div className="absolute -bottom-10 -left-10 bg-[#1c2d51] p-8 rounded-3xl text-white shadow-2xl animate-bounce-slow hidden md:block">
-                   <div className="text-xs opacity-70 mb-1 font-black uppercase tracking-widest">Leads do Mês</div>
-                   <div className="text-4xl font-black">124</div>
-                   <div className="text-[10px] mt-3 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full font-black inline-block tracking-widest">+12.5% vs FEV</div>
-                </div>
              </div>
           </div>
         </div>
       </section>
 
-      {/* Social Proof / Logos */}
-      <section className="py-20 border-y border-slate-50 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-between items-center gap-12 opacity-30 grayscale text-[#1c2d51]">
-          <Building2 size={40} />
-          <Shield size={40} />
-          <Globe size={40} />
-          <TrendingUp size={40} />
-          <Smartphone size={40} />
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="funcionalidades" className="py-32 max-w-7xl mx-auto px-6">
-        <div className="text-center mb-24">
-          <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] mb-6 tracking-tight">Potencialize a sua operação.</h2>
+      {/* Features Preview Section */}
+      <section className="py-32 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] mb-6 tracking-tight">Potencialize a sua operação imobiliária.</h2>
           <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
-            Esqueça as planilhas complexas. O ImoSuite centraliza toda a sua operação imobiliária num único sistema inteligente e intuitivo.
+            Centralize imóveis, contactos e processos comerciais num único sistema criado para consultores e imobiliárias.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-          {[
-            { title: 'Site Próprio', icon: <Globe />, desc: 'Portal imobiliário de alta conversão, personalizado com o seu domínio e marca.' },
-            { title: 'IA Generativa', icon: <Zap />, desc: 'O Gemini AI cria descrições de imóveis persuasivas e profissionais para você.' },
-            { title: 'Gestão de Leads', icon: <Users />, desc: 'Nunca perca um negócio. Painel de CRM focado exclusivamente no setor imobiliário.' },
-            { title: 'Multitenant', icon: <Shield />, desc: 'Segurança absoluta e isolamento total para os dados da sua empresa.' },
-            { title: 'White Label', icon: <Check />, desc: 'Remova as referências ao ImoSuite e utilize a sua própria identidade visual.' },
-            { title: 'Mobile First', icon: <Smartphone />, desc: 'Gerencie o seu inventário e responda a clientes diretamente do telemóvel.' }
-          ].map((feat, i) => (
-            <div key={i} className="group p-10 rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-[#357fb2]/20 hover:shadow-2xl hover:shadow-slate-200 transition-all duration-300">
-              <div className="w-16 h-16 bg-white text-[#1c2d51] rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:bg-[#1c2d51] group-hover:text-white transition-all duration-300">
-                {feat.icon}
-              </div>
-              <h3 className="text-2xl font-black mb-4 text-[#1c2d51] tracking-tight">{feat.title}</h3>
-              <p className="text-slate-500 leading-relaxed font-medium">{feat.desc}</p>
+        <div className="space-y-24">
+          {/* Gestão & Operação */}
+          <div>
+            <div className="flex items-center gap-4 mb-10">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Gestão & Operação</h3>
+              <div className="h-px flex-1 bg-slate-100"></div>
             </div>
-          ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <FeatureItem 
+                icon={<Globe />} 
+                title="Site Próprio" 
+                desc="Tenha um site imobiliário profissional, sempre atualizado com os seus imóveis."
+              />
+              <FeatureItem 
+                icon={<Building2 />} 
+                title="Gestão de Imóveis" 
+                desc="Crie, edite e publique imóveis em poucos cliques, com controlo total."
+              />
+              <FeatureItem 
+                icon={<MessageSquare />} 
+                title="Gestão de Leads" 
+                desc="Todos os contactos organizados num único painel, com histórico completo."
+              />
+              <FeatureItem 
+                icon={<Users />} 
+                title="Gestão de Equipa" 
+                desc="Distribua leads e acompanhe o desempenho da sua equipa comercial."
+              />
+            </div>
+          </div>
+
+          {/* Produtividade & Tecnologia */}
+          <div>
+            <div className="flex items-center gap-4 mb-10">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Produtividade & Tecnologia</h3>
+              <div className="h-px flex-1 bg-slate-100"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <FeatureItem 
+                icon={<Zap />} 
+                title="IA Generativa" 
+                desc="Crie descrições comerciais profissionais em segundos sem perder tempo."
+              />
+              <FeatureItem 
+                icon={<ShieldCheck />} 
+                title="Segurança" 
+                desc="Os dados da sua imobiliária ficam totalmente isolados e protegidos."
+              />
+              <FeatureItem 
+                icon={<Check />} 
+                title="White Label" 
+                desc="Trabalhe com a sua própria marca e identidade visual."
+              />
+              <FeatureItem 
+                icon={<Smartphone />} 
+                title="Mobile First" 
+                desc="Gere imóveis e acompanhe leads diretamente no telemóvel."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-24 text-center">
+           <p className="text-slate-400 font-black uppercase text-xs tracking-[0.3em] mb-8">
+             Tudo o que precisa para gerir e vender imóveis, num único sistema.
+           </p>
+           <Link to="/funcionalidades" className="text-[#357fb2] font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:gap-4 transition-all">
+             Conheça todas as funcionalidades <ArrowRight size={16} />
+           </Link>
         </div>
       </section>
 
       {/* Pricing Teaser */}
       <section id="planos" className="py-24 max-w-7xl mx-auto px-6">
-        <div className="bg-[#1c2d51] rounded-[4rem] p-12 md:p-24 text-center text-white relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#357fb2] rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/2"></div>
-          <div className="relative z-10">
-            <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">Pronto para transformar a sua agência?</h2>
-            <p className="text-white/70 max-w-xl mx-auto mb-12 text-lg font-medium">Junte-se a centenas de profissionais que já modernizaram a sua forma de trabalhar com o ImoSuite.</p>
-            
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Link to="/planos" className="bg-white text-[#1c2d51] px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-transform flex items-center gap-3">
-                Ver Planos e Preços
-                <ArrowRight />
-              </Link>
-            </div>
-          </div>
+        <div className="bg-slate-50 rounded-[4rem] p-12 md:p-24 text-center border border-slate-100">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] mb-6 tracking-tight">Pronto para transformar a sua agência?</h2>
+          <p className="text-slate-500 max-w-xl mx-auto mb-12 text-lg font-medium">Junte-se a centenas de profissionais que já modernizaram a sua forma de trabalhar.</p>
+          <Link to="/planos" className="inline-flex bg-[#1c2d51] text-white px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-transform items-center gap-3 shadow-xl">
+            Ver Planos e Preços <ArrowRight />
+          </Link>
         </div>
       </section>
     </div>
   );
 };
+
+const FeatureItem = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
+  <div className="group">
+    <div className="w-12 h-12 bg-slate-50 text-[#1c2d51] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#1c2d51] group-hover:text-white transition-all">
+      {icon}
+    </div>
+    <h4 className="font-black text-[#1c2d51] mb-2">{title}</h4>
+    <p className="text-xs text-slate-500 font-medium leading-relaxed">{desc}</p>
+  </div>
+);
 
 export default Marketing;
