@@ -57,22 +57,23 @@ const AdminSettings: React.FC = () => {
   };
 
   const handleSave = async () => {
-    // Lógica de recuperação de ID robusta
+    // Lógica de recuperação de ID ultra-robusta
     let tId = profile?.tenantId;
     
-    // Fallback: Se o tenantId for 'pending' mas temos um utilizador,
-    // tentamos usar o tnt_ID baseado no UID ou o ID local se já estiver preenchido
+    // Fallback 1: Se o profile estiver pendente mas o tenant local tiver um ID válido
     if ((!tId || tId === 'pending') && localTenant.id && localTenant.id !== 'default-tenant-uuid') {
       tId = localTenant.id;
     }
 
-    if (!tId || tId === 'pending') {
-      setErrorMessage("Identificador de conta pendente. Por favor, recarregue a página.");
-      return;
+    // Fallback 2: Se ainda for pendente mas temos o user logado, tentamos reconstruir o ID (caso padrão tnt_UID)
+    if ((!tId || tId === 'pending') && user) {
+      // Se chegamos aqui, o utilizador está logado mas o documento 'users/uid' não foi encontrado ou está vazio
+      // Vamos assumir que ele quer criar/configurar a sua agência agora
+      tId = `tnt_${user.uid.slice(0, 12)}`;
     }
 
-    if (tId === 'default-tenant-uuid') {
-      setErrorMessage("O modo demonstração é apenas de leitura. Registe a sua conta para gerir dados próprios.");
+    if (!tId || tId === 'pending' || tId === 'default-tenant-uuid') {
+      setErrorMessage("Não foi possível identificar a sua conta. Por favor, tente sair e entrar novamente.");
       return;
     }
 
@@ -86,7 +87,7 @@ const AdminSettings: React.FC = () => {
       const updates = {
         id: tId,
         nome: localTenant.nome || '',
-        email: localTenant.email || '',
+        email: localTenant.email || user?.email || '',
         telefone: localTenant.telefone || '',
         morada: localTenant.morada || '',
         nif: localTenant.nif || '',
@@ -98,12 +99,18 @@ const AdminSettings: React.FC = () => {
         updated_at: serverTimestamp()
       };
       
+      // 1. Guardar dados da agência
       await setDoc(tenantRef, updates, { merge: true });
       
-      // Se o perfil do utilizador não estiver vinculado a este tenant, vinculamos agora
-      if (user && profile?.tenantId === 'pending') {
+      // 2. Auto-correção: Vincular o utilizador a esta agência no Firestore caso o vínculo estivesse quebrado
+      if (user) {
         const userRef = doc(db, 'users', user.uid);
-        await setDoc(userRef, { tenantId: tId }, { merge: true });
+        await setDoc(userRef, { 
+          tenantId: tId,
+          email: user.email,
+          role: profile?.role || 'admin',
+          updated_at: serverTimestamp()
+        }, { merge: true });
       }
 
       setTenant({ ...tenant, ...updates });
@@ -111,13 +118,13 @@ const AdminSettings: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error("Erro ao guardar definições:", err);
-      setErrorMessage("Erro de permissão ou rede ao guardar.");
+      setErrorMessage("Erro ao ligar ao servidor. Verifique a sua internet.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (tenantLoading && profile?.tenantId === 'pending') {
+  if (tenantLoading && (!profile || profile.tenantId === 'pending')) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-slate-300">
         <Loader2 className="animate-spin mb-4 text-[#1c2d51]" size={40} />
