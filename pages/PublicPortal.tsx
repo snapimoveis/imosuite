@@ -96,12 +96,12 @@ const PublicPortal: React.FC = () => {
                 <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[8px] font-black uppercase">{p.tipo_negocio}</div>
               </div>
               <div className="p-8 flex-1 flex flex-col">
-                <h3 className="text-lg font-black text-[#1c2d51] mb-4 flex-1">{p.titulo}</h3>
-                <div className="flex justify-between items-center py-6 border-t border-slate-50">
+                <h3 className="text-lg font-black text-[#1c2d51] mb-4 flex-1 line-clamp-2">{p.titulo}</h3>
+                <div className="flex justify-between items-center py-6 border-t border-slate-50 mb-6">
                   <span className="text-xl font-black text-[#1c2d51]">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
                   <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#1c2d51] group-hover:text-white transition-all"><ChevronRight size={18}/></div>
                 </div>
-                <button onClick={(e) => handleContactClick(e, p.slug)} className="w-full bg-slate-50 text-[#1c2d51] py-3 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-[#1c2d51] hover:text-white transition-all flex items-center justify-center gap-2">
+                <button onClick={(e) => handleContactClick(e, p.slug)} className="w-full bg-[#1c2d51] text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
                   <MessageSquare size={14} /> Contactar Agente
                 </button>
               </div>
@@ -140,10 +140,13 @@ const PublicPortal: React.FC = () => {
                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30">{p.concelho} &bull; {p.tipologia}</span>
                    <h3 className="text-5xl md:text-7xl font-bold tracking-tighter leading-none">{p.titulo}</h3>
                    <p className="text-white/40 text-xl italic font-light max-w-md">Uma residência singular que redefine os limites da arquitetura contemporânea.</p>
-                   <div className="pt-10 flex items-center gap-10">
+                   <div className="pt-10 flex flex-wrap items-center gap-6">
                       <span className="text-4xl font-bold">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
-                      <button onClick={(e) => handleContactClick(e, p.slug)} className="p-4 rounded-full border border-white/10 hover:bg-white hover:text-black transition-all">
-                        <MessageSquare size={24} />
+                      <button 
+                        onClick={(e) => handleContactClick(e, p.slug)} 
+                        className="px-8 py-4 rounded-full border border-white/20 hover:bg-white hover:text-black transition-all flex items-center gap-3 font-bold uppercase text-[10px] tracking-widest"
+                      >
+                        <MessageSquare size={18} /> Contactar Agente
                       </button>
                       <ArrowUpRight size={40} strokeWidth={1} className="text-white/20 group-hover:text-white transition-all group-hover:translate-x-4" />
                    </div>
@@ -200,8 +203,8 @@ const PublicPortal: React.FC = () => {
                       <span className="flex items-center gap-1"><Square size={12}/> {p.area_util_m2}m²</span>
                    </div>
                 </div>
-                <button onClick={(e) => handleContactClick(e, p.slug)} className="mt-4 w-full bg-slate-50 text-[#1c2d51] py-2 rounded-lg font-black text-[9px] uppercase tracking-tighter flex items-center justify-center gap-2 hover:bg-blue-600 hover:text-white transition-all">
-                  <MessageSquare size={12} /> Contactar Agente
+                <button onClick={(e) => handleContactClick(e, p.slug)} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-900 transition-all shadow-lg shadow-blue-500/10">
+                  <MessageSquare size={14} /> Contactar Agente
                 </button>
              </Link>
            ))}
@@ -244,7 +247,12 @@ const PublicPortal: React.FC = () => {
                     <h3 className="text-5xl font-bold tracking-tighter leading-tight group-hover:translate-x-4 transition-transform duration-700">{p.titulo}</h3>
                     <div className="pt-10 border-t border-[#2D2926]/5 flex justify-between items-center">
                        <span className="text-3xl font-bold">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
-                       <button onClick={(e) => handleContactClick(e, p.slug)} className="text-[10px] font-black uppercase tracking-widest italic border-b border-[#2D2926]/20 pb-1 hover:border-[#2D2926] transition-all">Solicitar Contacto</button>
+                       <button 
+                        onClick={(e) => handleContactClick(e, p.slug)} 
+                        className="text-[10px] font-black uppercase tracking-widest italic border-b border-[#2D2926]/20 pb-1 hover:border-[#2D2926] transition-all flex items-center gap-2"
+                       >
+                         <MessageSquare size={14} /> Contactar Agente
+                       </button>
                     </div>
                  </div>
               </Link>

@@ -23,8 +23,6 @@ const PublicImovelDetails: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [formData, setFormData] = useState({ nome: '', email: '', telefone: '', mensagem: '' });
   
-  const contactSectionRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -59,12 +57,14 @@ const PublicImovelDetails: React.FC = () => {
     if (!loading && imovel) {
       const searchParams = new URLSearchParams(location.search);
       if (searchParams.get('contact') === 'true') {
-        setTimeout(() => {
+        // Aguarda um pouco mais para garantir que as seções foram renderizadas e as imagens não mudem o layout
+        const timer = setTimeout(() => {
           const element = document.getElementById('contact-section');
           if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
-        }, 500); // Pequeno atraso para garantir o render
+        }, 800);
+        return () => clearTimeout(timer);
       }
     }
   }, [loading, imovel, location.search]);
@@ -96,7 +96,7 @@ const PublicImovelDetails: React.FC = () => {
       <nav className="h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FAF9F6]/80 backdrop-blur-xl border-b border-[#2D2926]/5">
         <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-4 italic text-lg hover:opacity-50 transition-all"><ChevronLeft size={24} /> Coleção</Link>
         <span className="font-bold italic text-2xl tracking-tighter">{tenant.nome}</span>
-        <button onClick={() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#2D2926] text-white px-8 py-3 rounded-full text-[9px] font-black uppercase tracking-widest shadow-2xl">Solicitar Dossier</button>
+        <button onClick={() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' })} className="bg-[#2D2926] text-white px-8 py-3 rounded-full text-[9px] font-black uppercase tracking-widest shadow-2xl">Contactar Consultor</button>
       </nav>
       <main className="max-w-7xl mx-auto px-12 pt-24 pb-60">
         <div className="max-w-4xl space-y-12 mb-32">
@@ -131,16 +131,16 @@ const PublicImovelDetails: React.FC = () => {
                 </p>
              </div>
           </div>
-          <div className="space-y-12">
-             <div id="contact-section" className="bg-white p-16 rounded-[6rem] border border-[#2D2926]/5 shadow-3xl sticky top-40 text-center">
+          <div id="contact-section" className="space-y-12">
+             <div className="bg-white p-16 rounded-[6rem] border border-[#2D2926]/5 shadow-3xl sticky top-40 text-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.6em] text-[#2D2926]/20 mb-10">Investimento Ativo</p>
                 <div className="text-7xl font-bold mb-24 tracking-tighter">{formatCurrency(imovel.preco)}</div>
                 {sent ? (
                   <div className="py-20 animate-in zoom-in-95 duration-700"><Award size={100} strokeWidth={0.5} className="mx-auto mb-6 text-[#2D2926]/10" /><p className="text-2xl italic">Consultoria Privada Agendada.</p></div>
                 ) : (
                   <form onSubmit={handleContact} className="space-y-10">
-                     <input required placeholder="Nome Completo" className="w-full bg-transparent border-b-2 border-[#2D2926]/10 py-6 italic text-2xl outline-none focus:border-[#2D2926] transition-all" onChange={e => setFormData({...formData, nome: e.target.value})} />
-                     <input required type="email" placeholder="Endereço Digital" className="w-full bg-transparent border-b-2 border-[#2D2926]/10 py-6 italic text-2xl outline-none focus:border-[#2D2926] transition-all" onChange={e => setFormData({...formData, email: e.target.value})} />
+                     <input required placeholder="Nome Completo" className="w-full bg-transparent border-b-2 border-[#2D2926]/10 py-6 italic text-2xl outline-none focus:border-[#2D2926] transition-all" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
+                     <input required type="email" placeholder="Endereço Digital" className="w-full bg-transparent border-b-2 border-[#2D2926]/10 py-6 italic text-2xl outline-none focus:border-[#2D2926] transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                      <button className="w-full bg-[#2D2926] text-white py-10 rounded-full italic text-2xl hover:bg-black transition-all shadow-3xl mt-10">Solicitar Experiência</button>
                   </form>
                 )}
@@ -179,19 +179,23 @@ const PublicImovelDetails: React.FC = () => {
             </div>
             <p className="text-4xl italic leading-relaxed text-white/70 font-light">{imovel.descricao_md || 'Um refúgio de design contemporâneo onde a luz é o elemento estruturante.'}</p>
          </div>
-         <div id="contact-section" className="bg-white/5 p-20 backdrop-blur-3xl border border-white/10 sticky top-40 text-center">
+         <div id="contact-section" className="bg-white/5 p-20 backdrop-blur-3xl border border-white/10 sticky top-40 text-center rounded-3xl">
             <h4 className="text-3xl font-bold mb-12 uppercase tracking-widest italic">Interesse Reservado</h4>
-            <form onSubmit={handleContact} className="space-y-10 text-left">
-               <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.5em] text-white/30 ml-2">Nome</label>
-                  <input required className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl text-white" onChange={e => setFormData({...formData, nome: e.target.value})} />
-               </div>
-               <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.5em] text-white/30 ml-2">Email</label>
-                  <input required type="email" className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl text-white" onChange={e => setFormData({...formData, email: e.target.value})} />
-               </div>
-               <button className="w-full bg-white text-black py-8 font-black uppercase tracking-[0.4em] text-xs hover:bg-white/80 transition-all shadow-2xl">Solicitar Consultoria</button>
-            </form>
+            {sent ? (
+              <div className="py-20 text-emerald-500 font-bold uppercase tracking-widest">Pedido Enviado com Sucesso.</div>
+            ) : (
+              <form onSubmit={handleContact} className="space-y-10 text-left">
+                <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.5em] text-white/30 ml-2">Nome</label>
+                    <input required className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl text-white" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.5em] text-white/30 ml-2">Email</label>
+                    <input required type="email" className="w-full bg-transparent border border-white/10 px-6 py-4 outline-none focus:border-white transition-all text-xl text-white" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                </div>
+                <button className="w-full bg-white text-black py-8 font-black uppercase tracking-[0.4em] text-xs hover:bg-white/80 transition-all shadow-2xl">Solicitar Consultoria</button>
+              </form>
+            )}
          </div>
       </main>
     </div>
@@ -229,11 +233,15 @@ const PublicImovelDetails: React.FC = () => {
                 <p className="text-slate-500 leading-relaxed font-medium text-lg">{imovel.descricao_md || 'Descrição profissional em preparação.'}</p>
                 <div id="contact-section" className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100">
                    <h4 className="font-black text-[#1c2d51] uppercase text-[10px] tracking-[0.2em] mb-8">Contactar Agência</h4>
-                   <form onSubmit={handleContact} className="space-y-4">
-                      <input required placeholder="Nome" className="w-full p-5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 font-bold transition-all" onChange={e => setFormData({...formData, nome: e.target.value})} />
-                      <input required type="email" placeholder="Email" className="w-full p-5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 font-bold transition-all" onChange={e => setFormData({...formData, email: e.target.value})} />
+                   {sent ? (
+                      <div className="py-10 bg-white rounded-2xl text-center border border-emerald-100 text-emerald-600 font-black text-xs uppercase tracking-widest">Mensagem Enviada</div>
+                   ) : (
+                    <form onSubmit={handleContact} className="space-y-4">
+                      <input required placeholder="Nome" className="w-full p-5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 font-bold transition-all" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
+                      <input required type="email" placeholder="Email" className="w-full p-5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 font-bold transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                       <button className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-900/10 hover:-translate-y-1 transition-all">Enviar Mensagem</button>
-                   </form>
+                    </form>
+                   )}
                 </div>
              </div>
           </main>
