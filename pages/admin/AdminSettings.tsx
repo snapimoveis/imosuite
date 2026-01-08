@@ -8,16 +8,16 @@ import { db } from '../../lib/firebase.ts';
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 
   Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
-  CreditCard, Languages, ShieldCheck, CheckCircle2, Settings, AlertTriangle 
+  CreditCard, Languages, ShieldCheck, CheckCircle2, Settings, AlertTriangle, Eye, ChevronLeft, ChevronRight, Info
 } from 'lucide-react';
 import { Tenant } from '../../types.ts';
 
 const TEMPLATE_OPTIONS = [
-  { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal' },
-  { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Clean e Moderno' },
-  { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo' },
-  { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico' },
-  { id: 'luxe', name: 'Luxe', icon: <Brush size={20}/>, desc: 'Artístico e Lifestyle' },
+  { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
+  { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Clean e Moderno', color: '#357fb2' },
+  { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo', color: '#000000' },
+  { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico', color: '#10b981' },
+  { id: 'luxe', name: 'Luxe', icon: <Brush size={20}/>, desc: 'Artístico e Lifestyle', color: '#f59e0b' },
 ];
 
 const AdminSettings: React.FC = () => {
@@ -28,15 +28,19 @@ const AdminSettings: React.FC = () => {
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [previewingTemplate, setPreviewingTemplate] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
-  // Sincronizar dados locais quando o tenant global carregar ou mudar
   useEffect(() => {
-    if (!tenantLoading && tenant.id !== 'default-tenant-uuid') {
-      setLocalTenant(tenant);
+    if (!tenantLoading) {
+      setLocalTenant(prev => ({
+        ...prev,
+        ...tenant,
+        id: tenant.id !== 'default-tenant-uuid' ? tenant.id : prev.id
+      }));
     }
   }, [tenant, tenantLoading]);
 
@@ -57,23 +61,13 @@ const AdminSettings: React.FC = () => {
   };
 
   const handleSave = async () => {
-    // Lógica de recuperação de ID ultra-robusta
-    let tId = profile?.tenantId;
-    
-    // Fallback 1: Se o profile estiver pendente mas o tenant local tiver um ID válido
-    if ((!tId || tId === 'pending') && localTenant.id && localTenant.id !== 'default-tenant-uuid') {
-      tId = localTenant.id;
-    }
-
-    // Fallback 2: Se ainda for pendente mas temos o user logado, tentamos reconstruir o ID (caso padrão tnt_UID)
-    if ((!tId || tId === 'pending') && user) {
-      // Se chegamos aqui, o utilizador está logado mas o documento 'users/uid' não foi encontrado ou está vazio
-      // Vamos assumir que ele quer criar/configurar a sua agência agora
+    let tId = tenant.id;
+    if ((!tId || tId === 'default-tenant-uuid' || tId === 'pending') && user) {
       tId = `tnt_${user.uid.slice(0, 12)}`;
     }
 
-    if (!tId || tId === 'pending' || tId === 'default-tenant-uuid') {
-      setErrorMessage("Não foi possível identificar a sua conta. Por favor, tente sair e entrar novamente.");
+    if (!tId || !user) {
+      setErrorMessage("Sessão expirada. Por favor, faça login novamente.");
       return;
     }
 
@@ -83,11 +77,10 @@ const AdminSettings: React.FC = () => {
 
     try {
       const tenantRef = doc(db, 'tenants', tId);
-      
       const updates = {
         id: tId,
-        nome: localTenant.nome || '',
-        email: localTenant.email || user?.email || '',
+        nome: localTenant.nome || tenant.nome || 'Minha Agência',
+        email: localTenant.email || user.email || '',
         telefone: localTenant.telefone || '',
         morada: localTenant.morada || '',
         nif: localTenant.nif || '',
@@ -96,35 +89,30 @@ const AdminSettings: React.FC = () => {
         cor_primaria: localTenant.cor_primaria || '#1c2d51',
         cor_secundaria: localTenant.cor_secundaria || localTenant.cor_primaria || '#1c2d51',
         template_id: localTenant.template_id || 'heritage',
+        ativo: true,
         updated_at: serverTimestamp()
       };
       
-      // 1. Guardar dados da agência
       await setDoc(tenantRef, updates, { merge: true });
-      
-      // 2. Auto-correção: Vincular o utilizador a esta agência no Firestore caso o vínculo estivesse quebrado
-      if (user) {
-        const userRef = doc(db, 'users', user.uid);
-        await setDoc(userRef, { 
-          tenantId: tId,
-          email: user.email,
-          role: profile?.role || 'admin',
-          updated_at: serverTimestamp()
-        }, { merge: true });
-      }
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, { 
+        tenantId: tId,
+        role: profile?.role || 'admin',
+        updated_at: serverTimestamp()
+      }, { merge: true });
 
       setTenant({ ...tenant, ...updates });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
-      console.error("Erro ao guardar definições:", err);
-      setErrorMessage("Erro ao ligar ao servidor. Verifique a sua internet.");
+      console.error("Erro ao guardar:", err);
+      setErrorMessage("Erro de permissão no servidor.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (tenantLoading && (!profile || profile.tenantId === 'pending')) {
+  if (tenantLoading && !user) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-slate-300">
         <Loader2 className="animate-spin mb-4 text-[#1c2d51]" size={40} />
@@ -166,7 +154,6 @@ const AdminSettings: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-        {/* Sidebar Mini Nav */}
         <div className="lg:col-span-1 space-y-2">
           <TabLink active={activeTab === 'general'} icon={<Building2 size={18}/>} label="Empresa" sub="NIF e Localização" tab="general" />
           <TabLink active={activeTab === 'branding'} icon={<Brush size={18}/>} label="Branding" sub="Cores e Logótipo" tab="branding" />
@@ -174,10 +161,9 @@ const AdminSettings: React.FC = () => {
           <TabLink active={activeTab === 'system'} icon={<Settings size={18}/>} label="Sistema" sub="Moeda e Idioma" tab="system" />
         </div>
 
-        {/* Content Area */}
         <div className="lg:col-span-3 space-y-8">
           {activeTab === 'general' && (
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center"><Building2 size={24}/></div>
                 <div>
@@ -212,7 +198,7 @@ const AdminSettings: React.FC = () => {
           )}
 
           {activeTab === 'branding' && (
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center"><Brush size={24}/></div>
                 <div>
@@ -253,72 +239,60 @@ const AdminSettings: React.FC = () => {
                       <Palette size={32}/>
                     )}
                   </div>
-                  <input 
-                    type="file" 
-                    ref={logoInputRef} 
-                    onChange={handleLogoChange} 
-                    className="hidden" 
-                    accept="image/*" 
-                  />
+                  <input type="file" ref={logoInputRef} onChange={handleLogoChange} className="hidden" accept="image/*" />
                   <h4 className="font-black text-[#1c2d51] text-xs uppercase mb-2">Logótipo da Marca</h4>
                   <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed max-w-[150px] mb-6">Ficheiro SVG ou PNG transparente (Máx. 2MB)</p>
-                  <button 
-                    onClick={handleLogoClick}
-                    className="bg-white text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all active:scale-95"
-                  >
-                    Upload Logo
-                  </button>
+                  <button onClick={handleLogoClick} className="bg-white text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all active:scale-95">Upload Logo</button>
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === 'website' && (
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center"><Globe size={24}/></div>
                 <div>
                   <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Website Público</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Escolha o template e o slogan</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Escolha o template e o slogan para o seu portal</p>
                 </div>
               </div>
 
               <div className="space-y-8">
                  <div>
                    <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Zap size={12}/> Slogan do Website</label>
-                   <input 
-                    type="text" 
-                    value={localTenant.slogan || ''} 
-                    onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} 
-                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" 
-                    placeholder="Ex: A chave do seu novo lar." 
-                   />
+                   <input type="text" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all" placeholder="Ex: A chave do seu novo lar." />
                  </div>
 
                  <div>
-                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-4 ml-2">Templates de Design</label>
+                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-4 ml-2">Escolha o Template (Design)</label>
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {TEMPLATE_OPTIONS.map((tmpl) => (
-                      <button
-                        key={tmpl.id}
-                        onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id })}
-                        className={`flex items-start gap-4 p-6 rounded-3xl border-2 transition-all text-left group ${
-                          localTenant.template_id === tmpl.id 
-                          ? 'border-[#1c2d51] bg-[#1c2d51]/5 shadow-inner' 
-                          : 'border-slate-50 hover:border-slate-200'
-                        }`}
-                      >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                          localTenant.template_id === tmpl.id ? 'bg-[#1c2d51] text-white' : 'bg-white text-slate-300 border border-slate-100'
-                        }`}>
-                          {tmpl.icon}
-                        </div>
-                        <div>
-                          <div className={`font-black text-xs uppercase tracking-tighter ${localTenant.template_id === tmpl.id ? 'text-[#1c2d51]' : 'text-slate-500'}`}>{tmpl.name}</div>
-                          <div className="text-[9px] text-slate-400 font-bold mt-0.5">{tmpl.desc}</div>
-                        </div>
-                        {localTenant.template_id === tmpl.id && <Check className="ml-auto text-[#1c2d51]" size={16} strokeWidth={4} />}
-                      </button>
+                      <div key={tmpl.id} className="relative group">
+                        <button
+                          onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id })}
+                          className={`w-full flex items-start gap-4 p-6 rounded-3xl border-2 transition-all text-left ${
+                            localTenant.template_id === tmpl.id ? 'border-[#1c2d51] bg-[#1c2d51]/5 shadow-inner' : 'border-slate-50 hover:border-slate-200 shadow-sm bg-white'
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                            localTenant.template_id === tmpl.id ? 'bg-[#1c2d51] text-white' : 'bg-slate-50 text-slate-300 border border-slate-100'
+                          }`}>
+                            {tmpl.icon}
+                          </div>
+                          <div>
+                            <div className={`font-black text-xs uppercase tracking-tighter ${localTenant.template_id === tmpl.id ? 'text-[#1c2d51]' : 'text-slate-500'}`}>{tmpl.name}</div>
+                            <div className="text-[9px] text-slate-400 font-bold mt-0.5">{tmpl.desc}</div>
+                          </div>
+                          {localTenant.template_id === tmpl.id && <Check className="ml-auto text-[#1c2d51]" size={16} strokeWidth={4} />}
+                        </button>
+                        <button 
+                          onClick={() => setPreviewingTemplate(tmpl.id)}
+                          className="absolute bottom-4 right-4 text-[8px] font-black uppercase tracking-widest text-[#1c2d51] opacity-0 group-hover:opacity-100 bg-white/80 px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-1 transition-all"
+                        >
+                          <Eye size={12}/> Pré-visualizar
+                        </button>
+                      </div>
                     ))}
                   </div>
                  </div>
@@ -327,7 +301,7 @@ const AdminSettings: React.FC = () => {
           )}
 
           {activeTab === 'system' && (
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center"><Settings size={24}/></div>
                 <div>
@@ -342,7 +316,6 @@ const AdminSettings: React.FC = () => {
                   <select className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/5 transition-all">
                     <option>Português (Portugal)</option>
                     <option disabled>English (Soon)</option>
-                    <option disabled>Español (Soon)</option>
                   </select>
                 </div>
                 <div>
@@ -352,34 +325,107 @@ const AdminSettings: React.FC = () => {
                     <option>Dólar ($)</option>
                   </select>
                 </div>
-                <div className="bg-blue-50/50 p-6 rounded-3xl md:col-span-2 border border-blue-100/50 flex gap-4">
-                   <div className="text-blue-500 mt-1"><ShieldCheck size={20}/></div>
-                   <div>
-                     <p className="text-[10px] font-black text-[#1c2d51] uppercase tracking-widest mb-1 text-blue-800">Privacidade & RGPD</p>
-                     <p className="text-[9px] text-blue-600/70 font-bold uppercase leading-relaxed">
-                       Os seus dados e os dos seus clientes estão protegidos sob a lei europeia. 
-                       Garantimos o isolamento total da sua base de dados no ecossistema ImoSuite.
-                     </p>
-                   </div>
-                </div>
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* MODAL DE PRÉ-VISUALIZAÇÃO */}
+      {previewingTemplate && (
+        <TemplatePreviewModal 
+          templateId={previewingTemplate} 
+          onClose={() => setPreviewingTemplate(null)} 
+          onSelect={() => {
+            setLocalTenant({ ...localTenant, template_id: previewingTemplate });
+            setPreviewingTemplate(null);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// COMPONENTE DE PREVIEW (Sincronizado com OnboardingFlow)
+const TemplatePreviewModal = ({ templateId, onClose, onSelect }: { templateId: string, onClose: () => void, onSelect: () => void }) => {
+  const [activePage, setActivePage] = useState<'home' | 'list' | 'detail'>('home');
+  const template = TEMPLATE_OPTIONS.find(t => t.id === templateId);
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col animate-in fade-in duration-300">
+      <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0">
+        <div className="flex items-center gap-6">
+          <button onClick={onClose} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">
+            <ChevronLeft size={16}/> Voltar
+          </button>
+          <div className="h-6 w-px bg-slate-100 mx-2"></div>
+          <div>
+            <span className="text-[8px] font-black uppercase text-slate-300 block tracking-widest">Pré-visualização</span>
+            <span className="text-sm font-black text-[#1c2d51] tracking-tighter">{template?.name}</span>
+          </div>
+        </div>
+        <div className="bg-slate-50 p-1.5 rounded-2xl flex items-center gap-1">
+          <PageTab active={activePage === 'home'} onClick={() => setActivePage('home')} label="Homepage" />
+          <PageTab active={activePage === 'list'} onClick={() => setActivePage('list')} label="Listagem" />
+          <PageTab active={activePage === 'detail'} onClick={() => setActivePage('detail')} label="Detalhe do Imóvel" />
+        </div>
+        <button onClick={onSelect} className="bg-[#1c2d51] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all">
+          Usar este Template
+        </button>
+      </header>
+      <div className="flex-1 overflow-y-auto bg-slate-50 relative">
+        <div className="max-w-[1440px] mx-auto min-h-full bg-white shadow-2xl">
+          {activePage === 'home' && <PreviewHome template={template} />}
+          {activePage === 'list' && <PreviewList template={template} />}
+          {activePage === 'detail' && <PreviewDetail template={template} />}
+        </div>
+        <div className="fixed bottom-10 right-10 flex flex-col gap-4 max-w-xs animate-in slide-in-from-bottom-10">
+          <Tooltip text="Os seus imóveis reais aparecerão aqui" icon={<Building2 size={14}/>} />
+          <Tooltip text="As descrições podem ser geradas com IA" icon={<Zap size={14}/>} />
         </div>
       </div>
     </div>
   );
 };
 
+const PageTab = ({ active, onClick, label }: { active: boolean, onClick: () => void, label: string }) => (
+  <button onClick={onClick} className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${active ? 'bg-white text-[#1c2d51] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+    {label}
+  </button>
+);
+
+const Tooltip = ({ text, icon }: { text: string, icon: any }) => (
+  <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-2xl border border-blue-100 flex items-center gap-3 text-[10px] font-bold text-[#1c2d51]">
+    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">{icon}</div>
+    {text}
+  </div>
+);
+
+// MOCKS DE CONTEÚDO PARA PREVIEW (Homepage simplificada para Admin)
+const PreviewHome = ({ template }: any) => (
+  <div className="animate-in fade-in duration-500">
+    <section className="h-[500px] relative flex items-center justify-center text-center px-10">
+      <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-slate-900/40"></div>
+      <div className="relative z-10 max-w-2xl">
+        <h1 className="text-5xl font-black text-white mb-6 leading-tight">Encontre o lar perfeito.</h1>
+        <button className="px-8 py-4 rounded-xl text-white font-black text-[10px] uppercase tracking-widest" style={{ backgroundColor: template.color }}>Ver Imóveis</button>
+      </div>
+    </section>
+    <section className="py-20 px-10 text-center bg-slate-50">
+      <h2 className="text-2xl font-black text-[#1c2d51] mb-12">Destaques Selecionados</h2>
+      <div className="grid grid-cols-3 gap-8 max-w-5xl mx-auto">
+        {[1,2,3].map(i => <div key={i} className="h-40 bg-white rounded-2xl shadow-sm border border-slate-100"></div>)}
+      </div>
+    </section>
+  </div>
+);
+
+const PreviewList = ({ template }: any) => <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Layout de Listagem &bull; Grid de Imóveis</div>;
+const PreviewDetail = ({ template }: any) => <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Ficha de Imóvel &bull; Galeria e Contacto</div>;
+
 const TabLink = ({ active, icon, label, sub, tab }: { active: boolean, icon: any, label: string, sub: string, tab: string }) => (
-  <Link 
-    to={`/admin/settings?tab=${tab}`} 
-    className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all border ${
-      active 
-      ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-xl shadow-slate-900/10' 
-      : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'
-    }`}
-  >
+  <Link to={`/admin/settings?tab=${tab}`} className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all border ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-xl shadow-slate-900/10' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
     <div className={active ? 'text-white' : 'text-slate-300'}>{icon}</div>
     <div className="overflow-hidden">
       <div className={`font-black text-[11px] uppercase tracking-tighter leading-none mb-1 truncate ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
