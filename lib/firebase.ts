@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-// Use standard modular imports from firebase/firestore and firebase/analytics
+// Use modular exports from firebase/firestore and firebase/analytics
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
@@ -19,14 +19,18 @@ const firebaseConfig = {
 // Singleton para evitar múltiplas inicializações
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Inicialização dos serviços
+// Inicialização dos serviços usando a API modular (v9+)
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Inicialização de Analytics (opcional, apenas se suportado pelo browser)
 let analytics: any = null;
 isSupported().then(yes => {
-  if (yes) analytics = getAnalytics(app);
+  if (yes) {
+    analytics = getAnalytics(app);
+  }
+}).catch(err => {
+  console.debug("Analytics not supported in this environment", err);
 });
 
 export { app, auth, db, analytics };
