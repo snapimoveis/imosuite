@@ -31,8 +31,18 @@ const PublicPortal: React.FC = () => {
           setTenant(tData);
 
           const pRef = collection(db, "tenants", tData.id, "properties");
-          const pQuery = query(pRef, orderBy("created_at", "desc"));
-          const pSnap = await getDocs(pQuery);
+          
+          // LÓGICA DE CARREGAMENTO INTELIGENTE:
+          // Primeiro tentamos os destaques. Se não houver, pegamos os mais recentes.
+          const highlightQuery = query(pRef, where("destaque", "==", true), where("publicado", "==", true), limit(9));
+          let pSnap = await getDocs(highlightQuery);
+          
+          if (pSnap.empty) {
+            // Fallback: Mostrar os últimos publicados se nenhum estiver em destaque
+            const recentQuery = query(pRef, where("publicado", "==", true), orderBy("created_at", "desc"), limit(9));
+            pSnap = await getDocs(recentQuery);
+          }
+
           setProperties(pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Imovel)));
         }
       } catch (err) {
@@ -44,7 +54,7 @@ const PublicPortal: React.FC = () => {
     fetchData();
   }, [slug]);
 
-  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-white"><Loader2 className="animate-spin text-slate-200 mb-4" size={48} /><p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">Gerando experiência personalizada...</p></div>;
+  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-white"><Loader2 className="animate-spin text-slate-200 mb-4" size={48} /><p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A sintonizar experiência...</p></div>;
   if (!tenant) return <div className="h-screen flex flex-col items-center justify-center p-10 text-center"><Building2 size={48} className="text-slate-200 mb-4"/><h2 className="text-2xl font-black text-slate-900 mb-2">Portal Indisponível</h2><Link to="/" className="text-blue-600 font-bold underline">Voltar para o ImoSuite</Link></div>;
 
   const templateId = tenant.template_id || 'heritage';
@@ -74,23 +84,27 @@ const PublicPortal: React.FC = () => {
         </div>
       </header>
       <main className="max-w-7xl mx-auto py-24 px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {properties.map(p => (
-            <Link key={p.id} to={`/agencia/${tenant.slug}/imovel/${p.slug}`} className="bg-white rounded-3xl overflow-hidden border border-slate-100 group shadow-sm hover:shadow-2xl transition-all">
-              <div className="h-64 overflow-hidden relative">
-                <img src={p.media[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[8px] font-black uppercase">{p.tipo_negocio}</div>
-              </div>
-              <div className="p-8">
-                <h3 className="text-lg font-black text-[#1c2d51] mb-4">{p.titulo}</h3>
-                <div className="flex justify-between items-center pt-6 border-t border-slate-50">
-                  <span className="text-xl font-black text-[#1c2d51]">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
-                  <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#1c2d51] group-hover:text-white transition-all"><ChevronRight size={18}/></div>
+        {properties.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {properties.map(p => (
+              <Link key={p.id} to={`/agencia/${tenant.slug}/imovel/${p.slug}`} className="bg-white rounded-3xl overflow-hidden border border-slate-100 group shadow-sm hover:shadow-2xl transition-all">
+                <div className="h-64 overflow-hidden relative">
+                  <img src={p.media[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[8px] font-black uppercase">{p.tipo_negocio}</div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div className="p-8">
+                  <h3 className="text-lg font-black text-[#1c2d51] mb-4">{p.titulo}</h3>
+                  <div className="flex justify-between items-center pt-6 border-t border-slate-50">
+                    <span className="text-xl font-black text-[#1c2d51]">{formatCurrency(p.preco || p.preco_arrendamento)}</span>
+                    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#1c2d51] group-hover:text-white transition-all"><ChevronRight size={18}/></div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 opacity-30 font-black uppercase text-xs tracking-widest">Aguardando catálogo de imóveis...</div>
+        )}
       </main>
     </div>
   );
@@ -235,12 +249,10 @@ const PublicPortal: React.FC = () => {
             ))}
           </div>
           
-          {/* SECÇÃO EDITORIAL EXTRA PARA LUXE */}
           <div className="bg-white p-20 rounded-[5rem] flex flex-col md:flex-row items-center gap-20 shadow-sm border border-[#2D2926]/5">
              <div className="flex-1 space-y-8">
                 <Quote size={60} className="text-[#2D2926]/10" />
                 <h2 className="text-6xl font-bold tracking-tighter leading-none italic">"A arquitetura é o jogo sábio, correto e magnífico dos volumes sob a luz."</h2>
-                <p className="text-xl text-[#2D2926]/50 italic">A nossa equipa de consultores especializados em arte e design ajuda-o a escolher não apenas um imóvel, mas um investimento estético.</p>
              </div>
              <div className="w-72 h-72 bg-slate-100 rounded-full overflow-hidden grayscale">
                 <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" className="w-full h-full object-cover" />
