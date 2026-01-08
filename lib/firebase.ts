@@ -1,9 +1,8 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-// Fix: Use firestore/lite to ensure modular exports are found in environments with type resolution issues
-import { getFirestore } from "firebase/firestore/lite";
-// Fix: Use standard analytics exports from the modular SDK
+// Use standard modular imports from firebase/firestore and firebase/analytics
+import { getFirestore } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Configuração oficial do ImoSuite

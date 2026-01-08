@@ -2,7 +2,9 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const generatePropertyDescription = async (property: any): Promise<string> => {
+  // Always initialize right before use as per guidelines
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   const prompt = `
     Crie uma descrição atraente e profissional para um imóvel com as seguintes características:
     Título: ${property.titulo}
@@ -23,7 +25,8 @@ export const generatePropertyDescription = async (property: any): Promise<string
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text || "Erro ao gerar descrição.";
+    // .text is a property getter, not a function
+    return response.text || "Não foi possível gerar a descrição automática neste momento.";
   } catch (error) {
     console.error("AI Generation Error:", error);
     return "Não foi possível gerar a descrição automática neste momento.";

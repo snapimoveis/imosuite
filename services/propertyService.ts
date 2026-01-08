@@ -4,11 +4,8 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
-  deleteDoc, 
-  doc, 
-  query, 
-  where 
-} from "firebase/firestore/lite";
+  doc 
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Imovel } from "../types";
 import { MOCK_IMOVEIS } from "../mocks";
@@ -16,14 +13,13 @@ import { MOCK_IMOVEIS } from "../mocks";
 const USE_MOCK = true; // Toggle para facilitar desenvolvimento inicial
 
 export const PropertyService = {
-  // Fix: Use modular Firestore functions from firestore/lite and resolve parameter shadowing
   async getProperties(tenantId: string): Promise<Imovel[]> {
     if (USE_MOCK) return MOCK_IMOVEIS;
 
     try {
       const propertiesRef = collection(db, "tenants", tenantId, "properties");
       const snapshot = await getDocs(propertiesRef);
-      // Fix: Rename 'doc' callback parameter to 'propertyDoc' to avoid collision with imported 'doc' function
+      // Alterado nome da variável no map para não colidir com o import 'doc'
       return snapshot.docs.map(propertyDoc => ({ id: propertyDoc.id, ...propertyDoc.data() } as Imovel));
     } catch (error) {
       console.error("Firebase fetch error:", error);
