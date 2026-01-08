@@ -4,9 +4,10 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.ts';
 
+// Added 'super_admin' to role type to ensure type safety in role comparisons throughout the app
 interface UserProfile {
   id: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'super_admin';
   tenantId: string;
   displayName: string;
   email: string;
