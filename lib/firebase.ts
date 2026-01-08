@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -16,9 +16,10 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Configuração robusta para evitar erros de stream (ERR_QUIC_PROTOCOL_ERROR)
+// Configuração agressiva para compatibilidade total
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true, // Crucial para estabilidade em redes instáveis ou com bloqueio de QUIC
+  experimentalForceLongPolling: true,
+  useFetchStreams: false, // Desativa streams HTTP2 que costumam dar erro 400 em certas redes
 });
 
 export const auth = getAuth(app);

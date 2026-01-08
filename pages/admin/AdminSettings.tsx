@@ -21,15 +21,18 @@ const AdminSettings: React.FC = () => {
   const [localTenant, setLocalTenant] = useState(tenant);
   const [success, setSuccess] = useState(false);
 
-  // Sincroniza o estado local quando os dados reais chegam da base de dados
+  // Sincroniza o estado local apenas quando temos dados novos e válidos
   useEffect(() => {
-    if (!tenantLoading) {
+    if (!tenantLoading && tenant.id !== 'default-tenant-uuid') {
       setLocalTenant(tenant);
     }
   }, [tenant, tenantLoading]);
 
   const handleSave = async () => {
-    if (!profile?.tenantId || profile.tenantId === 'pending') return;
+    if (!profile?.tenantId || profile.tenantId === 'pending') {
+      alert("Aguarde que o seu perfil seja carregado totalmente.");
+      return;
+    }
 
     setIsSaving(true);
     setSuccess(false);
@@ -50,17 +53,22 @@ const AdminSettings: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error(err);
-      alert("Erro ao guardar definições.");
+      alert("Erro ao guardar definições. Verifique a sua ligação.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (tenantLoading || profile?.tenantId === 'pending') {
+  // Só bloqueamos se realmente não tivermos NADA (nem default nem real) e o auth ainda estiver em 'pending'
+  // Mas se o tenantLoading for false (por causa do timeout), libertamos a página.
+  if (tenantLoading && profile?.tenantId === 'pending') {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-slate-300 font-brand">
         <Loader2 className="animate-spin mb-4 text-[#1c2d51]" size={40} />
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">A carregar definições da agência...</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-pulse text-center">
+          A sintonizar com a central...<br/>
+          <span className="opacity-50">Isto não deve demorar muito</span>
+        </p>
       </div>
     );
   }
@@ -74,7 +82,7 @@ const AdminSettings: React.FC = () => {
         </div>
         {success && (
           <div className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest animate-in slide-in-from-top-4">
-            <Check size={16} strokeWidth={3} /> Guardado com sucesso
+            <Check size={16} strokeWidth={3} /> Alterações Guardadas
           </div>
         )}
       </div>

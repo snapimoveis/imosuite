@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase.ts';
 import { Tenant } from '../types';
 import { DEFAULT_TENANT } from '../constants.tsx';
@@ -19,42 +19,51 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [tenant, setTenant] = useState<Tenant>(DEFAULT_TENANT);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sincronizar dados do Tenant com a base de dados em tempo real
   useEffect(() => {
-    // Se o perfil existe e tem um tenantId válido (não pendente ou default)
-    if (profile?.tenantId && profile.tenantId !== 'pending' && profile.tenantId !== 'default-tenant-uuid') {
-      setIsLoading(true);
-      const tenantRef = doc(db, 'tenants', profile.tenantId);
-      
-      const unsubscribe = onSnapshot(tenantRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const tenantData = { id: docSnap.id, ...docSnap.data() } as Tenant;
-          setTenant(tenantData);
-          
-          // Aplicar cores da marca ao CSS global
-          const root = document.documentElement;
-          root.style.setProperty('--primary', tenantData.cor_primaria);
-          root.style.setProperty('--secondary', tenantData.cor_secundaria || tenantData.cor_primaria);
-        }
-        setIsLoading(false);
-      }, (error) => {
-        console.error("Erro ao carregar dados da agência:", error);
-        setIsLoading(false);
-      });
-
-      return () => unsubscribe();
-    } else {
-      // Se não há tenantId, mantém o default
-      setIsLoading(false);
+    // Se o perfil está pendente, não tentamos carregar ainda, mas também não ficamos em loading eterno
+    if (!profile?.tenantId || profile.tenantId === 'pending') {
+      const timer = setTimeout(() => setIsLoading(false), 2000);
+      return () => clearTimeout(timer);
     }
-  }, [profile?.tenantId]);
 
-  // Aplicar cores iniciais
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--primary', tenant.cor_primaria);
-    root.style.setProperty('--secondary', tenant.cor_secundaria);
-  }, [tenant.cor_primaria, tenant.cor_secundaria]);
+    if (profile.tenantId === 'default-tenant-uuid') {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Timeout de segurança: Se o Firestore não responder em 3.5s, paramos o spinner
+    const safetyTimeout = setTimeout(() => {
+      console.warn("TenantContext: Firestore demorou demasiado. A libertar UI...");
+      setIsLoading(false);
+    }, 3500);
+
+    const tenantRef = doc(db, 'tenants', profile.tenantId);
+    
+    const unsubscribe = onSnapshot(tenantRef, (docSnap) => {
+      clearTimeout(safetyTimeout);
+      if (docSnap.exists()) {
+        const tenantData = { id: docSnap.id, ...docSnap.data() } as Tenant;
+        setTenant(tenantData);
+        
+        // Aplicar cores
+        const root = document.documentElement;
+        root.style.setProperty('--primary', tenantData.cor_primaria);
+        root.style.setProperty('--secondary', tenantData.cor_secundaria || tenantData.cor_primaria);
+      }
+      setIsLoading(false);
+    }, (error) => {
+      clearTimeout(safetyTimeout);
+      console.error("Erro ao carregar dados da agência:", error);
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+      clearTimeout(safetyTimeout);
+    };
+  }, [profile?.tenantId]);
 
   return (
     <TenantContext.Provider value={{ tenant, setTenant, isLoading }}>
