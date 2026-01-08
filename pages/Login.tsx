@@ -17,6 +17,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Use signInWithEmailAndPassword from firebase/auth
       await signInWithEmailAndPassword(auth, email, password);
       navigate('/admin');
     } catch (err: any) {

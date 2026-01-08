@@ -14,14 +14,15 @@ const firebaseConfig = {
   measurementId: "G-SG8GBG1NR5"
 };
 
-// Singleton: Inicializa apenas se não houver instâncias ativas
+// Use initializeApp, getApps, and getApp from firebase/app
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Exporta instâncias já vinculadas ao app central para evitar erro de registro
+// Use getAuth from firebase/auth
 export const auth = getAuth(app);
+// Use getFirestore from firebase/firestore
 export const db = getFirestore(app);
 
-// Analytics opcional
+// Use getAnalytics and isSupported from firebase/analytics
 export const initAnalytics = async () => {
   if (await isSupported()) {
     return getAnalytics(app);
