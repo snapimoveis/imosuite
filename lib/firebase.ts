@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -14,15 +14,15 @@ const firebaseConfig = {
   measurementId: "G-SG8GBG1NR5"
 };
 
-// Use initializeApp, getApps, and getApp from firebase/app
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Use getAuth from firebase/auth
-export const auth = getAuth(app);
-// Use getFirestore from firebase/firestore
-export const db = getFirestore(app);
+// Configuração robusta para evitar erros de stream (ERR_QUIC_PROTOCOL_ERROR)
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true, // Crucial para estabilidade em redes instáveis ou com bloqueio de QUIC
+});
 
-// Use getAnalytics and isSupported from firebase/analytics
+export const auth = getAuth(app);
+
 export const initAnalytics = async () => {
   if (await isSupported()) {
     return getAnalytics(app);
