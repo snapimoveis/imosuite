@@ -1,12 +1,12 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
+/**
+ * Gera uma descrição atraente para um imóvel usando o Gemini 3 Flash.
+ */
 export const generatePropertyDescription = async (property: any): Promise<string> => {
-  // Garantir que a API KEY é lida do ambiente no momento da execução
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API Key não configurada no ambiente.");
-  
-  const ai = new GoogleGenAI({ apiKey });
+  // Always initialize GoogleGenAI with a named parameter using process.env.API_KEY
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `
     Crie uma descrição atraente e sofisticada para um anúncio imobiliário em Portugal:
@@ -34,10 +34,13 @@ export const generatePropertyDescription = async (property: any): Promise<string
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    // Correct method: ai.models.generateContent with model and contents properties
+    const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
+    
+    // Correct property access: .text directly (not a method)
     return response.text || "Erro ao gerar descrição.";
   } catch (error) {
     console.error("Gemini Error:", error);
@@ -45,18 +48,20 @@ export const generatePropertyDescription = async (property: any): Promise<string
   }
 };
 
+/**
+ * Gera um slogan para a agência imobiliária.
+ */
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) return "Excelência imobiliária.";
-  
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `Gere um slogan comercial curto para a imobiliária "${agencyName}" em Portugal. Foco em confiança.`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
+    
+    // Correct property access: .text
     return response.text?.trim() || "O seu parceiro de confiança.";
   } catch {
     return "A sua imobiliária de referência.";

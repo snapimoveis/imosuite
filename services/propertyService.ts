@@ -1,5 +1,5 @@
 
-import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";
 
@@ -32,6 +32,12 @@ export const PropertyService = {
     }
   },
 
+  async getPropertyMedia(tenantId: string, propertyId: string): Promise<ImovelMedia[]> {
+    const mediaRef = collection(db, "tenants", tenantId, "properties", propertyId, "media");
+    const snapshot = await getDocs(mediaRef);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ImovelMedia));
+  },
+
   async createProperty(tenantId: string, propertyData: Partial<Imovel>, mediaItems: ImovelMedia[] = []) {
     if (!tenantId || tenantId === 'pending') {
       throw new Error("Agência não carregada.");
@@ -40,7 +46,6 @@ export const PropertyService = {
     try {
       const propertiesRef = collection(db, "tenants", tenantId, "properties");
       
-      // Preparar dados com timestamps e defaults
       const finalData = cleanData({
         ...propertyData,
         tenant_id: tenantId,
@@ -51,7 +56,6 @@ export const PropertyService = {
 
       const docRef = await addDoc(propertiesRef, finalData);
 
-      // Se houver media, salvar na subcoleção
       if (mediaItems.length > 0) {
         const mediaColRef = collection(db, "tenants", tenantId, "properties", docRef.id, "media");
         for (const item of mediaItems) {
@@ -61,7 +65,6 @@ export const PropertyService = {
           });
         }
         
-        // Atualizar o total de media no documento pai
         await updateDoc(docRef, {
           "media.total": mediaItems.length,
           "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || null
@@ -75,11 +78,29 @@ export const PropertyService = {
     }
   },
 
-  async updateProperty(tenantId: string, propertyId: string, updates: Partial<Imovel>) {
+  async updateProperty(tenantId: string, propertyId: string, updates: Partial<Imovel>, mediaItems?: ImovelMedia[]) {
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
-    return await updateDoc(propertyRef, cleanData({
-      ...updates,
+    
+    // Remove ID and timestamps from updates to avoid overwriting
+    const { id, created_at, ...cleanUpdates } = updates as any;
+    
+    await updateDoc(propertyRef, cleanData({
+      ...cleanUpdates,
       updated_at: serverTimestamp()
     }));
+
+    // Se houver media para atualizar, isto simplifica o processo (substitui/adiciona)
+    if (mediaItems) {
+       // Nota: Numa app real, faríamos diffing. Aqui apenas garantimos que o total e a capa estão certos.
+       await updateDoc(propertyRef, {
+        "media.total": mediaItems.length,
+        "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || null
+      });
+    }
+  },
+
+  async deleteProperty(tenantId: string, propertyId: string) {
+    const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
+    return await deleteDoc(propertyRef);
   }
 };

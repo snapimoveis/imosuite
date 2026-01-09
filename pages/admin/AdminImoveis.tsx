@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PropertyService } from '../../services/propertyService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Imovel, TipoImovel, ImovelMedia } from '../../types';
 import { 
   Plus, Search, Edit2, Trash2, Eye, X, Loader2, AlertCircle, 
-  MapPin, Building2, Zap, Sparkles, Check, 
+  Building2, Zap, Sparkles, Check, 
   ChevronRight, ChevronLeft, Camera, Trash, Star,
-  MoveUp, MoveDown, ShieldCheck, Euro, LayoutGrid, Info
+  MoveUp, MoveDown, ShieldCheck, Euro, UploadCloud
 } from 'lucide-react';
 import { formatCurrency, generateSlug } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
@@ -20,11 +20,12 @@ const AdminImoveis: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
 
-  // Initial state strictly following the new Nested Schema
   const initialFormState: Partial<Imovel> = {
     titulo: '',
     ref: '',
@@ -40,7 +41,7 @@ const AdminImoveis: React.FC = () => {
       distrito: 'Lisboa',
       concelho: '',
       freguesia: '',
-      codigo_postal: '', // Fix: Added missing required property
+      codigo_postal: '',
       morada: '',
       porta: '',
       lat: null,
@@ -99,6 +100,7 @@ const AdminImoveis: React.FC = () => {
 
   const loadProperties = async () => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
+    setIsLoading(true);
     try {
       const data = await PropertyService.getProperties(profile.tenantId);
       setProperties(data);
@@ -114,26 +116,61 @@ const AdminImoveis: React.FC = () => {
   const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
+  const handleOpenCreate = () => {
+    setEditingId(null);
+    setFormData(initialFormState);
+    setTempMedia([]);
+    setCurrentStep(1);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = async (imovel: Imovel) => {
+    setEditingId(imovel.id);
+    setFormData(imovel);
+    setCurrentStep(1);
+    
+    // Carregar media da subcoleção se necessário
+    if (profile?.tenantId) {
+      const media = await PropertyService.getPropertyMedia(profile.tenantId, imovel.id);
+      setTempMedia(media);
+    }
+    
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!profile?.tenantId || !window.confirm("Tem a certeza que deseja apagar este imóvel?")) return;
+    try {
+      await PropertyService.deleteProperty(profile.tenantId, id);
+      loadProperties();
+    } catch (error) {
+      alert("Erro ao apagar imóvel.");
+    }
+  };
+
   const handleSave = async () => {
     if (!profile?.tenantId || !user) return;
     setIsSaving(true);
     setSaveError(null);
 
     try {
-      const slug = generateSlug(`${formData.titulo}-${Date.now()}`);
-      const finalPayload = {
-        ...formData,
-        slug,
-        owner_uid: user.uid
-      };
-
-      await PropertyService.createProperty(profile.tenantId, finalPayload, tempMedia);
+      if (editingId) {
+        await PropertyService.updateProperty(profile.tenantId, editingId, formData, tempMedia);
+      } else {
+        const slug = generateSlug(`${formData.titulo}-${Date.now()}`);
+        const finalPayload = {
+          ...formData,
+          slug,
+          owner_uid: user.uid
+        };
+        await PropertyService.createProperty(profile.tenantId, finalPayload, tempMedia);
+      }
       
       setIsModalOpen(false);
       loadProperties();
       setFormData(initialFormState);
       setTempMedia([]);
-      setCurrentStep(1);
+      setEditingId(null);
     } catch (err: any) {
       setSaveError(err.message || "Erro ao salvar.");
     } finally {
@@ -141,16 +178,28 @@ const AdminImoveis: React.FC = () => {
     }
   };
 
+  // Improved handleAIGenerate with proper type safety and defensive spreading
   const handleAIGenerate = async () => {
     setIsGeneratingAI(true);
     try {
+      // Call service to generate text from Gemini API
       const desc = await generatePropertyDescription(formData);
-      setFormData(prev => ({ 
-        ...prev, 
-        descricao: { ...prev.descricao!, completa_md: desc } 
-      }));
+      
+      // Update local state with the generated description, ensuring defensive spreading
+      setFormData(prev => {
+        if (!prev) return prev;
+        return { 
+          ...prev, 
+          descricao: { 
+            ...(prev.descricao || { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null }), 
+            completa_md: desc,
+            gerada_por_ia: true,
+            ultima_geracao_ia_at: new Date().toISOString()
+          } 
+        };
+      });
     } catch (error) {
-      console.error(error);
+      console.error("AI Generation failed:", error);
     } finally {
       setIsGeneratingAI(false);
     }
@@ -171,6 +220,19 @@ const AdminImoveis: React.FC = () => {
     setTempMedia([...tempMedia, newMedia]);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handleAddMedia(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   return (
     <div className="space-y-6 font-brand">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -179,7 +241,7 @@ const AdminImoveis: React.FC = () => {
           <p className="text-sm text-slate-400 font-medium uppercase tracking-widest mt-1">Inventário Completo</p>
         </div>
         <button 
-          onClick={() => { setIsModalOpen(true); setCurrentStep(1); }} 
+          onClick={handleOpenCreate} 
           className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-slate-900/10"
         >
           <Plus size={20} /> Novo Imóvel
@@ -192,7 +254,7 @@ const AdminImoveis: React.FC = () => {
             <div className="px-10 py-6 border-b border-slate-50 flex items-center justify-between shrink-0">
                <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-blue-50 text-[#1c2d51] rounded-xl flex items-center justify-center"><Building2 size={20}/></div>
-                  <h3 className="text-xl font-black text-[#1c2d51]">Novo Imóvel Profissional</h3>
+                  <h3 className="text-xl font-black text-[#1c2d51]">{editingId ? 'Editar Imóvel' : 'Novo Imóvel Profissional'}</h3>
                </div>
                <div className="hidden md:flex items-center gap-2">
                   {[1,2,3,4,5,6].map(s => (
@@ -316,7 +378,7 @@ const AdminImoveis: React.FC = () => {
                       <InputGroup label="Área Útil (m²)">
                          <input type="number" className="admin-input" value={formData.areas?.area_util_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_util_m2: Number(e.target.value)}})} />
                       </InputGroup>
-                      <InputGroup label="Área Bruta (m²)">
+                      <InputGroup label="Area Bruta (m²)">
                          <input type="number" className="admin-input" value={formData.areas?.area_bruta_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_bruta_m2: Number(e.target.value)}})} />
                       </InputGroup>
                       <InputGroup label="Andar">
@@ -386,32 +448,34 @@ const AdminImoveis: React.FC = () => {
                    </div>
                    <div className="space-y-6">
                       <label className="text-[10px] font-black uppercase text-slate-400">Media & Fotos</label>
-                      <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4">
-                         <Camera className="mx-auto text-slate-300" size={32}/>
-                         <p className="text-xs font-bold text-slate-400 uppercase">Cole URLs de imagens (Mock de Upload)</p>
-                         <div className="flex gap-2 max-w-lg mx-auto">
-                            <input id="mediaUrl" placeholder="https://..." className="admin-input bg-white" onKeyPress={e => e.key === 'Enter' && handleAddMedia((e.target as any).value)} />
-                            <button onClick={() => {
-                               const input = document.getElementById('mediaUrl') as HTMLInputElement;
-                               handleAddMedia(input.value);
-                               input.value = '';
-                            }} className="bg-[#1c2d51] text-white px-6 rounded-xl font-black uppercase text-xs">OK</button>
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-slate-50 p-12 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4 cursor-pointer hover:bg-slate-100 transition-all"
+                      >
+                         <UploadCloud className="mx-auto text-slate-300" size={48}/>
+                         <div>
+                           <p className="text-sm font-black text-[#1c2d51] uppercase tracking-tight">Carregar Fotos do Imóvel</p>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Clique para selecionar ficheiros</p>
                          </div>
+                         <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*" />
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                         {tempMedia.map((m, idx) => (
-                           <div key={m.id} className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${m.is_cover ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-100'}`}>
-                              <img src={m.url} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
-                                 <button onClick={() => {
-                                   const newMedia = tempMedia.map(item => ({ ...item, is_cover: item.id === m.id }));
-                                   setTempMedia(newMedia);
-                                 }} className="p-2 bg-white rounded-lg hover:text-blue-500"><Star size={14}/></button>
-                                 <button onClick={() => setTempMedia(tempMedia.filter(item => item.id !== m.id))} className="p-2 bg-white rounded-lg text-red-500"><Trash size={14}/></button>
-                              </div>
-                           </div>
-                         ))}
-                      </div>
+
+                      {tempMedia.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                           {tempMedia.map((m, idx) => (
+                             <div key={m.id} className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${m.is_cover ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-100'}`}>
+                                <img src={m.url} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                                   <button onClick={() => {
+                                     const newMedia = tempMedia.map(item => ({ ...item, is_cover: item.id === m.id }));
+                                     setTempMedia(newMedia);
+                                   }} className="p-2 bg-white rounded-lg hover:text-blue-500 shadow-sm"><Star size={14} fill={m.is_cover ? 'currentColor' : 'none'} /></button>
+                                   <button onClick={() => setTempMedia(tempMedia.filter(item => item.id !== m.id))} className="p-2 bg-white rounded-lg text-red-500 shadow-sm"><Trash size={14}/></button>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                      )}
                    </div>
                 </div>
               )}
@@ -423,8 +487,8 @@ const AdminImoveis: React.FC = () => {
                {currentStep < totalSteps ? (
                  <button onClick={handleNext} className="bg-[#1c2d51] text-white px-10 py-4 rounded-xl font-black text-xs uppercase flex items-center gap-2 hover:translate-x-1 transition-all">Seguinte <ChevronRight size={16}/></button>
                ) : (
-                 <button onClick={handleSave} disabled={isSaving} className="bg-[#1c2d51] text-white px-12 py-4 rounded-xl font-black text-xs uppercase flex items-center gap-2 shadow-xl shadow-[#1c2d51]/20">
-                   {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16}/>} Publicar Imóvel
+                 <button onClick={handleSave} disabled={isSaving} className="bg-[#1c2d51] text-white px-12 py-4 rounded-xl font-black text-xs uppercase flex items-center gap-2 shadow-xl shadow-[#1c2d51]/20 transition-all active:scale-95">
+                   {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16}/>} {editingId ? 'Guardar Alterações' : 'Publicar Imóvel'}
                  </button>
                )}
             </div>
@@ -433,24 +497,58 @@ const AdminImoveis: React.FC = () => {
       )}
 
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-50"><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} /><input type="text" placeholder="Filtrar inventário..." className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl outline-none font-bold" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div></div>
+        <div className="p-6 border-b border-slate-50">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+            <input type="text" placeholder="Filtrar inventário por ref ou título..." className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead><tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest"><th className="px-8 py-5">Imóvel / Ref</th><th className="px-8 py-5">Negócio</th><th className="px-8 py-5 text-right">Acções</th></tr></thead>
+            <thead>
+              <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                <th className="px-8 py-5">Imóvel / Ref</th>
+                <th className="px-8 py-5">Tipo & Negócio</th>
+                <th className="px-8 py-5 text-right">Acções</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-slate-50">
-              {isLoading ? (<tr><td colSpan={3} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" /></td></tr>) : 
-               properties.map(p => (
+              {isLoading ? (
+                <tr><td colSpan={3} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" /></td></tr>
+              ) : properties.length === 0 ? (
+                <tr><td colSpan={3} className="py-20 text-center text-slate-300 font-bold uppercase text-[10px]">Sem imóveis no inventário.</td></tr>
+              ) : properties.filter(p => p.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || p.ref.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
                 <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden font-black text-slate-300 flex items-center justify-center">
-                        {p.media?.cover_media_id ? 'IMG' : p.titulo.charAt(0)}
+                      <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden font-black text-slate-300 flex items-center justify-center border border-slate-200 flex-shrink-0">
+                        {p.media?.cover_media_id || p.media?.total > 0 ? <img src={p.media.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=100'} className="w-full h-full object-cover" /> : p.titulo.charAt(0)}
                       </div>
-                      <div><div className="font-black text-sm text-[#1c2d51]">{p.titulo}</div><div className="text-[10px] text-slate-400 font-bold uppercase">REF: {p.ref}</div></div>
+                      <div>
+                        <div className="font-black text-sm text-[#1c2d51]">{p.titulo}</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">REF: {p.ref} &bull; {formatCurrency(p.financeiro.preco_venda || p.financeiro.preco_arrendamento)}</div>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-8 py-5"><span className="text-[10px] font-black uppercase text-slate-400">{p.tipo_imovel} &bull; {p.operacao}</span></td>
-                  <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity"><div className="flex justify-end gap-2"><button className="w-9 h-9 flex items-center justify-center bg-white border rounded-lg text-slate-400"><Edit2 size={14}/></button><button className="w-9 h-9 flex items-center justify-center bg-white border rounded-lg text-red-400"><Trash2 size={14}/></button></div></td>
+                  <td className="px-8 py-5">
+                    <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">{p.tipo_imovel} &bull; {p.operacao}</span>
+                  </td>
+                  <td className="px-8 py-5 text-right">
+                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                      <button 
+                        onClick={() => handleEdit(p)}
+                        className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#1c2d51] hover:border-[#1c2d51] hover:shadow-lg transition-all"
+                      >
+                        <Edit2 size={16}/>
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(p.id)}
+                        className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-red-400 hover:bg-red-50 hover:border-red-100 hover:shadow-lg transition-all"
+                      >
+                        <Trash2 size={16}/>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
                ))
               }
@@ -479,9 +577,9 @@ const Counter = ({ label, value, onChange }: any) => (
   <div className="bg-slate-50 p-6 rounded-[2rem] flex flex-col items-center justify-center">
      <span className="text-[9px] font-black uppercase text-slate-400 mb-3">{label}</span>
      <div className="flex items-center gap-4">
-        <button onClick={() => onChange(Math.max(0, value - 1))} className="w-8 h-8 rounded-full bg-white text-lg font-black">-</button>
+        <button onClick={() => onChange(Math.max(0, value - 1))} className="w-8 h-8 rounded-full bg-white text-lg font-black shadow-sm">-</button>
         <span className="text-xl font-black">{value}</span>
-        <button onClick={() => onChange(value + 1)} className="w-8 h-8 rounded-full bg-white text-lg font-black">+</button>
+        <button onClick={() => onChange(value + 1)} className="w-8 h-8 rounded-full bg-white text-lg font-black shadow-sm">+</button>
      </div>
   </div>
 );
