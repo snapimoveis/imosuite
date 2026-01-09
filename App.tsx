@@ -57,7 +57,6 @@ const App: React.FC = () => {
             {/* Portais das Agências */}
             <Route path="/agencia/:slug" element={<PublicPortal />} />
             <Route path="/agencia/:slug/imovel/:imovelSlug" element={<PublicImovelDetails />} />
-            <Route path="/imovel/:slug" element={<PublicImovelDetails />} /> {/* Redir context handled inside component */}
             <Route path="/demo" element={<Navigate to="/agencia/demo-imosuite" replace />} />
 
             {/* Admin & Onboarding */}
