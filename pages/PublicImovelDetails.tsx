@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// Fix: Use standard modular Firestore imports
+// Correcting modular Firestore imports for version 9+
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant, Imovel } from '../types';
@@ -9,7 +9,7 @@ import { LeadService } from '../services/leadService';
 import { 
   MapPin, Bed, Bath, Square, Loader2, ChevronLeft, 
   Send, Share2, Heart, Phone, Mail, Car, Zap, Check, ArrowRight, Building2, Calendar, Info, ShieldCheck,
-  Star // Fix: Add missing Star import
+  Star
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import ImovelCard from '../components/ImovelCard';

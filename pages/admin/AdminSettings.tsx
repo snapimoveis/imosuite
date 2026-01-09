@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-// Fix: Use standard modular Firestore imports
+// Fixing modular Firestore imports for version 9+
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { 
@@ -33,7 +33,7 @@ const AdminSettings: React.FC = () => {
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Fix: Explicit type for previewingTemplate to avoid string union errors
+  // Fixing explicit type for previewingTemplate
   const [previewingTemplate, setPreviewingTemplate] = useState<Tenant['template_id'] | null>(null);
   const [isGeneratingSlogan, setIsGeneratingSlogan] = useState(false);
   
@@ -102,7 +102,7 @@ const AdminSettings: React.FC = () => {
         localTenant.slug = normalizedSlug;
       }
 
-      // Fix: Cast doc data to avoid type issues with complex types
+      // Fixing data saving structure
       const { id, ...dataToSave } = localTenant;
       const updates = {
         ...(dataToSave as any),
@@ -456,7 +456,7 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
                <div className="flex-1 space-y-10">
                   <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">The Reserve &bull; 2024</span>
                   <h3 className="text-7xl font-black tracking-tighter uppercase leading-none">{p.title}</h3>
-                  <p className="text-white/40 text-xl font-light italic leading-relaxed">A sanctuary of pure architectural brilliance and natural harmony.</p>
+                  <p className="text-white/40 italic text-xl font-light leading-relaxed">A sanctuary of pure architectural brilliance and natural harmony.</p>
                   <div className="flex items-center gap-6"><div className="w-20 h-px bg-white/20"></div><span className="font-black text-lg tracking-widest">{formatCurrency(p.price)}</span></div>
                </div>
             </div>

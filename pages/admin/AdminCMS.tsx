@@ -1,14 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { 
-  Globe, Layout, Type, List, Save, Loader2, Eye, 
+  Globe, Layout, Type, List, Save, Loader2, 
   ChevronUp, ChevronDown, ToggleLeft, ToggleRight, 
-  Plus, Trash2, Edit3, X, Check, Link as LinkIcon, 
-  FileText, ExternalLink, Settings 
+  Plus, Trash2, Edit3, X, Navigation
 } from 'lucide-react';
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { CMSSection, TenantCMS, MenuItem, CMSPage } from '../../types';
@@ -21,10 +19,10 @@ const AdminCMS: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'homepage' | 'menus' | 'pages'>('homepage');
   
-  const [editingSection, setEditingSection] = useState<CMSSection | null>(null);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [isPageModalOpen, setIsPageModalOpen] = useState(false);
   
+  const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
   const [newMenuItem, setNewMenuItem] = useState<Partial<MenuItem>>({ label: '', path: '', is_external: false, order: 0 });
   const [menuTarget, setMenuTarget] = useState<'main' | 'footer'>('main');
   const [editingPage, setEditingPage] = useState<Partial<CMSPage>>({ title: '', slug: '', content_md: '', enabled: true });
@@ -81,25 +79,66 @@ const AdminCMS: React.FC = () => {
     setCms({ ...cms, homepage_sections: newSections.map((s, i) => ({ ...s, order: i })) });
   };
 
-  const addMenuItem = () => {
+  const openMenuModal = (target: 'main' | 'footer', item: MenuItem | null = null) => {
+    setMenuTarget(target);
+    if (item) {
+      setEditingMenuItem(item);
+      setNewMenuItem({ ...item });
+    } else {
+      setEditingMenuItem(null);
+      setNewMenuItem({ label: '', path: '', is_external: false, order: cms.menus[target].length });
+    }
+    setIsMenuModalOpen(true);
+  };
+
+  const handleSaveMenuItem = () => {
     if (!newMenuItem.label || !newMenuItem.path) return;
-    const item: MenuItem = {
-      id: crypto.randomUUID(),
-      label: newMenuItem.label,
-      path: newMenuItem.path,
-      is_external: !!newMenuItem.is_external,
-      order: cms.menus[menuTarget].length
-    };
     
+    setCms(prev => {
+      const currentMenu = [...prev.menus[menuTarget]];
+      if (editingMenuItem) {
+        const idx = currentMenu.findIndex(m => m.id === editingMenuItem.id);
+        if (idx > -1) currentMenu[idx] = { ...editingMenuItem, ...newMenuItem } as MenuItem;
+      } else {
+        currentMenu.push({
+          id: crypto.randomUUID(),
+          label: newMenuItem.label!,
+          path: newMenuItem.path!,
+          is_external: !!newMenuItem.is_external,
+          order: currentMenu.length
+        });
+      }
+      return { ...prev, menus: { ...prev.menus, [menuTarget]: currentMenu } };
+    });
+
+    setIsMenuModalOpen(false);
+    setNewMenuItem({ label: '', path: '', is_external: false });
+    setEditingMenuItem(null);
+  };
+
+  const addPageToMenu = (page: CMSPage) => {
+    const path = `/p/${page.slug}`;
+    const alreadyInMenu = cms.menus.main.some(m => m.path === path);
+    
+    if (alreadyInMenu) {
+      alert("Esta página já está presente no menu principal.");
+      return;
+    }
+
     setCms(prev => ({
       ...prev,
       menus: {
         ...prev.menus,
-        [menuTarget]: [...prev.menus[menuTarget], item]
+        main: [...prev.menus.main, {
+          id: crypto.randomUUID(),
+          label: page.title,
+          path: path,
+          is_external: false,
+          order: prev.menus.main.length
+        }]
       }
     }));
-    setNewMenuItem({ label: '', path: '', is_external: false });
-    setIsMenuModalOpen(false);
+    setActiveTab('menus');
   };
 
   const handleAddOrUpdatePage = () => {
@@ -179,13 +218,37 @@ const AdminCMS: React.FC = () => {
               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-black text-[#1c2d51] uppercase text-xs">Menu Principal</h3>
-                  <button onClick={() => { setMenuTarget('main'); setIsMenuModalOpen(true); }} className="bg-slate-50 px-4 py-2 rounded-xl text-blue-600 font-black text-[10px] uppercase flex items-center gap-2"><Plus size={14}/> Novo Link</button>
+                  <button onClick={() => openMenuModal('main')} className="bg-slate-50 px-4 py-2 rounded-xl text-blue-600 font-black text-[10px] uppercase flex items-center gap-2"><Plus size={14}/> Novo Link</button>
                 </div>
                 <div className="space-y-2">
                    {cms.menus.main.map(item => (
+                     <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                        <div className="flex flex-col">
+                           <span className="font-bold text-xs">{item.label}</span>
+                           <span className="text-[9px] text-slate-400 font-bold font-mono">{item.path}</span>
+                        </div>
+                        <div className="flex gap-2">
+                           <button onClick={() => openMenuModal('main', item)} className="p-2 text-slate-300 hover:text-blue-500"><Edit3 size={16}/></button>
+                           <button onClick={() => setCms(prev => ({ ...prev, menus: { ...prev.menus, main: prev.menus.main.filter(m => m.id !== item.id) } }))} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-black text-[#1c2d51] uppercase text-xs">Menu de Rodapé</h3>
+                  <button onClick={() => openMenuModal('footer')} className="bg-slate-50 px-4 py-2 rounded-xl text-blue-600 font-black text-[10px] uppercase flex items-center gap-2"><Plus size={14}/> Novo Link</button>
+                </div>
+                <div className="space-y-2">
+                   {cms.menus.footer.map(item => (
                      <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                         <span className="font-bold text-xs">{item.label}</span>
-                        <button onClick={() => setCms(prev => ({ ...prev, menus: { ...prev.menus, main: prev.menus.main.filter(m => m.id !== item.id) } }))} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                        <div className="flex gap-2">
+                           <button onClick={() => openMenuModal('footer', item)} className="p-2 text-slate-300 hover:text-blue-500"><Edit3 size={16}/></button>
+                           <button onClick={() => setCms(prev => ({ ...prev, menus: { ...prev.menus, footer: prev.menus.footer.filter(m => m.id !== item.id) } }))} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                        </div>
                      </div>
                    ))}
                 </div>
@@ -201,15 +264,23 @@ const AdminCMS: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {cms.pages.map(page => (
-                    <div key={page.id} className="p-6 bg-slate-50 rounded-2xl flex justify-between items-center">
-                       <div>
-                          <h4 className="font-black text-[#1c2d51] text-sm">{page.title}</h4>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">/{page.slug}</p>
+                    <div key={page.id} className="p-6 bg-slate-50 rounded-2xl flex flex-col gap-4">
+                       <div className="flex justify-between items-start">
+                          <div>
+                             <h4 className="font-black text-[#1c2d51] text-sm">{page.title}</h4>
+                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">/{page.slug}</p>
+                          </div>
+                          <div className="flex gap-2">
+                             <button onClick={() => { setEditingPage(page); setIsPageModalOpen(true); }} title="Editar conteúdo" className="p-2 bg-white rounded-lg text-slate-400 hover:text-blue-600 shadow-sm transition-all"><Edit3 size={16}/></button>
+                             <button onClick={() => setCms(prev => ({ ...prev, pages: prev.pages.filter(p => p.id !== page.id) }))} className="p-2 bg-white rounded-lg text-slate-400 hover:text-red-500 shadow-sm transition-all"><Trash2 size={16}/></button>
+                          </div>
                        </div>
-                       <div className="flex gap-2">
-                          <button onClick={() => { setEditingPage(page); setIsPageModalOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600"><Edit3 size={16}/></button>
-                          <button onClick={() => setCms(prev => ({ ...prev, pages: prev.pages.filter(p => p.id !== page.id) }))} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
-                       </div>
+                       <button 
+                        onClick={() => addPageToMenu(page)}
+                        className="w-full py-2.5 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 hover:text-white transition-all"
+                       >
+                          <Navigation size={14}/> Linkar ao Menu Principal
+                       </button>
                     </div>
                   ))}
               </div>
@@ -225,10 +296,19 @@ const AdminCMS: React.FC = () => {
                 <button onClick={() => setIsPageModalOpen(false)}><X size={20}/></button>
              </div>
              <div className="space-y-6">
-                <input className="w-full p-4 bg-slate-50 rounded-xl outline-none font-bold" placeholder="Título da Página" value={editingPage.title} onChange={e => setEditingPage({...editingPage, title: e.target.value})} />
-                <input className="w-full p-4 bg-slate-50 rounded-xl outline-none font-bold" placeholder="Slug (ex: quem-somos)" value={editingPage.slug} onChange={e => setEditingPage({...editingPage, slug: e.target.value})} />
-                <textarea rows={8} className="w-full p-4 bg-slate-50 rounded-xl outline-none font-medium text-sm" placeholder="Conteúdo em Markdown..." value={editingPage.content_md} onChange={e => setEditingPage({...editingPage, content_md: e.target.value})} />
-                <button onClick={handleAddOrUpdatePage} className="w-full bg-[#1c2d51] text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest">Guardar Página</button>
+                <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase text-slate-400 ml-2">Título Público</label>
+                   <input className="admin-input-small" placeholder="Ex: Quem Somos" value={editingPage.title} onChange={e => setEditingPage({...editingPage, title: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase text-slate-400 ml-2">Slug da URL</label>
+                   <input className="admin-input-small" placeholder="ex: quem-somos" value={editingPage.slug} onChange={e => setEditingPage({...editingPage, slug: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase text-slate-400 ml-2">Conteúdo do Texto (Markdown)</label>
+                   <textarea rows={8} className="admin-input-small resize-none font-medium text-sm" placeholder="Escreva o conteúdo aqui..." value={editingPage.content_md} onChange={e => setEditingPage({...editingPage, content_md: e.target.value})} />
+                </div>
+                <button onClick={handleAddOrUpdatePage} className="w-full bg-[#1c2d51] text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl">Guardar Página</button>
              </div>
           </div>
         </div>
@@ -238,17 +318,33 @@ const AdminCMS: React.FC = () => {
         <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-black text-[#1c2d51]">Novo Link</h3>
+                <h3 className="text-xl font-black text-[#1c2d51]">{editingMenuItem ? 'Editar Link' : 'Novo Link'}</h3>
                 <button onClick={() => setIsMenuModalOpen(false)}><X size={20}/></button>
              </div>
              <div className="space-y-4">
-                <input className="w-full p-4 bg-slate-50 rounded-xl outline-none font-bold" placeholder="Nome do Link" value={newMenuItem.label} onChange={e => setNewMenuItem({...newMenuItem, label: e.target.value})} />
-                <input className="w-full p-4 bg-slate-50 rounded-xl outline-none font-bold" placeholder="URL ou Caminho" value={newMenuItem.path} onChange={e => setNewMenuItem({...newMenuItem, path: e.target.value})} />
-                <button onClick={addMenuItem} className="w-full bg-[#1c2d51] text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest">Adicionar</button>
+                <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase text-slate-400 ml-2">Nome no Menu</label>
+                   <input className="admin-input-small" placeholder="Ex: Contatos" value={newMenuItem.label} onChange={e => setNewMenuItem({...newMenuItem, label: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase text-slate-400 ml-2">URL ou Caminho Interno</label>
+                   <input className="admin-input-small" placeholder="Ex: /imoveis ou https://..." value={newMenuItem.path} onChange={e => setNewMenuItem({...newMenuItem, path: e.target.value})} />
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
+                   <input type="checkbox" className="w-5 h-5 rounded-lg" checked={newMenuItem.is_external} onChange={e => setNewMenuItem({...newMenuItem, is_external: e.target.checked})} />
+                   <span className="text-[10px] font-black uppercase text-slate-500">Abrir em nova aba?</span>
+                </div>
+                <button onClick={handleSaveMenuItem} className="w-full bg-[#1c2d51] text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl">
+                  {editingMenuItem ? 'Atualizar Link' : 'Adicionar ao Menu'}
+                </button>
              </div>
           </div>
         </div>
       )}
+      <style>{`
+        .admin-input-small { width: 100%; padding: 1rem 1.25rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; }
+        .admin-input-small:focus { background: #fff; border-color: #1c2d51; }
+      `}</style>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-// Fix: Modular Firestore imports for collection, query, and filters
+// Correcting modular Firestore imports for version 9+
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';

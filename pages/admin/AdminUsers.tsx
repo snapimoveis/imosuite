@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-// Fix: Use standard modular Firestore imports
+// Correcting modular Firestore imports for version 9+
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
@@ -20,7 +20,7 @@ const AdminUsers: React.FC = () => {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("tenantId", "==", profile.tenantId));
         const snapshot = await getDocs(q);
-        // Fix: Cast doc.data() to any to resolve spread type error
+        // Fixing spread type issue by casting to any
         setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })));
       } catch (err) {
         console.error("Erro ao carregar equipa:", err);

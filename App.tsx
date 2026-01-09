@@ -22,6 +22,7 @@ import AdminCMS from './pages/admin/AdminCMS';
 import AdminShell from './components/admin/AdminShell';
 import PublicPortal from './pages/PublicPortal';
 import PublicImovelDetails from './pages/PublicImovelDetails';
+import PublicPage from './pages/PublicPage';
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ const App: React.FC = () => {
             {/* Portais das Agências */}
             <Route path="/agencia/:slug" element={<PublicPortal />} />
             <Route path="/agencia/:slug/imovel/:imovelSlug" element={<PublicImovelDetails />} />
+            <Route path="/agencia/:slug/p/:pageSlug" element={<PublicPage />} />
             <Route path="/demo" element={<Navigate to="/agencia/demo-imosuite" replace />} />
 
             {/* Admin & Onboarding */}

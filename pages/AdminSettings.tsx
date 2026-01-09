@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../contexts/TenantContext.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
-// Fix: Modular Firestore imports
+// Correcting modular Firestore imports for version 9+
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase.ts';
 import { 
@@ -15,7 +15,7 @@ import {
 import { Tenant } from '../types.ts';
 import { formatCurrency } from '../lib/utils';
 
-// Fix: Use const as literal and include all options from type union
+// Fixing explicit type for template options
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
   { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Design Moderno e Limpo', color: '#357fb2' },
@@ -32,7 +32,7 @@ const AdminSettings: React.FC = () => {
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Fix: Explicitly type previewingTemplate to allow literal union matching
+  // Fixing explicit type for previewingTemplate
   const [previewingTemplate, setPreviewingTemplate] = useState<Tenant['template_id'] | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
@@ -215,77 +215,4 @@ const PreviewEngine = ({ templateId, page }: any) => {
              <div className="w-px h-32 bg-white/20 mx-auto mt-10"></div>
           </div>
        </header>
-       <main className="py-40 px-12 space-y-40 max-w-7xl mx-auto">
-          {[1,2].map(i => (
-            <div key={i} className={`flex items-center gap-20 ${i % 2 === 0 ? 'flex-row-reverse' : ''}`}>
-               <div className="flex-1 aspect-[4/3] bg-white/5 overflow-hidden"><img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800" className="w-full h-full object-cover grayscale opacity-60" /></div>
-               <div className="flex-1 space-y-6">
-                  <h3 className="text-6xl font-bold tracking-tighter">Estate Noir</h3>
-                  <p className="text-white/40 italic text-xl">Arquitetura de autor em cenário de luxo absoluto.</p>
-                  <ArrowUpRight size={40} strokeWidth={1} className="text-white/20" />
-               </div>
-            </div>
-          ))}
-       </main>
-    </div>
-  );
-
-  // 3. SKYLINE PREVIEW
-  if (templateId === 'skyline') return (
-    <div className="bg-slate-50 font-brand text-slate-900">
-       <nav className="h-20 bg-white border-b border-slate-200 px-10 flex items-center justify-between">
-          <div className="flex items-center gap-3"><div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black">S</div><span className="font-black text-lg tracking-tighter">Skyline</span></div>
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">Contactar</button>
-       </nav>
-       <header className="bg-white border-b border-slate-100 py-16 px-10 flex items-center gap-10">
-          <div className="flex-1 space-y-6">
-             <div className="bg-blue-50 text-blue-600 text-[8px] font-black px-3 py-1 rounded-full uppercase inline-block">New Market</div>
-             <h1 className="text-6xl font-black tracking-tighter leading-none">A sua base na cidade.</h1>
-             <input type="text" placeholder="Bairro ou Código Postal" className="w-full bg-slate-50 p-4 rounded-xl border-none outline-none font-bold text-sm" />
-          </div>
-          <div className="flex-1 bg-slate-100 aspect-video rounded-[2rem] overflow-hidden"><img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600" className="w-full h-full object-cover" /></div>
-       </header>
-       <main className="p-10 grid grid-cols-4 gap-4 max-w-7xl mx-auto">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm"><div className="aspect-square bg-slate-50 rounded-xl mb-4"></div><h4 className="font-black text-xs">Loft Industrial</h4><p className="text-blue-600 font-black text-xs">245.000 €</p></div>
-          ))}
-       </main>
-    </div>
-  );
-
-  // 4. LUXE PREVIEW
-  if (templateId === 'luxe') return (
-    <div className="bg-[#FAF9F6] text-[#2D2926] font-heritage">
-       <nav className="h-24 px-12 flex items-center justify-between absolute w-full">
-          <span className="text-2xl font-bold tracking-widest italic">Luxe</span>
-          <div className="text-[9px] font-black uppercase tracking-[0.4em] border-b border-[#2D2926] pb-1">Curadoria</div>
-       </nav>
-       <header className="h-[80vh] flex items-center px-20 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-2/3 h-full bg-slate-100"><img src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1000" className="w-full h-full object-cover opacity-80" /></div>
-          <div className="relative z-10 space-y-8 max-w-2xl">
-             <div className="flex items-center gap-4 text-[#2D2926]/40 text-[8px] font-black uppercase tracking-[0.6em]"><div className="w-12 h-px bg-[#2D2926]/20"></div> Estética Imobiliária</div>
-             <h1 className="text-[8rem] font-bold tracking-tighter leading-[0.8]">Espaços<br/><span className="italic font-light ml-40">com Alma.</span></h1>
-          </div>
-       </header>
-       <main className="py-40 px-20 grid grid-cols-2 gap-24 items-start max-w-7xl mx-auto">
-          {[1,2].map(i => (
-            <div key={i} className={`flex flex-col ${i === 2 ? 'mt-40' : ''}`}>
-               <div className="aspect-[3/4] rounded-[4rem] overflow-hidden shadow-2xl mb-10"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600" className="w-full h-full object-cover" /></div>
-               <div className="px-6 space-y-4"><div className="flex justify-between items-center text-[8px] font-black uppercase tracking-[0.5em] text-[#2D2926]/30"><span>Lisboa &bull; T4</span><Heart size={14}/></div><h3 className="text-4xl font-bold tracking-tighter italic leading-none">The Marigold Villa</h3></div>
-            </div>
-          ))}
-       </main>
-    </div>
-  );
-
-  return null;
-};
-
-const TabLink = ({ active, icon, label, tab }: any) => (
-  <Link to={`/admin/settings?tab=${tab}`} className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all border ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-xl shadow-slate-900/10' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
-    <div className={active ? 'text-white' : 'text-slate-300'}>{icon}</div>
-    <div className={`font-black text-[11px] uppercase tracking-tighter ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
-  </Link>
-);
-
-export default AdminSettings;
+       <main className="py-40 px-12

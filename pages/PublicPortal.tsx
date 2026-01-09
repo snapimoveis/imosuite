@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// Fix: Use standard modular Firestore imports
+// Correcting modular Firestore imports for version 9+
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant, Imovel, CMSSection, MenuItem } from '../types';
@@ -57,6 +57,15 @@ const PublicPortal: React.FC = () => {
     fetchData();
   }, [slug]);
 
+  const resolvePath = (path: string) => {
+    if (!tenant) return '/';
+    if (path.startsWith('http')) return path;
+    if (path === '/') return `/agencia/${tenant.slug}`;
+    // Garante que o link interno comece com /agencia/slug
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `/agencia/${tenant.slug}${cleanPath}`;
+  };
+
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-white">
       <Loader2 className="animate-spin text-slate-200 mb-4" size={48} />
@@ -84,7 +93,7 @@ const PublicPortal: React.FC = () => {
 
          <div className="hidden md:flex gap-10">
             {cms.menus.main.map((m: MenuItem) => (
-              <Link key={m.id} to={m.path} className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors hover:text-[var(--primary)] ${template === 'prestige' ? 'text-white/40' : 'text-slate-400'}`}>{m.label}</Link>
+              <Link key={m.id} to={resolvePath(m.path)} className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors hover:text-[var(--primary)] ${template === 'prestige' ? 'text-white/40' : 'text-slate-400'}`}>{m.label}</Link>
             ))}
          </div>
 
@@ -127,7 +136,7 @@ const PublicPortal: React.FC = () => {
                <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Páginas</p>
                <div className="flex flex-col gap-3">
                   {cms.menus.footer.map(m => (
-                    <Link key={m.id} to={m.path} className={`text-xs font-bold transition-colors hover:text-[var(--primary)] ${template === 'prestige' ? 'text-white/60' : 'text-slate-600'}`}>{m.label}</Link>
+                    <Link key={m.id} to={resolvePath(m.path)} className={`text-xs font-bold transition-colors hover:text-[var(--primary)] ${template === 'prestige' ? 'text-white/60' : 'text-slate-600'}`}>{m.label}</Link>
                   ))}
                </div>
             </div>
@@ -149,7 +158,7 @@ const PublicPortal: React.FC = () => {
         <div className="fixed inset-0 z-[100] bg-white p-10 flex flex-col items-center justify-center space-y-8 animate-in slide-in-from-top duration-300 md:hidden">
            <button onClick={() => setIsMenuOpen(false)} className="absolute top-8 right-8 text-slate-400"><X size={32}/></button>
            {cms.menus.main.map(m => (
-             <Link key={m.id} to={m.path} onClick={() => setIsMenuOpen(false)} className="text-2xl font-black text-[#1c2d51]">{m.label}</Link>
+             <Link key={m.id} to={resolvePath(m.path)} onClick={() => setIsMenuOpen(false)} className="text-2xl font-black text-[#1c2d51]">{m.label}</Link>
            ))}
         </div>
       )}
@@ -196,7 +205,7 @@ const SectionRenderer: React.FC<{ section: CMSSection, tenant: Tenant, propertie
                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{template === 'prestige' ? 'Private Selection' : 'Oportunidades'}</p>
                <h2 className={`text-4xl md:text-5xl font-black tracking-tighter ${template === 'prestige' ? 'italic' : 'text-[#1c2d51]'}`}>{section.content.title || 'Destaques'}</h2>
             </div>
-            <Link to="/imoveis" className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all hover:gap-3 ${template === 'prestige' ? 'text-white/40 hover:text-white' : 'text-[#1c2d51]'}`}>Ver Portefólio Completo <ArrowRight size={16}/></Link>
+            <Link to={`/agencia/${tenant.slug}/imoveis`} className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all hover:gap-3 ${template === 'prestige' ? 'text-white/40 hover:text-white' : 'text-[#1c2d51]'}`}>Ver Portefólio Completo <ArrowRight size={16}/></Link>
          </div>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {featured.map(p => <ImovelCard key={p.id} imovel={p} />)}
