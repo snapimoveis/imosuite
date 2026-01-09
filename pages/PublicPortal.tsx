@@ -5,7 +5,7 @@ import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from '
 import { db } from '../lib/firebase.ts';
 import { Tenant, Imovel } from '../types';
 import { 
-  Loader2, Building2, ChevronRight, MessageSquare
+  Loader2, Building2, ChevronRight, MessageSquare, Mail, Phone, MapPin, Globe
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
@@ -21,8 +21,6 @@ const PublicPortal: React.FC = () => {
       if (!slug) return;
       try {
         let tData: Tenant | null = null;
-        
-        // 1. Tentar procurar por SLUG
         const tRef = collection(db, "tenants");
         const tQuery = query(tRef, where("slug", "==", slug), limit(1));
         const tSnap = await getDocs(tQuery);
@@ -30,7 +28,6 @@ const PublicPortal: React.FC = () => {
         if (!tSnap.empty) {
           tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
         } else {
-          // 2. Fallback para ID
           const docRef = doc(db, "tenants", slug);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
@@ -40,8 +37,6 @@ const PublicPortal: React.FC = () => {
         
         if (tData) {
           setTenant(tData);
-
-          // Aplicar cores do tenant ao portal
           const root = document.documentElement;
           root.style.setProperty('--primary', tData.cor_primaria);
           root.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
@@ -54,7 +49,6 @@ const PublicPortal: React.FC = () => {
             const recentQuery = query(pRef, where("publicacao.publicar_no_site", "==", true), orderBy("created_at", "desc"), limit(9));
             pSnap = await getDocs(recentQuery);
           }
-
           setProperties(pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel)));
         }
       } catch (err) {
@@ -93,7 +87,7 @@ const PublicPortal: React.FC = () => {
   );
 
   return (
-    <div className="bg-[#FDFCFB] font-brand min-h-screen pb-20" style={{ '--primary': tenant.cor_primaria } as any}>
+    <div className="bg-[#FDFCFB] font-brand min-h-screen flex flex-col" style={{ '--primary': tenant.cor_primaria } as any}>
       <nav className="h-20 px-8 flex items-center justify-between border-b border-slate-100 bg-white sticky top-0 z-50">
         <div className="flex items-center gap-3">
           {tenant.logo_url ? (
@@ -103,15 +97,14 @@ const PublicPortal: React.FC = () => {
           )}
         </div>
         <div className="hidden md:flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          <a href="#" className="hover:text-[var(--primary)]">Início</a>
-          <a href="#" className="hover:text-[var(--primary)]">Imóveis</a>
-          <a href="#" className="hover:text-[var(--primary)]">Contacto</a>
+          <a href="#" className="hover:text-[var(--primary)] transition-colors">Início</a>
+          <a href="#" className="hover:text-[var(--primary)] transition-colors">Imóveis</a>
+          <a href="#" className="hover:text-[var(--primary)] transition-colors">Contacto</a>
         </div>
         <button className="bg-[var(--primary)] text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10">Menu</button>
       </nav>
       
       <header className="py-28 px-8 text-center bg-slate-50 relative overflow-hidden border-b border-slate-100 min-h-[60vh] flex flex-col justify-center items-center">
-        {/* Hero Background personalizada */}
         <div className="absolute inset-0 z-0">
            <img 
              src={tenant.hero_image_url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1600'} 
@@ -135,7 +128,7 @@ const PublicPortal: React.FC = () => {
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto py-24 px-8">
+      <main className="max-w-7xl mx-auto py-24 px-8 flex-1 w-full">
         <div className="flex justify-between items-end mb-12">
           <div>
             <h2 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Imóveis em Destaque</h2>
@@ -168,6 +161,64 @@ const PublicPortal: React.FC = () => {
           ))}
         </div>
       </main>
+
+      {/* Footer do Portal da Agência (Igual ao Footer SaaS) */}
+      <footer className="py-24 bg-white text-slate-400 border-t border-slate-100 mt-20">
+        <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-20">
+          <div className="col-span-1 md:col-span-2">
+            <div className="mb-8">
+              {tenant.logo_url ? (
+                <img src={tenant.logo_url} className="h-12 w-auto object-contain" alt={tenant.nome} />
+              ) : (
+                <span className="text-2xl font-black text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
+              )}
+            </div>
+            <p className="text-lg max-w-sm font-medium leading-relaxed text-slate-500">
+              {tenant.slogan || 'Transformamos casas em lares e investimentos em realidade.'}
+            </p>
+          </div>
+          
+          <div>
+            <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[10px]">Navegação</h4>
+            <ul className="space-y-4 text-sm font-bold">
+              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Página Inicial</a></li>
+              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Catálogo de Imóveis</a></li>
+              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Sobre a Agência</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[10px]">Contacto</h4>
+            <ul className="space-y-4 text-sm font-bold">
+              {tenant.email && (
+                <li className="flex items-center gap-2 hover:text-[var(--primary)] cursor-pointer">
+                  <Mail size={14}/> {tenant.email}
+                </li>
+              )}
+              {tenant.telefone && (
+                <li className="flex items-center gap-2 hover:text-[var(--primary)] cursor-pointer">
+                  <Phone size={14}/> {tenant.telefone}
+                </li>
+              )}
+              {tenant.morada && (
+                <li className="flex items-start gap-2 italic text-xs leading-relaxed">
+                  <MapPin size={14} className="shrink-0 mt-0.5"/> {tenant.morada}
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-8 pt-16 mt-16 border-t border-slate-50 text-[10px] font-black uppercase tracking-widest flex flex-col md:flex-row justify-between items-center gap-6">
+          <span>&copy; {new Date().getFullYear()} {tenant.nome}. Todos os direitos reservados.</span>
+          <div className="flex gap-8 items-center text-slate-300">
+            <span className="hover:text-[#1c2d51] cursor-pointer">Privacidade</span>
+            <span className="hover:text-[#1c2d51] cursor-pointer">Legal</span>
+            <div className="h-4 w-px bg-slate-100"></div>
+            <span className="flex items-center gap-1.5 opacity-40">Powered by <Building2 size={12}/> ImoSuite</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -89,7 +89,6 @@ const AdminSettings: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      // Validar SLUG único se mudou
       if (localTenant.slug !== tenant.slug) {
         const normalizedSlug = generateSlug(localTenant.slug);
         const q = query(collection(db, "tenants"), where("slug", "==", normalizedSlug), limit(1));
@@ -100,19 +99,14 @@ const AdminSettings: React.FC = () => {
         localTenant.slug = normalizedSlug;
       }
 
-      // Preparar objeto para gravação (removendo ID interno para evitar erro de permissão)
       const { id, ...dataToSave } = localTenant;
-
       const updates = {
         ...dataToSave,
         updated_at: serverTimestamp()
       };
 
       await setDoc(doc(db, 'tenants', tId), updates, { merge: true });
-      
-      // Atualizar contexto local
       setTenant({ ...localTenant, id: tId });
-      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
@@ -179,25 +173,23 @@ const AdminSettings: React.FC = () => {
           {activeTab === 'branding' && (
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
               <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Branding & Cores</h3>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                  <div className="space-y-8">
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Primária (Navegação/Botões)</label>
+                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Primária</label>
                        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
                           <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_primaria} onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value})} />
                           <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_primaria}</span>
                        </div>
                     </div>
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Secundária (Acentos/Ícones)</label>
+                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Secundária</label>
                        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
                           <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_secundaria} onChange={e => setLocalTenant({...localTenant, cor_secundaria: e.target.value})} />
                           <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_secundaria}</span>
                        </div>
                     </div>
                  </div>
-
                  <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-4 block">Logótipo da Agência</label>
                     <div onClick={handleLogoClick} className="h-52 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6 relative group">
@@ -231,7 +223,6 @@ const AdminSettings: React.FC = () => {
                          <input className="flex-1 bg-transparent outline-none font-black text-[#1c2d51] text-sm lowercase" value={localTenant.slug} onChange={e => setLocalTenant({...localTenant, slug: e.target.value})} />
                        </div>
                     </div>
-                    
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Imagem de Capa (Hero)</label>
                        <div onClick={handleHeroClick} className="h-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center gap-4 px-6 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden relative">
@@ -284,6 +275,7 @@ const AdminSettings: React.FC = () => {
             setLocalTenant({ ...localTenant, template_id: previewingTemplate }); 
             setPreviewingTemplate(null); 
           }} 
+          tenantData={localTenant}
         />
       )}
     </div>
@@ -292,7 +284,7 @@ const AdminSettings: React.FC = () => {
 
 // --- COMPONENTES DE PRÉ-VISUALIZAÇÃO ---
 
-const TemplatePreviewModal = ({ templateId, onClose, onSelect }: any) => {
+const TemplatePreviewModal = ({ templateId, onClose, onSelect, tenantData }: any) => {
   const [page, setPage] = useState('home');
   const template = TEMPLATE_OPTIONS.find(t => t.id === templateId);
 
@@ -323,7 +315,7 @@ const TemplatePreviewModal = ({ templateId, onClose, onSelect }: any) => {
 
       <div className="flex-1 overflow-y-auto bg-slate-100 p-8 sm:p-12 lg:p-20">
         <div className="max-w-[1440px] mx-auto min-h-full bg-white shadow-[0_40px_100px_rgba(0,0,0,0.2)] rounded-[3rem] overflow-hidden">
-          <PreviewEngine templateId={templateId} page={page} color={template.color} />
+          <PreviewEngine templateId={templateId} page={page} color={template.color} tenant={tenantData} />
         </div>
       </div>
     </div>
@@ -339,17 +331,50 @@ const PageTab = ({ active, onClick, label }: any) => (
   </button>
 );
 
-const PreviewEngine = ({ templateId, page, color }: any) => {
+const PreviewEngine = ({ templateId, page, color, tenant }: any) => {
   const dummyProps = [
     { id: 1, title: 'Apartamento T3 Centro Histórico', price: 450000, loc: 'Lisboa', img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
     { id: 2, title: 'Moradia de Luxo com Piscina', price: 1250000, loc: 'Cascais', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800' },
     { id: 3, title: 'Loft Industrial em Marvila', price: 320000, loc: 'Lisboa', img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800' },
   ];
 
+  const SharedFooter = () => (
+    <footer className="py-24 bg-white text-slate-400 border-t border-slate-100 mt-20">
+      <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-20">
+        <div className="col-span-1 md:col-span-2">
+          <div className="mb-8">
+            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain grayscale" /> : <span className="text-xl font-black text-[#1c2d51]">{tenant.nome}</span>}
+          </div>
+          <p className="text-sm max-w-sm font-medium leading-relaxed text-slate-400">
+            {tenant.slogan || 'O seu próximo capítulo começa aqui.'}
+          </p>
+        </div>
+        <div>
+          <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[9px]">Links</h4>
+          <ul className="space-y-3 text-xs font-bold">
+            <li className="hover:text-[#1c2d51] cursor-pointer">Início</li>
+            <li className="hover:text-[#1c2d51] cursor-pointer">Imóveis</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[9px]">Contacto</h4>
+          <ul className="space-y-3 text-xs font-bold leading-relaxed">
+            <li>{tenant.email}</li>
+            <li>{tenant.telefone}</li>
+          </ul>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-8 pt-12 mt-12 border-t border-slate-50 text-[9px] font-black uppercase tracking-widest flex justify-between">
+        <span>&copy; {new Date().getFullYear()} {tenant.nome}</span>
+        <span className="opacity-30">Powered by ImoSuite</span>
+      </div>
+    </footer>
+  );
+
   if (templateId === 'heritage') {
     const Navbar = () => (
       <nav className="h-20 border-b border-slate-100 px-12 flex items-center justify-between bg-white sticky top-0 z-50">
-        <span className="font-black text-xl text-[#1c2d51] tracking-tighter">Heritage Agency</span>
+        <span className="font-black text-xl text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
         <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
           <span>Início</span><span>Imóveis</span><span>Sobre</span><span>Contacto</span>
         </div>
@@ -357,28 +382,36 @@ const PreviewEngine = ({ templateId, page, color }: any) => {
     );
 
     if (page === 'home') return (
-      <div className="font-brand text-slate-900 animate-in fade-in duration-700">
+      <div className="font-brand text-slate-900 animate-in fade-in duration-700 min-h-full flex flex-col">
         <Navbar />
-        <header className="py-32 px-12 text-center bg-slate-50 border-b border-slate-100 relative overflow-hidden">
-           <h1 className="text-7xl font-black text-[#1c2d51] tracking-tighter leading-none mb-8 max-w-4xl mx-auto italic">Onde a tradição encontra o seu novo lar.</h1>
-           <p className="text-slate-500 max-w-xl mx-auto mb-12 font-medium">Mais de 20 anos a construir confiança no mercado imobiliário português.</p>
-        </header>
-        <main className="py-24 px-12 grid grid-cols-3 gap-10 max-w-7xl mx-auto">
-          {dummyProps.map(p => (
-            <div key={p.id} className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-               <div className="h-64 bg-slate-200 overflow-hidden"><img src={p.img} className="w-full h-full object-cover"/></div>
-               <div className="p-8">
-                  <div className="flex items-center gap-2 text-[8px] font-black uppercase text-slate-300 mb-2"><MapPin size={10}/> {p.loc}</div>
-                  <h4 className="font-black text-lg text-[#1c2d51] leading-tight mb-4">{p.title}</h4>
-                  <p className="font-black text-2xl text-[#1c2d51]">{formatCurrency(p.price)}</p>
-               </div>
-            </div>
-          ))}
-        </main>
+        <div className="flex-1">
+          <header className="py-32 px-12 text-center bg-slate-50 border-b border-slate-100 relative overflow-hidden">
+            <h1 className="text-7xl font-black text-[#1c2d51] tracking-tighter leading-none mb-8 max-w-4xl mx-auto italic">{tenant.slogan || 'Onde a tradição encontra o lar.'}</h1>
+            <p className="text-slate-500 max-w-xl mx-auto mb-12 font-medium">Confiança construída em cada m².</p>
+          </header>
+          <main className="py-24 px-12 grid grid-cols-3 gap-10 max-w-7xl mx-auto">
+            {dummyProps.map(p => (
+              <div key={p.id} className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                <div className="h-64 bg-slate-200 overflow-hidden"><img src={p.img} className="w-full h-full object-cover"/></div>
+                <div className="p-8">
+                    <div className="flex items-center gap-2 text-[8px] font-black uppercase text-slate-300 mb-2"><MapPin size={10}/> {p.loc}</div>
+                    <h4 className="font-black text-lg text-[#1c2d51] leading-tight mb-4">{p.title}</h4>
+                    <p className="font-black text-2xl text-[#1c2d51]">{formatCurrency(p.price)}</p>
+                </div>
+              </div>
+            ))}
+          </main>
+        </div>
+        <SharedFooter />
       </div>
     );
   }
-  return <div className="p-20 text-center font-brand text-slate-300 font-black uppercase text-sm tracking-widest">Layout de Preview em desenvolvimento.</div>;
+  return (
+    <div className="min-h-full flex flex-col">
+      <div className="flex-1 p-20 text-center font-brand text-slate-300 font-black uppercase text-sm tracking-widest">Layout de Preview em desenvolvimento.</div>
+      <SharedFooter />
+    </div>
+  );
 };
 
 const TabLink = ({ active, icon, label, tab }: any) => (
