@@ -18,6 +18,7 @@ import { generateAgencySlogan } from '../../services/geminiService';
 
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
+  { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Design Moderno e Limpo', color: '#357fb2' },
   { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo', color: '#000000' },
   { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico', color: '#2563eb' },
   { id: 'luxe', name: 'Luxe', icon: <Brush size={20}/>, desc: 'Artístico e Lifestyle', color: '#2D2926' },
@@ -243,7 +244,7 @@ const AdminSettings: React.FC = () => {
               </div>
 
               <div className="space-y-6 border-t pt-10">
-                <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Temas de Design</h3>
+                <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Catálogo de Templates (5 Estilos)</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {TEMPLATE_OPTIONS.map((tmpl) => (
                     <div key={tmpl.id} className={`group relative p-8 rounded-[2.5rem] border-2 transition-all ${localTenant.template_id === tmpl.id ? 'border-[#1c2d51] bg-[#1c2d51]/5' : 'border-slate-50 hover:border-slate-200 shadow-sm'}`}>
@@ -328,141 +329,206 @@ const PageTab = ({ active, onClick, label }: any) => (
   </button>
 );
 
-const PreviewEngine = ({ templateId, page, tenant }: any) => {
+const PreviewEngine = ({ templateId, tenant }: any) => {
   const dummyProps = [
     { id: 1, title: 'Apartamento T3 com Vista Mar', price: 385000, loc: 'Cascais e Estoril, Cascais', ref: 'REF001', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },
     { id: 2, title: 'Moradia V4 com Jardim e Piscina', price: 750000, loc: 'Madalena, Vila Nova de Gaia', ref: 'REF002', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800' },
     { id: 3, title: 'Moradia T5 com Vista Panorâmica', price: 1250000, loc: 'São Pedro de Penaferrim, Sintra', ref: 'REF004', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800' },
   ];
 
-  const SharedFooter = () => (
-    <footer className="py-24 bg-white text-slate-400 border-t border-slate-50 mt-20">
-      <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-20">
-        <div className="col-span-1 md:col-span-2">
-          <div className="mb-8">
-            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" /> : <span className="text-xl font-black text-[#1c2d51]">{tenant.nome}</span>}
+  // 1. HERITAGE (Classic, Dark Blue, Serif)
+  if (templateId === 'heritage') return (
+    <div className="font-brand text-slate-900">
+       <nav className="h-20 border-b border-slate-100 px-10 flex items-center justify-between bg-white">
+          <span className="font-black text-xl text-[#1c2d51] tracking-tighter">Heritage Agency</span>
+          <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400"><span>Início</span><span>Imóveis</span><span>Contacto</span></div>
+       </nav>
+       <header className="py-32 px-10 text-center bg-slate-50 border-b border-slate-100 relative">
+          <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+          <h1 className="text-7xl font-black text-[#1c2d51] tracking-tighter leading-[0.9] mb-8 max-w-4xl mx-auto font-heritage italic">Tradição & Confiança.</h1>
+          <p className="text-slate-400 text-sm mb-12 max-w-lg mx-auto font-medium uppercase tracking-widest">O seu próximo capítulo começa aqui.</p>
+          <div className="bg-white p-2 rounded-2xl shadow-2xl max-w-xl mx-auto flex gap-2 border border-slate-100">
+             <div className="flex-1 bg-slate-50 rounded-xl px-6 py-4 text-left text-slate-400 text-xs font-bold uppercase tracking-widest">Onde quer viver?</div>
+             <button className="bg-[#1c2d51] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl">Pesquisar</button>
           </div>
-          <p className="text-sm max-w-sm font-medium leading-relaxed text-slate-400">
-            {tenant.slogan || 'O seu próximo capítulo começa aqui.'}
-          </p>
-        </div>
-        <div>
-          <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[9px]">Links</h4>
-          <ul className="space-y-3 text-xs font-bold"><li>Início</li><li>Imóveis</li></ul>
-        </div>
-        <div>
-          <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[9px]">Contacto</h4>
-          <ul className="space-y-3 text-xs font-bold leading-relaxed"><li>{tenant.email}</li><li>{tenant.telefone}</li></ul>
-        </div>
-      </div>
-      <div className="max-w-7xl mx-auto px-8 pt-12 mt-12 border-t border-slate-50 text-[9px] font-black uppercase tracking-widest flex justify-between">
-        <span>&copy; 2024 {tenant.nome}</span><span className="opacity-30">Powered by ImoSuite</span>
-      </div>
-    </footer>
-  );
-
-  const ServiceSection = () => (
-    <section className="py-32 bg-slate-50/50 border-y border-slate-100">
-      <div className="max-w-7xl mx-auto px-8 text-center">
-        <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter mb-4">Os Nossos Serviços</h2>
-        <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest mb-16">Acompanhamento personalizado em todas as fases</p>
-        <div className="grid grid-cols-3 gap-10">
-          <div className="bg-white p-10 rounded-[2.5rem] text-left border border-slate-50 shadow-sm">
-             <div className="w-14 h-14 bg-blue-50 text-[#1c2d51] rounded-2xl flex items-center justify-center mb-6"><Building2 size={24}/></div>
-             <h4 className="text-xl font-black text-[#1c2d51] mb-3">Compra de Imóveis</h4>
-             <p className="text-slate-400 text-xs leading-relaxed">Encontramos o imóvel perfeito para si, seja para habitação ou investimento.</p>
+       </header>
+       <main className="py-32 px-10 max-w-7xl mx-auto">
+          <div className="flex justify-between items-end mb-20 border-b pb-8">
+             <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter font-heritage italic">Destaques</h2>
+             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-300">Curadoria exclusiva</span>
           </div>
-          <div className="bg-white p-10 rounded-[2.5rem] text-left border border-slate-50 shadow-sm">
-             <div className="w-14 h-14 bg-blue-50 text-[#1c2d51] rounded-2xl flex items-center justify-center mb-6"><Key size={24}/></div>
-             <h4 className="text-xl font-black text-[#1c2d51] mb-3">Arrendamento</h4>
-             <p className="text-slate-400 text-xs leading-relaxed">Gestão completa de arrendamento, desde a seleção à cobrança.</p>
-          </div>
-          <div className="bg-white p-10 rounded-[2.5rem] text-left border border-slate-50 shadow-sm">
-             <div className="w-14 h-14 bg-blue-50 text-[#1c2d51] rounded-2xl flex items-center justify-center mb-6"><Handshake size={24}/></div>
-             <h4 className="text-xl font-black text-[#1c2d51] mb-3">Venda de Imóveis</h4>
-             <p className="text-slate-400 text-xs leading-relaxed">Valorização e promoção para uma venda rápida e ao melhor preço.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-
-  const CTABanner = () => (
-    <section className="py-24 px-12 text-center text-white" style={{ background: tenant.cor_primaria }}>
-       <h3 className="text-5xl font-black tracking-tighter mb-6">Quer vender ou arrendar o seu imóvel?</h3>
-       <p className="text-white/70 mb-10 text-lg max-w-xl mx-auto">Contacte-nos para uma avaliação gratuita e descubra como podemos ajudá-lo.</p>
-       <div className="flex justify-center gap-4">
-          <button className="bg-[#1c2d51] px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl">Fale Connosco</button>
-          <button className="bg-white text-[#1c2d51] px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest">Saber Mais</button>
-       </div>
-    </section>
-  );
-
-  const Navbar = () => (
-    <nav className="h-20 border-b border-slate-50 px-12 flex items-center justify-between bg-white sticky top-0 z-50">
-      <span className="font-black text-xl text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
-      <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
-        <span>Início</span><span>Imóveis</span><span>Serviços</span>
-      </div>
-    </nav>
-  );
-
-  return (
-    <div className="font-brand text-slate-900 animate-in fade-in duration-700 min-h-full flex flex-col bg-white">
-      <Navbar />
-      <div className="flex-1">
-        <header className="py-24 px-12 text-center bg-slate-50 relative overflow-hidden border-b border-slate-50">
-          <h1 className="text-7xl font-black text-[#1c2d51] tracking-tighter leading-none mb-8 max-w-4xl mx-auto">{tenant.slogan || 'Onde a tradição encontra o lar.'}</h1>
-          <div className="max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-xl flex gap-2">
-             <div className="flex-1 p-4 text-left border-r border-slate-50 text-xs font-bold text-slate-300">Localidade ou Tipologia</div>
-             <button className="bg-[#1c2d51] text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase">Pesquisar</button>
-          </div>
-        </header>
-
-        <main className="py-32 px-12 max-w-7xl mx-auto">
-          <div className="flex justify-between items-end mb-16">
-             <div>
-                <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter leading-none">Imóveis em Destaque</h2>
-                <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest mt-2">Melhores oportunidades do mercado</p>
-             </div>
-             <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-slate-200 px-6 py-3 rounded-xl">Ver todos <ChevronRight size={14}/></button>
-          </div>
-
           <div className="grid grid-cols-3 gap-12">
             {dummyProps.map(p => (
-              <div key={p.id} className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all border border-slate-50 group">
-                <div className="h-64 bg-slate-200 relative overflow-hidden">
-                   <img src={p.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"/>
-                   <div className="absolute top-4 left-4 flex gap-2">
-                      <div className="bg-[#1c2d51] text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase">Venda</div>
-                      <div className="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase">Destaque</div>
-                   </div>
-                   <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end text-white">
-                      <span className="text-xl font-black">{formatCurrency(p.price)}</span>
-                      <span className="text-[7px] font-black opacity-60 uppercase">Ref: {p.ref}</span>
-                   </div>
-                </div>
-                <div className="p-8">
-                    <h4 className="font-black text-lg text-[#1c2d51] leading-tight mb-2">{p.title}</h4>
-                    <div className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-300 mb-6"><MapPin size={10}/> {p.loc}</div>
-                    <div className="flex gap-4 pt-6 border-t border-slate-50 text-slate-400">
-                       <span className="flex items-center gap-2 text-[9px] font-black">T3</span>
-                       <span className="flex items-center gap-1.5"><Bed size={14}/> <span className="text-[9px] font-black">3</span></span>
-                       <span className="flex items-center gap-1.5"><Bath size={14}/> <span className="text-[9px] font-black">2</span></span>
-                       <span className="flex items-center gap-1.5"><Square size={14}/> <span className="text-[9px] font-black">125m²</span></span>
-                    </div>
-                </div>
+              <div key={p.id} className="group cursor-pointer">
+                 <div className="aspect-[4/5] bg-slate-200 rounded-[2.5rem] overflow-hidden mb-6 shadow-sm group-hover:shadow-2xl transition-all duration-700">
+                    <img src={p.img} className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" />
+                 </div>
+                 <h4 className="font-black text-xl text-[#1c2d51] mb-1 font-heritage italic tracking-tight">{p.title}</h4>
+                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{p.loc}</p>
+                 <p className="text-[#1c2d51] font-black text-lg mt-3">{formatCurrency(p.price)}</p>
               </div>
             ))}
           </div>
-        </main>
-      </div>
-
-      <ServiceSection />
-      <CTABanner />
-      <SharedFooter />
+       </main>
     </div>
   );
+
+  // 2. CANVAS (Modern, Clean, Blue/White)
+  if (templateId === 'canvas') return (
+    <div className="bg-white font-brand text-slate-900">
+       <nav className="h-20 px-12 flex items-center justify-between border-b border-slate-50">
+          <div className="w-10 h-10 bg-blue-500 rounded-2xl"></div>
+          <div className="flex gap-12 font-bold text-sm text-slate-500"><span>Home</span><span>Catalogue</span><span>Services</span></div>
+          <button className="bg-slate-900 text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest">Connect</button>
+       </nav>
+       <header className="grid grid-cols-2 gap-20 p-20 items-center">
+          <div className="space-y-8">
+             <div className="inline-block bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">Real Estate Platform</div>
+             <h1 className="text-8xl font-black text-slate-900 tracking-tighter leading-[0.9]">{tenant.nome}.</h1>
+             <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-sm">{tenant.slogan || 'Minimalist approach to property search.'}</p>
+             <div className="flex items-center gap-6">
+                <button className="bg-blue-500 text-white px-10 py-5 rounded-3xl font-black text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-all">Explore Now</button>
+                <div className="flex items-center gap-2 font-black text-xs uppercase tracking-widest text-slate-400 group cursor-pointer hover:text-blue-500">View Demo <ArrowRight size={16}/></div>
+             </div>
+          </div>
+          <div className="aspect-square bg-slate-100 rounded-[4rem] overflow-hidden rotate-3 hover:rotate-0 transition-transform duration-700 shadow-2xl">
+             <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1000" className="w-full h-full object-cover" />
+          </div>
+       </header>
+       <main className="p-20">
+          <div className="grid grid-cols-3 gap-8">
+             {dummyProps.map(p => (
+               <div key={p.id} className="bg-slate-50 p-4 rounded-[3rem] border border-transparent hover:bg-white hover:border-blue-100 hover:shadow-2xl transition-all group">
+                  <div className="aspect-[16/10] rounded-[2rem] overflow-hidden mb-6"><img src={p.img} className="w-full h-full object-cover" /></div>
+                  <div className="px-4 pb-4">
+                    <h4 className="font-black text-lg text-slate-900 mb-2">{p.title}</h4>
+                    <div className="flex justify-between items-center"><span className="text-blue-500 font-black">{formatCurrency(p.price)}</span><span className="text-slate-300 font-bold text-[9px] uppercase tracking-widest">{p.ref}</span></div>
+                  </div>
+               </div>
+             ))}
+          </div>
+       </main>
+    </div>
+  );
+
+  // 3. PRESTIGE (Luxury, Minimal, Grayscale focus)
+  if (templateId === 'prestige') return (
+    <div className="bg-[#080808] text-white min-h-full font-brand selection:bg-white selection:text-black">
+       <nav className="h-24 px-20 flex items-center justify-between absolute w-full z-10">
+          <span className="text-2xl font-black tracking-[0.4em] uppercase">PRESTIGE</span>
+          <div className="flex gap-16 text-[9px] font-black uppercase tracking-[0.4em] opacity-40"><span>Collection</span><span>About</span><span>Contact</span></div>
+       </nav>
+       <header className="h-screen flex items-center justify-center text-center px-20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
+          <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1600" className="absolute inset-0 w-full h-full object-cover -z-10 opacity-30 grayscale" />
+          <div className="relative space-y-12 animate-in fade-in zoom-in-95 duration-1000">
+             <p className="text-[10px] font-black uppercase tracking-[1em] opacity-40">Exclusivity Defined</p>
+             <h1 className="text-[12rem] font-black tracking-tighter leading-[0.7] opacity-90 uppercase italic">Luxury.</h1>
+             <div className="w-px h-32 bg-white/20 mx-auto mt-20"></div>
+             <p className="text-white/40 text-sm font-light uppercase tracking-[0.5em] mt-10">Portugal's finest estates</p>
+          </div>
+       </header>
+       <main className="py-60 px-20 max-w-7xl mx-auto space-y-80">
+          {dummyProps.slice(0,2).map((p, i) => (
+            <div key={p.id} className={`flex items-center gap-32 ${i % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
+               <div className="flex-1 aspect-[4/5] bg-white/5 overflow-hidden group">
+                  <img src={p.img} className="w-full h-full object-cover grayscale opacity-50 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" />
+               </div>
+               <div className="flex-1 space-y-10">
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">The Reserve &bull; 2024</span>
+                  <h3 className="text-7xl font-black tracking-tighter uppercase leading-none">{p.title}</h3>
+                  <p className="text-white/40 text-xl font-light italic leading-relaxed">A sanctuary of pure architectural brilliance and natural harmony.</p>
+                  <div className="flex items-center gap-6"><div className="w-20 h-px bg-white/20"></div><span className="font-black text-lg tracking-widest">{formatCurrency(p.price)}</span></div>
+               </div>
+            </div>
+          ))}
+       </main>
+    </div>
+  );
+
+  // 4. SKYLINE (Urban, Tech, Vibrant Blue)
+  if (templateId === 'skyline') return (
+    <div className="bg-[#f0f4f8] font-brand text-[#1a2b3c]">
+       <nav className="h-20 bg-white border-b border-slate-200 px-12 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-600/30">S</div>
+             <span className="font-black text-2xl tracking-tighter">Skyline</span>
+          </div>
+          <div className="flex gap-8 font-black text-[10px] uppercase tracking-widest text-slate-400"><span>City</span><span>Investment</span><span>Rent</span></div>
+          <button className="bg-blue-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all">Submit Lead</button>
+       </nav>
+       <header className="bg-white border-b border-slate-100 py-24 px-12 grid grid-cols-2 gap-20 items-center">
+          <div className="space-y-8">
+             <div className="bg-blue-50 text-blue-600 text-[9px] font-black px-4 py-2 rounded-full uppercase inline-block shadow-sm">High Performance Portfolio</div>
+             <h1 className="text-7xl font-black tracking-tighter leading-[0.95] text-[#1a2b3c]">Real-time Urban Living.</h1>
+             <div className="p-1.5 bg-slate-100 rounded-2xl flex gap-1 shadow-inner max-w-sm">
+                <input type="text" placeholder="Neighborhood..." className="flex-1 bg-transparent border-none outline-none px-4 font-bold text-sm" />
+                <button className="bg-white p-3 rounded-xl shadow-md text-blue-600"><Search size={18}/></button>
+             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+             <div className="aspect-[4/3] bg-slate-200 rounded-3xl overflow-hidden shadow-xl"><img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600" className="w-full h-full object-cover" /></div>
+             <div className="aspect-[4/3] bg-slate-200 rounded-3xl overflow-hidden shadow-xl mt-12"><img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600" className="w-full h-full object-cover" /></div>
+          </div>
+       </header>
+       <main className="p-20 grid grid-cols-4 gap-6 max-w-8xl mx-auto">
+          {dummyProps.concat(dummyProps[0]).map((p, i) => (
+            <div key={i} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-xl hover:-translate-y-2 transition-all">
+               <div className="aspect-video bg-slate-50 rounded-[1.5rem] mb-6 overflow-hidden relative">
+                  <img src={p.img} className="w-full h-full object-cover" />
+                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-blue-600 px-3 py-1 rounded-full text-[8px] font-black uppercase">Urban</div>
+               </div>
+               <h4 className="font-black text-sm mb-1">{p.title}</h4>
+               <p className="text-slate-400 text-[9px] font-bold uppercase mb-4">{p.loc}</p>
+               <div className="flex justify-between items-center border-t border-slate-50 pt-4"><span className="text-blue-600 font-black text-base">{formatCurrency(p.price)}</span><ArrowUpRight size={18} className="text-slate-200"/></div>
+            </div>
+          ))}
+       </main>
+    </div>
+  );
+
+  // 5. LUXE (Artistic, Lifestyle, Earthy Tones)
+  if (templateId === 'luxe') return (
+    <div className="bg-[#FAF9F6] text-[#2D2926] font-brand selection:bg-[#2D2926] selection:text-white">
+       <nav className="h-24 px-12 flex items-center justify-between absolute w-full">
+          <span className="text-3xl font-black tracking-widest italic font-heritage">Luxe</span>
+          <div className="flex gap-12 text-[9px] font-black uppercase tracking-[0.4em] opacity-30"><span>Curated</span><span>Spaces</span><span>Atelier</span></div>
+       </nav>
+       <header className="h-screen flex items-center px-24 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-3/4 h-full bg-slate-100 z-0 overflow-hidden">
+             <img src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200" className="w-full h-full object-cover opacity-90 scale-105" />
+          </div>
+          <div className="relative z-10 space-y-10 max-w-3xl">
+             <div className="flex items-center gap-6 text-[#2D2926]/40 text-[9px] font-black uppercase tracking-[0.6em]">
+                <div className="w-20 h-px bg-[#2D2926]/20"></div> Estética Imobiliária
+             </div>
+             <h1 className="text-[10rem] font-black tracking-tighter leading-[0.8] font-heritage">Espaços<br/><span className="italic font-light ml-40">com Alma.</span></h1>
+             <p className="text-lg text-[#2D2926]/60 font-medium leading-relaxed max-w-sm ml-40">Curadoria exclusiva de imóveis com história e design de autor.</p>
+          </div>
+       </header>
+       <main className="py-60 px-24 grid grid-cols-2 gap-40 items-start max-w-7xl mx-auto">
+          {dummyProps.slice(0,2).map((p, i) => (
+            <div key={p.id} className={`flex flex-col ${i === 1 ? 'mt-60' : ''}`}>
+               <div className="aspect-[3/4] rounded-[5rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.1)] mb-12 relative group">
+                  <img src={p.img} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-1000" />
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+               </div>
+               <div className="px-10 space-y-6">
+                  <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-[0.5em] text-[#2D2926]/30">
+                     <span>{p.loc.split(',')[1]} &bull; Art House</span>
+                     <Heart size={16} strokeWidth={1} />
+                  </div>
+                  <h3 className="text-5xl font-black tracking-tighter font-heritage italic leading-none">{p.title}</h3>
+                  <div className="w-12 h-0.5 bg-[#2D2926]/10"></div>
+                  <p className="text-2xl font-light text-[#2D2926]/80">{formatCurrency(p.price)}</p>
+               </div>
+            </div>
+          ))}
+       </main>
+    </div>
+  );
+
+  return null;
 };
 
 const TabLink = ({ active, icon, label, tab }: any) => (
