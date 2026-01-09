@@ -27,8 +27,9 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
   const prompt = `Gera uma descrição para o seguinte imóvel: ${JSON.stringify(ctx)}`;
 
   try {
+    // Using gemini-3-pro-preview for complex reasoning and high-quality copywriting
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         systemInstruction,
@@ -51,6 +52,7 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
             },
           },
           required: ["curta", "completa", "hashtags"],
+          propertyOrdering: ["curta", "completa", "hashtags"],
         },
       },
     });
@@ -75,7 +77,7 @@ export const generateAgencySlogan = async (agencyName: string): Promise<string> 
         systemInstruction: "És um especialista em branding imobiliário em Portugal."
       }
     });
-    // Use .text property directly
+    // Use .text property directly as per guidelines
     return response.text?.trim().replace(/"/g, '') || "A sua agência de confiança.";
   } catch { 
     return "Líderes em soluções imobiliárias."; 

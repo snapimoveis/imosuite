@@ -18,7 +18,7 @@ const Footer: React.FC = () => {
           <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-xs">Produto</h4>
           <ul className="space-y-4 text-sm font-bold">
             <li><Link to="/demo" className="hover:text-[#1c2d51] transition-colors">Demo</Link></li>
-            <li><a href="/#funcionalidades" className="hover:text-[#1c2d51] transition-colors">Funcionalidades</a></li>
+            <li><Link to="/funcionalidades" className="hover:text-[#1c2d51] transition-colors">Funcionalidades</Link></li>
             <li><Link to="/planos" className="hover:text-[#1c2d51] transition-colors">Preços</Link></li>
           </ul>
         </div>
@@ -27,8 +27,8 @@ const Footer: React.FC = () => {
           <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-xs">Empresa</h4>
           <ul className="space-y-4 text-sm font-bold">
             <li><a href="#" className="hover:text-[#1c2d51] transition-colors">Sobre nós</a></li>
-            <li><a href="#" className="hover:text-[#1c2d51] transition-colors">Privacidade</a></li>
-            <li><a href="#" className="hover:text-[#1c2d51] transition-colors">Termos de Uso</a></li>
+            <li><Link to="/privacidade" className="hover:text-[#1c2d51] transition-colors">Privacidade</Link></li>
+            <li><Link to="/termos" className="hover:text-[#1c2d51] transition-colors">Termos de Uso</Link></li>
           </ul>
         </div>
       </div>

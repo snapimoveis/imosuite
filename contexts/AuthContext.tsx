@@ -1,7 +1,8 @@
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-// Modular Firestore imports for authentication state management
-import { doc, onSnapshot } from 'firebase/firestore';
+/* Fixed named imports from firebase/firestore */
+import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from '../lib/firebase';
 
 interface UserProfile {

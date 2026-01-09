@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-// Modular Firestore imports for user document updates
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+/* Fixed modular Firestore imports */
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { updateProfile } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
 import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Camera, Smartphone } from 'lucide-react';

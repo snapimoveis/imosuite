@@ -1,4 +1,5 @@
-// Standard modular Firestore imports for version 9+
+
+/* Fixed modular Firestore imports */
 import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";
@@ -28,10 +29,10 @@ export const PropertyService = {
     try {
       const propertiesRef = collection(db, "tenants", tenantId, "properties");
       const snapshot = await getDocs(propertiesRef);
-      return snapshot.docs.map(doc => {
-        const data = doc.data() as any;
+      return snapshot.docs.map(propertyDoc => {
+        const data = propertyDoc.data() as any;
         return { 
-          id: doc.id, 
+          id: propertyDoc.id, 
           ...data,
           caracteristicas: Array.isArray(data.caracteristicas) ? data.caracteristicas : []
         } as Imovel;

@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
-// Modular Firestore imports for team member listing
-import { collection, getDocs, query, where } from 'firebase/firestore';
+/* Fixed modular Firestore imports */
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -19,7 +20,7 @@ const AdminUsers: React.FC = () => {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("tenantId", "==", profile.tenantId));
         const snapshot = await getDocs(q);
-        setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })));
+        setUsers(snapshot.docs.map(userDoc => ({ id: userDoc.id, ...(userDoc.data() as any) })));
       } catch (err) {
         console.error("Erro ao carregar equipa:", err);
       } finally {

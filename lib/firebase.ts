@@ -1,6 +1,7 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-// Standard modular Firestore import from the official package for version 9+
+/* Fixed modular import from firebase/firestore */
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {

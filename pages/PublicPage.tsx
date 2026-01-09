@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// Fixed: Ensured named imports are correctly resolved from the firebase/firestore package
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+/* Fixed modular Firestore imports */
+import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../lib/firebase';
 import { Tenant, CMSPage, MenuItem } from '../types';
 import { Loader2, Building2, ChevronLeft, Menu, X, Facebook, Instagram, Linkedin } from 'lucide-react';
