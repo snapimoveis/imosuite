@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase.ts';
 import { Tenant, Imovel } from '../types';
 import { 
@@ -22,6 +22,8 @@ const PublicPortal: React.FC = () => {
       if (!slug) return;
       try {
         let tData: Tenant | null = null;
+        
+        // 1. Tentar encontrar agência pelo slug ou ID
         const tRef = collection(db, "tenants");
         const tQuery = query(tRef, where("slug", "==", slug), limit(1));
         const tSnap = await getDocs(tQuery);
@@ -42,11 +44,21 @@ const PublicPortal: React.FC = () => {
           root.style.setProperty('--primary', tData.cor_primaria);
           root.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
 
+          // 2. Carregar Imóveis (Removido orderBy do Firestore para evitar erro de índice)
           const pRef = collection(db, "tenants", tData.id, "properties");
-          const highlightQuery = query(pRef, where("publicacao.publicar_no_site", "==", true), orderBy("publicacao.destaque", "desc"), limit(9));
-          let pSnap = await getDocs(highlightQuery);
+          const pQuery = query(pRef, where("publicacao.publicar_no_site", "==", true), limit(50));
+          const pSnap = await getDocs(pQuery);
           
-          setProperties(pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel)));
+          const allProps = pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel));
+          
+          // 3. Ordenar manualmente: Destaques primeiro, depois data de criação
+          const sorted = allProps.sort((a, b) => {
+            if (a.publicacao?.destaque && !b.publicacao?.destaque) return -1;
+            if (!a.publicacao?.destaque && b.publicacao?.destaque) return 1;
+            return 0;
+          }).slice(0, 9);
+
+          setProperties(sorted);
         }
       } catch (err) {
         console.error("Erro ao carregar portal:", err);
@@ -60,7 +72,7 @@ const PublicPortal: React.FC = () => {
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-white">
       <Loader2 className="animate-spin text-slate-200 mb-4" size={48} />
-      <p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A carregar a melhor experiência...</p>
+      <p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A sincronizar portefólio...</p>
     </div>
   );
 
@@ -121,10 +133,14 @@ const PublicPortal: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {properties.map(p => (
+          {properties.length === 0 ? (
+            <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-100 rounded-[3rem]">
+              <p className="text-slate-300 font-black uppercase text-xs tracking-widest">Nenhum imóvel disponível de momento</p>
+            </div>
+          ) : properties.map(p => (
             <Link key={p.id} to={`/agencia/${tenant.slug || tenant.id}/imovel/${p.slug}`} className="group bg-white rounded-[2rem] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full border border-slate-50">
               <div className="relative h-72 overflow-hidden bg-slate-100">
-                <img src={p.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                <img src={p.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={p.titulo} />
                 
                 {/* Badges do Anúncio */}
                 <div className="absolute top-5 left-5 flex gap-2">
@@ -147,10 +163,10 @@ const PublicPortal: React.FC = () => {
                 
                 {/* Atributos do Imóvel */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3 py-6 border-t border-slate-50 mb-auto">
-                   <div className="flex items-center gap-2 text-slate-500"><span className="text-[10px] font-black">{p.tipologia}</span></div>
-                   <div className="flex items-center gap-2 text-slate-500"><Bed size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.quartos}</span></div>
-                   <div className="flex items-center gap-2 text-slate-500"><Bath size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.casas_banho}</span></div>
-                   <div className="flex items-center gap-2 text-slate-500"><Square size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.areas?.area_util_m2}m²</span></div>
+                   <div className="flex items-center gap-2 text-slate-500"><span className="text-[10px] font-black">{p.tipologia || 'T?'}</span></div>
+                   <div className="flex items-center gap-2 text-slate-500"><Bed size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.quartos || 0}</span></div>
+                   <div className="flex items-center gap-2 text-slate-500"><Bath size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.casas_banho || 0}</span></div>
+                   <div className="flex items-center gap-2 text-slate-500"><Square size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.areas?.area_util_m2 || 0}m²</span></div>
                    {p.divisoes?.garagem?.tem && <div className="flex items-center gap-2 text-slate-500"><Car size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.garagem?.lugares}</span></div>}
                 </div>
 
@@ -215,7 +231,7 @@ const PublicPortal: React.FC = () => {
         </div>
         <div className="max-w-7xl mx-auto px-8 pt-16 mt-16 border-t border-slate-50 text-[10px] font-black uppercase tracking-widest flex justify-between items-center text-slate-300">
           <span>&copy; {new Date().getFullYear()} {tenant.nome}.</span>
-          <span className="flex items-center gap-1.5 opacity-40">Powered by ImoSuite</span>
+          <span className="flex items-center gap-1.5 opacity-40">Powered by <Building2 size={12}/> ImoSuite</span>
         </div>
       </footer>
     </div>
