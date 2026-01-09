@@ -3,54 +3,33 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
 /**
  * Gera descrições profissionais para imóveis usando o Gemini 3 Flash.
+ * Chave obtida via process.env.API_KEY injetada no build/runtime.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
-  // Inicialização obrigatória usando a variável de ambiente injetada
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("Configuração da IA em falta (API_KEY). Verifique as variáveis de ambiente no Vercel.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const propertyContext = {
     titulo: property.titulo,
-    ref: property.ref,
     tipo: property.tipo_imovel,
     tipologia: property.tipologia,
-    estado: property.estado_conservacao,
-    operacao: property.operacao,
-    arrendamento_tipo: property.arrendamento_tipo,
+    concelho: property.localizacao?.concelho,
+    distrito: property.localizacao?.distrito,
     preco: property.financeiro?.preco_venda || property.financeiro?.preco_arrendamento,
-    area_util: property.areas?.area_util_m2,
-    divisoes: property.divisoes,
-    localizacao: {
-      concelho: property.localizacao?.concelho,
-      distrito: property.localizacao?.distrito,
-      expor_morada: property.localizacao?.expor_morada
-    },
-    caracteristicas: property.caracteristicas || [],
-    certificado_energetico: property.certificacao?.certificado_energetico
+    caracteristicas: property.caracteristicas || []
   };
 
   const prompt = `
-    És um especialista em marketing imobiliário em Portugal. Escreves descrições persuasivas, realistas e conformes, sem inventar características.
-
-    Tarefa:
-    Gerar 2 versões de texto para um anúncio imobiliário:
-    1) Descrição curta (até 350 caracteres)
-    2) Descrição completa (600–1200 caracteres) em português de Portugal, com tom comercial profissional.
-
-    Regras:
-    - NÃO inventar dados. Se algo não estiver nos dados, não mencionar.
-    - NÃO prometer garantias (“o melhor”, “imperdível”) sem suporte.
-    - Se certificado energético estiver ausente ou for "Em preparação", escrever “Certificado energético: a confirmar”.
-    - Se morada não for para expor, não mencionar rua/porta; usar apenas zona (freguesia/concelho).
-    - Se operação for arrendamento, mencionar tipo de arrendamento (residencial/temporário/férias) e condições fornecidas (caução, despesas).
-    - Incluir CTA final (“Agende a sua visita” / “Peça informações”).
-    - Otimizar para SEO com palavras naturais (tipologia + concelho + tipo de imóvel), sem keyword stuffing.
-    - Estrutura da descrição completa:
-      - Abertura com benefício principal
-      - 3–6 bullets de destaques
-      - Parágrafo final com localização (zona) + CTA
-
-    Dados do imóvel (JSON):
-    ${JSON.stringify(propertyContext)}
+    És um redator imobiliário experiente em Portugal. 
+    Gera uma descrição curta (até 350 carac.) e uma completa (Markdown) para este imóvel.
+    Utiliza português de Portugal (PT-PT).
+    
+    Dados: ${JSON.stringify(propertyContext)}
   `;
 
   try {
@@ -62,19 +41,9 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            curta: {
-              type: Type.STRING,
-              description: 'Resumo comercial curto.',
-            },
-            completa: {
-              type: Type.STRING,
-              description: 'Descrição completa detalhada.',
-            },
-            hashtags_opcionais: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: 'Hashtags imobiliárias sugeridas.',
-            },
+            curta: { type: Type.STRING },
+            completa: { type: Type.STRING },
+            hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
           required: ["curta", "completa"],
         },
@@ -85,28 +54,26 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
     return {
       curta: result.curta || "",
       completa: result.completa || "",
-      hashtags: result.hashtags_opcionais || []
+      hashtags: result.hashtags || []
     };
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    throw new Error("Erro ao ligar à IA. Certifique-se que a API Key está correta no Vercel.");
+  } catch (error: any) {
+    console.error("Erro Gemini:", error);
+    throw new Error(error.message || "Erro na comunicação com a IA.");
   }
 };
 
-/**
- * Gera um slogan para a agência.
- */
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Gere um slogan comercial curto em português de Portugal para a imobiliária "${agencyName}".`;
-
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return "A sua imobiliária de confiança.";
+  
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: prompt,
+      contents: `Gere um slogan curto para a imobiliária "${agencyName}" em Portugal. Retorne apenas o texto.`,
     });
-    return response.text?.trim() || "A sua imobiliária de confiança.";
+    return response.text?.trim() || "Excelência no mercado imobiliário.";
   } catch {
-    return "Excelência no mercado imobiliário.";
+    return "A sua imobiliária de confiança.";
   }
 };
