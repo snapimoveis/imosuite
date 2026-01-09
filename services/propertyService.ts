@@ -57,7 +57,7 @@ export const PropertyService = {
     
     const propertiesRef = collection(db, "tenants", tenantId, "properties");
     
-    // Sincroniza tipologia se necessário para evitar erros de schema/regras
+    // Crucial: Incluir as imagens no documento principal para visualização rápida
     const finalData = prepareData({
       ...propertyData,
       tipology: propertyData.tipologia || 'T0',
@@ -65,11 +65,17 @@ export const PropertyService = {
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
       tracking: { views: 0, favorites: 0 },
-      caracteristicas: propertyData.caracteristicas || []
+      caracteristicas: propertyData.caracteristicas || [],
+      media: {
+        cover_media_id: mediaItems.find(m => m.is_cover)?.id || mediaItems[0]?.id || null,
+        total: mediaItems.length,
+        items: mediaItems // Guardamos no doc principal para os cards funcionarem
+      }
     }, false);
 
     const docRef = await addDoc(propertiesRef, finalData);
 
+    // Também guardamos na sub-coleção para gestão granular
     if (mediaItems.length > 0) {
       const mediaColRef = collection(db, "tenants", tenantId, "properties", docRef.id, "media");
       const batch = writeBatch(db);
@@ -91,9 +97,18 @@ export const PropertyService = {
     if (!tenantId || !propertyId) return;
     
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
+    
     const cleanUpdates = prepareData({
       ...updates,
-      tipology: updates.tipologia || 'T0'
+      tipology: updates.tipologia || 'T0',
+      // Se houver novas fotos, atualizamos o resumo no doc principal
+      ...(mediaItems && {
+        media: {
+          cover_media_id: mediaItems.find(m => m.is_cover)?.id || mediaItems[0]?.id || null,
+          total: mediaItems.length,
+          items: mediaItems
+        }
+      })
     }, true);
     
     await updateDoc(propertyRef, { ...cleanUpdates, updated_at: serverTimestamp() });

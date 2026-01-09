@@ -18,44 +18,46 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
     publico_alvo: property.operacao === 'venda' ? 'Investidores ou Famílias para habitação própria' : 'Arrendatários de longo prazo ou temporários'
   };
 
-  const prompt = `
-    Atua como um redator imobiliário premium em Portugal. 
-    Gera uma descrição para o seguinte imóvel:
-    ${JSON.stringify(ctx)}
-    
-    Requisitos Obrigatórios:
-    - Linguagem: Português de Portugal (PT-PT).
-    - Tom: Profissional e sofisticado.
-    - Estrutura: Destaca a localização (${ctx.local}) e extras.
-  `;
+  const systemInstruction = `Atua como um copywriter imobiliário de luxo em Portugal. 
+  O teu objetivo é criar descrições persuasivas, elegantes e profissionais. 
+  Utiliza Português de Portugal (PT-PT) exclusivamente (ex: 'casa de banho' em vez de 'banheiro', 'arrendamento' em vez de 'aluguel').
+  Foca-te no estilo de vida e nas vantagens competitivas do imóvel.`;
+
+  const prompt = `Gera uma descrição para o seguinte imóvel: ${JSON.stringify(ctx)}`;
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
+        systemInstruction,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            curta: { type: Type.STRING },
-            completa: { type: Type.STRING },
-            hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            curta: { 
+              type: Type.STRING, 
+              description: "Uma frase curta e impactante para listagens." 
+            },
+            completa: { 
+              type: Type.STRING, 
+              description: "Descrição detalhada com parágrafos bem estruturados." 
+            },
+            hashtags: { 
+              type: Type.ARRAY, 
+              items: { type: Type.STRING },
+              description: "Hashtags relevantes para redes sociais."
+            },
           },
-          required: ["curta", "completa"],
+          required: ["curta", "completa", "hashtags"],
         },
       },
     });
     
-    const result = JSON.parse(response.text || "{}");
-    return {
-      curta: result.curta || "",
-      completa: result.completa || "",
-      hashtags: result.hashtags || []
-    };
+    return JSON.parse(response.text || "{}");
   } catch (error: any) {
     console.error("Gemini AI Error:", error);
-    throw new Error("Falha na comunicação com a IA. Verifique a configuração da chave.");
+    throw new Error("Falha ao gerar texto com IA. Verifique os dados do imóvel.");
   }
 };
 
@@ -65,6 +67,9 @@ export const generateAgencySlogan = async (agencyName: string): Promise<string> 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Gere um slogan comercial curto e impactante (PT-PT) para a imobiliária "${agencyName}". Apenas o texto.`,
+      config: {
+        systemInstruction: "És um especialista em branding imobiliário em Portugal."
+      }
     });
     return response.text?.trim().replace(/"/g, '') || "A sua agência de confiança.";
   } catch { 
