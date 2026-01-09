@@ -5,7 +5,8 @@ import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from '
 import { db } from '../lib/firebase.ts';
 import { Tenant, Imovel } from '../types';
 import { 
-  Loader2, Building2, ChevronRight, MessageSquare, Mail, Phone, MapPin, Globe
+  Loader2, Building2, ChevronRight, MessageSquare, Mail, Phone, MapPin, 
+  Globe, Bed, Bath, Square, Car, ArrowRight, Handshake, Key
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
@@ -42,13 +43,9 @@ const PublicPortal: React.FC = () => {
           root.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
 
           const pRef = collection(db, "tenants", tData.id, "properties");
-          const highlightQuery = query(pRef, where("publicacao.destaque", "==", true), where("publicacao.publicar_no_site", "==", true), limit(9));
+          const highlightQuery = query(pRef, where("publicacao.publicar_no_site", "==", true), orderBy("publicacao.destaque", "desc"), limit(9));
           let pSnap = await getDocs(highlightQuery);
           
-          if (pSnap.empty) {
-            const recentQuery = query(pRef, where("publicacao.publicar_no_site", "==", true), orderBy("created_at", "desc"), limit(9));
-            pSnap = await getDocs(recentQuery);
-          }
           setProperties(pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel)));
         }
       } catch (err) {
@@ -60,167 +57,177 @@ const PublicPortal: React.FC = () => {
     fetchData();
   }, [slug]);
 
-  const handleContactClick = (e: React.MouseEvent, propertySlug: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigate(`/agencia/${tenant?.slug || tenant?.id}/imovel/${propertySlug}?contact=true`);
-  };
-
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-white">
       <Loader2 className="animate-spin text-slate-200 mb-4" size={48} />
-      <p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A preparar o seu portal...</p>
+      <p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A carregar a melhor experiência...</p>
     </div>
   );
 
   if (!tenant) return (
     <div className="h-screen flex flex-col items-center justify-center p-10 text-center font-brand">
-      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
-        <Building2 size={40} className="text-slate-200"/>
-      </div>
+      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6"><Building2 size={40} className="text-slate-200"/></div>
       <h2 className="text-3xl font-black text-[#1c2d51] mb-2 tracking-tighter">Portal Indisponível</h2>
-      <p className="text-slate-400 mb-8 max-w-xs font-medium">A agência não existe ou o link está incorreto.</p>
-      <Link to="/" className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl hover:scale-105 transition-all">
-        Voltar ao Início
-      </Link>
+      <Link to="/" className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl hover:scale-105 transition-all">Voltar ao Início</Link>
     </div>
   );
 
   return (
-    <div className="bg-[#FDFCFB] font-brand min-h-screen flex flex-col" style={{ '--primary': tenant.cor_primaria } as any}>
-      <nav className="h-20 px-8 flex items-center justify-between border-b border-slate-100 bg-white sticky top-0 z-50">
+    <div className="bg-white font-brand min-h-screen flex flex-col" style={{ '--primary': tenant.cor_primaria } as any}>
+      {/* Navegação */}
+      <nav className="h-20 px-8 flex items-center justify-between border-b border-slate-50 bg-white sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          {tenant.logo_url ? (
-            <img src={tenant.logo_url} className="h-10 w-auto object-contain" alt={tenant.nome} />
-          ) : (
-            <span className="text-xl font-black text-[var(--primary)] tracking-tighter">{tenant.nome}</span>
-          )}
+          {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" alt={tenant.nome} /> : <span className="text-xl font-black text-[var(--primary)] tracking-tighter">{tenant.nome}</span>}
         </div>
-        <div className="hidden md:flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
+        <div className="hidden md:flex gap-10 text-[11px] font-black uppercase tracking-widest text-slate-400">
           <a href="#" className="hover:text-[var(--primary)] transition-colors">Início</a>
           <a href="#" className="hover:text-[var(--primary)] transition-colors">Imóveis</a>
-          <a href="#" className="hover:text-[var(--primary)] transition-colors">Contacto</a>
+          <a href="#" className="hover:text-[var(--primary)] transition-colors">Vender</a>
+          <a href="#" className="hover:text-[var(--primary)] transition-colors">Serviços</a>
         </div>
-        <button className="bg-[var(--primary)] text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10">Menu</button>
+        <button className="bg-[var(--primary)] text-white px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10">Contactar</button>
       </nav>
       
-      <header className="py-28 px-8 text-center bg-slate-50 relative overflow-hidden border-b border-slate-100 min-h-[60vh] flex flex-col justify-center items-center">
+      {/* Hero */}
+      <header className="py-24 px-8 text-center bg-slate-50 relative overflow-hidden flex flex-col justify-center items-center min-h-[50vh]">
         <div className="absolute inset-0 z-0">
-           <img 
-             src={tenant.hero_image_url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1600'} 
-             className="w-full h-full object-cover opacity-10" 
-             alt="Hero"
-           />
-           <div className="absolute inset-0 bg-gradient-to-b from-white/80 to-transparent"></div>
+           <img src={tenant.hero_image_url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1600'} className="w-full h-full object-cover opacity-[0.08]" alt="Hero" />
+           <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white"></div>
         </div>
-
         <div className="max-w-4xl mx-auto relative z-10">
-          <h1 className="text-5xl md:text-8xl font-black text-[#1c2d51] mb-8 leading-tight tracking-tighter animate-in slide-in-from-bottom duration-700">
-            {tenant.slogan || 'O seu próximo capítulo começa aqui.'}
-          </h1>
-          <div className="bg-white p-2 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2 max-w-2xl mx-auto animate-in fade-in zoom-in-95 duration-1000 delay-300">
-             <div className="flex-1 px-6 py-4 text-left border-r border-slate-50">
-                <p className="text-[8px] font-black text-slate-300 uppercase mb-1">O que procura?</p>
-                <p className="text-sm font-bold text-[#1c2d51]">Localidade ou Tipologia</p>
+          <h1 className="text-5xl md:text-8xl font-black text-[#1c2d51] mb-8 leading-[1.1] tracking-tighter animate-in slide-in-from-bottom duration-700">{tenant.slogan || 'O seu próximo capítulo começa aqui.'}</h1>
+          <div className="bg-white p-2 rounded-3xl shadow-2xl flex flex-col md:flex-row gap-2 max-w-3xl mx-auto border border-slate-100">
+             <div className="flex-1 px-8 py-4 text-left border-r border-slate-50">
+                <p className="text-[9px] font-black text-slate-300 uppercase mb-1">Localização</p>
+                <p className="text-sm font-bold text-[#1c2d51]">Onde quer viver?</p>
              </div>
-             <button className="bg-[var(--primary)] text-white px-10 py-4 rounded-xl font-black uppercase text-xs shadow-xl">Pesquisar</button>
+             <div className="flex-1 px-8 py-4 text-left border-r border-slate-50">
+                <p className="text-[9px] font-black text-slate-300 uppercase mb-1">Tipo de Imóvel</p>
+                <p className="text-sm font-bold text-[#1c2d51]">Apartamento ou Moradia</p>
+             </div>
+             <button className="bg-[var(--primary)] text-white px-12 py-5 rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-[1.02] transition-transform">Pesquisar</button>
           </div>
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto py-24 px-8 flex-1 w-full">
-        <div className="flex justify-between items-end mb-12">
+      {/* Imóveis em Destaque */}
+      <main className="max-w-7xl mx-auto py-32 px-8 flex-1 w-full">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>
-            <h2 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Imóveis em Destaque</h2>
-            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">A nossa seleção exclusiva em {tenant.nome}</p>
+            <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] tracking-tighter">Imóveis em Destaque</h2>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Seleção especial das melhores oportunidades do mercado</p>
           </div>
+          <button className="flex items-center gap-2 px-6 py-3 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Ver todos os imóveis <ChevronRight size={14}/></button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {properties.length === 0 ? (
-            <div className="col-span-3 py-20 text-center text-slate-300 font-bold uppercase text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[3rem]">
-              Sem imóveis disponíveis no momento.
-            </div>
-          ) : properties.map(p => (
-            <Link key={p.id} to={`/agencia/${tenant.slug || tenant.id}/imovel/${p.slug}`} className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 group shadow-sm hover:shadow-2xl transition-all flex flex-col h-full">
-              <div className="h-64 overflow-hidden relative bg-slate-100">
-                <img src={p.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute top-4 left-4 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[8px] font-black uppercase shadow-sm border border-slate-100 text-[#1c2d51]">{p.operacao}</div>
-              </div>
-              <div className="p-8 flex-1 flex flex-col">
-                <h3 className="text-lg font-black text-[#1c2d51] mb-4 flex-1 line-clamp-2 leading-tight">{p.titulo}</h3>
-                <div className="flex justify-between items-center py-6 border-t border-slate-50 mb-6">
-                  <span className="text-2xl font-black text-[#1c2d51]">{formatCurrency((p.operacao === 'venda' ? p.financeiro?.preco_venda : p.financeiro?.preco_arrendamento) || 0)}</span>
-                  <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[var(--primary)] group-hover:text-white transition-all"><ChevronRight size={18}/></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+          {properties.map(p => (
+            <Link key={p.id} to={`/agencia/${tenant.slug || tenant.id}/imovel/${p.slug}`} className="group bg-white rounded-[2rem] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col h-full border border-slate-50">
+              <div className="relative h-72 overflow-hidden bg-slate-100">
+                <img src={p.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                
+                {/* Badges do Anúncio */}
+                <div className="absolute top-5 left-5 flex gap-2">
+                   <div className="bg-[#1c2d51] text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg border border-white/10">{p.operacao}</div>
+                   {p.publicacao?.destaque && <div className="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg">Destaque</div>}
                 </div>
-                <button onClick={(e) => handleContactClick(e, p.slug)} className="w-full bg-[var(--primary)] text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-                  <MessageSquare size={14} /> Contactar Consultor
-                </button>
+
+                {/* Overlay de Preço e Ref */}
+                <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/80 to-transparent flex justify-between items-end">
+                   <div className="text-white">
+                      <p className="text-2xl font-black">{formatCurrency((p.operacao === 'venda' ? p.financeiro?.preco_venda : p.financeiro?.preco_arrendamento) || 0)}</p>
+                   </div>
+                   <div className="text-white/60 text-[8px] font-black uppercase tracking-widest">Ref: {p.ref}</div>
+                </div>
+              </div>
+
+              <div className="p-8 flex-1 flex flex-col">
+                <h3 className="text-xl font-black text-[#1c2d51] mb-2 line-clamp-2 leading-tight group-hover:text-[var(--primary)] transition-colors">{p.titulo}</h3>
+                <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-6"><MapPin size={12} className="text-[var(--primary)]"/> {p.localizacao?.concelho}, {p.localizacao?.distrito}</div>
+                
+                {/* Atributos do Imóvel */}
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 py-6 border-t border-slate-50 mb-auto">
+                   <div className="flex items-center gap-2 text-slate-500"><span className="text-[10px] font-black">{p.tipologia}</span></div>
+                   <div className="flex items-center gap-2 text-slate-500"><Bed size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.quartos}</span></div>
+                   <div className="flex items-center gap-2 text-slate-500"><Bath size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.casas_banho}</span></div>
+                   <div className="flex items-center gap-2 text-slate-500"><Square size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.areas?.area_util_m2}m²</span></div>
+                   {p.divisoes?.garagem?.tem && <div className="flex items-center gap-2 text-slate-500"><Car size={16} strokeWidth={2.5}/> <span className="text-[10px] font-black">{p.divisoes?.garagem?.lugares}</span></div>}
+                </div>
+
+                <p className="text-slate-400 text-xs line-clamp-2 mt-6 mb-8 italic">{p.descricao?.curta}</p>
               </div>
             </Link>
           ))}
         </div>
       </main>
 
-      {/* Footer do Portal da Agência (Igual ao Footer SaaS) */}
-      <footer className="py-24 bg-white text-slate-400 border-t border-slate-100 mt-20">
-        <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-20">
+      {/* Secção de Serviços */}
+      <section className="py-32 bg-slate-50/50 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-8 text-center">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] tracking-tighter mb-4">Os Nossos Serviços</h2>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-20">Acompanhamento personalizado em todas as fases do seu projeto imobiliário</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <ServiceCard icon={<Building2 size={32}/>} title="Compra de Imóveis" desc="Encontramos o imóvel perfeito para si, seja para habitação própria ou investimento. Análise de mercado e negociação incluídas." />
+            <ServiceCard icon={<Key size={32}/>} title="Arrendamento" desc="Gestão completa de arrendamento, desde a seleção de inquilinos até à elaboração de contratos e cobrança de rendas." />
+            <ServiceCard icon={<Handshake size={32}/>} title="Venda de Imóveis" desc="Valorização e promoção do seu imóvel para uma venda rápida e ao melhor preço de mercado." />
+          </div>
+        </div>
+      </section>
+
+      {/* Banner CTA */}
+      <section className="py-32 bg-[var(--primary)] text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div className="max-w-4xl mx-auto px-8 text-center relative z-10">
+           <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-tight">Quer vender ou arrendar o seu imóvel?</h2>
+           <p className="text-xl text-white/70 font-medium mb-12 max-w-2xl mx-auto">Contacte-nos para uma avaliação gratuita e descubra como podemos ajudá-lo a obter o melhor resultado.</p>
+           <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <button className="bg-[#1c2d51] text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">Fale Connosco <ArrowRight size={18}/></button>
+              <button className="bg-white text-[#1c2d51] px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">Saber Mais</button>
+           </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-24 bg-white text-slate-400 border-t border-slate-50">
+        <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-20">
           <div className="col-span-1 md:col-span-2">
             <div className="mb-8">
-              {tenant.logo_url ? (
-                <img src={tenant.logo_url} className="h-12 w-auto object-contain" alt={tenant.nome} />
-              ) : (
-                <span className="text-2xl font-black text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
-              )}
+              {tenant.logo_url ? <img src={tenant.logo_url} className="h-12 w-auto object-contain" alt={tenant.nome} /> : <span className="text-2xl font-black text-[#1c2d51] tracking-tighter">{tenant.nome}</span>}
             </div>
-            <p className="text-lg max-w-sm font-medium leading-relaxed text-slate-500">
-              {tenant.slogan || 'Transformamos casas em lares e investimentos em realidade.'}
-            </p>
+            <p className="text-lg max-w-sm font-medium leading-relaxed text-slate-400">{tenant.slogan || 'Especialistas no mercado imobiliário.'}</p>
           </div>
-          
           <div>
-            <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[10px]">Navegação</h4>
+            <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[10px]">Links Rápidos</h4>
             <ul className="space-y-4 text-sm font-bold">
-              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Página Inicial</a></li>
               <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Catálogo de Imóveis</a></li>
-              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Sobre a Agência</a></li>
+              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Venda o seu Imóvel</a></li>
+              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Área de Cliente</a></li>
             </ul>
           </div>
-          
           <div>
-            <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[10px]">Contacto</h4>
+            <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[10px]">Contactos</h4>
             <ul className="space-y-4 text-sm font-bold">
-              {tenant.email && (
-                <li className="flex items-center gap-2 hover:text-[var(--primary)] cursor-pointer">
-                  <Mail size={14}/> {tenant.email}
-                </li>
-              )}
-              {tenant.telefone && (
-                <li className="flex items-center gap-2 hover:text-[var(--primary)] cursor-pointer">
-                  <Phone size={14}/> {tenant.telefone}
-                </li>
-              )}
-              {tenant.morada && (
-                <li className="flex items-start gap-2 italic text-xs leading-relaxed">
-                  <MapPin size={14} className="shrink-0 mt-0.5"/> {tenant.morada}
-                </li>
-              )}
+              <li className="flex items-center gap-3"><Mail size={16}/> {tenant.email}</li>
+              <li className="flex items-center gap-3"><Phone size={16}/> {tenant.telefone}</li>
             </ul>
           </div>
         </div>
-        
-        <div className="max-w-7xl mx-auto px-8 pt-16 mt-16 border-t border-slate-50 text-[10px] font-black uppercase tracking-widest flex flex-col md:flex-row justify-between items-center gap-6">
-          <span>&copy; {new Date().getFullYear()} {tenant.nome}. Todos os direitos reservados.</span>
-          <div className="flex gap-8 items-center text-slate-300">
-            <span className="hover:text-[#1c2d51] cursor-pointer">Privacidade</span>
-            <span className="hover:text-[#1c2d51] cursor-pointer">Legal</span>
-            <div className="h-4 w-px bg-slate-100"></div>
-            <span className="flex items-center gap-1.5 opacity-40">Powered by <Building2 size={12}/> ImoSuite</span>
-          </div>
+        <div className="max-w-7xl mx-auto px-8 pt-16 mt-16 border-t border-slate-50 text-[10px] font-black uppercase tracking-widest flex justify-between items-center text-slate-300">
+          <span>&copy; {new Date().getFullYear()} {tenant.nome}.</span>
+          <span className="flex items-center gap-1.5 opacity-40">Powered by ImoSuite</span>
         </div>
       </footer>
     </div>
   );
 };
+
+const ServiceCard = ({ icon, title, desc }: any) => (
+  <div className="bg-white p-12 rounded-[2.5rem] text-left border border-slate-50 shadow-sm hover:shadow-xl transition-all">
+    <div className="w-16 h-16 bg-blue-50 text-[#1c2d51] rounded-2xl flex items-center justify-center mb-8">{icon}</div>
+    <h3 className="text-2xl font-black text-[#1c2d51] mb-4 tracking-tighter">{title}</h3>
+    <p className="text-slate-400 font-medium leading-relaxed text-sm">{desc}</p>
+  </div>
+);
 
 export default PublicPortal;

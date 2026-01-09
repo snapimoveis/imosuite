@@ -10,7 +10,7 @@ import {
   Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
   Settings, AlertTriangle, Eye, ChevronLeft, ChevronRight, Info,
   Quote, Heart, Search, LayoutGrid, List, ArrowUpRight, Bed, Bath, Square,
-  MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon
+  MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight
 } from 'lucide-react';
 import { Tenant } from '../../types.ts';
 import { formatCurrency, generateSlug } from '../../lib/utils';
@@ -130,7 +130,6 @@ const AdminSettings: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           {success && <div className="text-emerald-600 text-xs font-black uppercase flex items-center gap-2 animate-bounce"><Check size={16}/> Guardado!</div>}
-          {errorMessage && <div className="text-red-500 text-[10px] font-black uppercase max-w-[200px] text-right leading-tight">{errorMessage}</div>}
           <button onClick={handleSave} disabled={isSaving} className="bg-[#1c2d51] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl hover:-translate-y-1 transition-all">
             {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} Gravar Tudo
           </button>
@@ -297,15 +296,13 @@ const TemplatePreviewModal = ({ templateId, onClose, onSelect, tenantData }: any
           </button>
           <div className="h-8 w-px bg-slate-100"></div>
           <div>
-            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Pré-visualização</span>
+            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Pré-visualização Real</span>
             <h4 className="text-sm font-black text-[#1c2d51] tracking-tighter">{template?.name}</h4>
           </div>
         </div>
 
         <div className="bg-slate-50 p-1.5 rounded-2xl flex items-center gap-1">
            <PageTab active={page === 'home'} onClick={() => setPage('home')} label="Homepage" />
-           <PageTab active={page === 'list'} onClick={() => setPage('list')} label="Listagem" />
-           <PageTab active={page === 'detail'} onClick={() => setPage('detail')} label="Detalhe" />
         </div>
 
         <button onClick={onSelect} className="bg-[#1c2d51] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-0.5 transition-all">
@@ -331,19 +328,19 @@ const PageTab = ({ active, onClick, label }: any) => (
   </button>
 );
 
-const PreviewEngine = ({ templateId, page, color, tenant }: any) => {
+const PreviewEngine = ({ templateId, page, tenant }: any) => {
   const dummyProps = [
-    { id: 1, title: 'Apartamento T3 Centro Histórico', price: 450000, loc: 'Lisboa', img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
-    { id: 2, title: 'Moradia de Luxo com Piscina', price: 1250000, loc: 'Cascais', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800' },
-    { id: 3, title: 'Loft Industrial em Marvila', price: 320000, loc: 'Lisboa', img: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800' },
+    { id: 1, title: 'Apartamento T3 com Vista Mar', price: 385000, loc: 'Cascais e Estoril, Cascais', ref: 'REF001', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },
+    { id: 2, title: 'Moradia V4 com Jardim e Piscina', price: 750000, loc: 'Madalena, Vila Nova de Gaia', ref: 'REF002', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800' },
+    { id: 3, title: 'Moradia T5 com Vista Panorâmica', price: 1250000, loc: 'São Pedro de Penaferrim, Sintra', ref: 'REF004', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800' },
   ];
 
   const SharedFooter = () => (
-    <footer className="py-24 bg-white text-slate-400 border-t border-slate-100 mt-20">
+    <footer className="py-24 bg-white text-slate-400 border-t border-slate-50 mt-20">
       <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-20">
         <div className="col-span-1 md:col-span-2">
           <div className="mb-8">
-            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain grayscale" /> : <span className="text-xl font-black text-[#1c2d51]">{tenant.nome}</span>}
+            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" /> : <span className="text-xl font-black text-[#1c2d51]">{tenant.nome}</span>}
           </div>
           <p className="text-sm max-w-sm font-medium leading-relaxed text-slate-400">
             {tenant.slogan || 'O seu próximo capítulo começa aqui.'}
@@ -351,64 +348,118 @@ const PreviewEngine = ({ templateId, page, color, tenant }: any) => {
         </div>
         <div>
           <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[9px]">Links</h4>
-          <ul className="space-y-3 text-xs font-bold">
-            <li className="hover:text-[#1c2d51] cursor-pointer">Início</li>
-            <li className="hover:text-[#1c2d51] cursor-pointer">Imóveis</li>
-          </ul>
+          <ul className="space-y-3 text-xs font-bold"><li>Início</li><li>Imóveis</li></ul>
         </div>
         <div>
           <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[9px]">Contacto</h4>
-          <ul className="space-y-3 text-xs font-bold leading-relaxed">
-            <li>{tenant.email}</li>
-            <li>{tenant.telefone}</li>
-          </ul>
+          <ul className="space-y-3 text-xs font-bold leading-relaxed"><li>{tenant.email}</li><li>{tenant.telefone}</li></ul>
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-8 pt-12 mt-12 border-t border-slate-50 text-[9px] font-black uppercase tracking-widest flex justify-between">
-        <span>&copy; {new Date().getFullYear()} {tenant.nome}</span>
-        <span className="opacity-30">Powered by ImoSuite</span>
+        <span>&copy; 2024 {tenant.nome}</span><span className="opacity-30">Powered by ImoSuite</span>
       </div>
     </footer>
   );
 
-  if (templateId === 'heritage') {
-    const Navbar = () => (
-      <nav className="h-20 border-b border-slate-100 px-12 flex items-center justify-between bg-white sticky top-0 z-50">
-        <span className="font-black text-xl text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
-        <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          <span>Início</span><span>Imóveis</span><span>Sobre</span><span>Contacto</span>
+  const ServiceSection = () => (
+    <section className="py-32 bg-slate-50/50 border-y border-slate-100">
+      <div className="max-w-7xl mx-auto px-8 text-center">
+        <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter mb-4">Os Nossos Serviços</h2>
+        <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest mb-16">Acompanhamento personalizado em todas as fases</p>
+        <div className="grid grid-cols-3 gap-10">
+          <div className="bg-white p-10 rounded-[2.5rem] text-left border border-slate-50 shadow-sm">
+             <div className="w-14 h-14 bg-blue-50 text-[#1c2d51] rounded-2xl flex items-center justify-center mb-6"><Building2 size={24}/></div>
+             <h4 className="text-xl font-black text-[#1c2d51] mb-3">Compra de Imóveis</h4>
+             <p className="text-slate-400 text-xs leading-relaxed">Encontramos o imóvel perfeito para si, seja para habitação ou investimento.</p>
+          </div>
+          <div className="bg-white p-10 rounded-[2.5rem] text-left border border-slate-50 shadow-sm">
+             <div className="w-14 h-14 bg-blue-50 text-[#1c2d51] rounded-2xl flex items-center justify-center mb-6"><Key size={24}/></div>
+             <h4 className="text-xl font-black text-[#1c2d51] mb-3">Arrendamento</h4>
+             <p className="text-slate-400 text-xs leading-relaxed">Gestão completa de arrendamento, desde a seleção à cobrança.</p>
+          </div>
+          <div className="bg-white p-10 rounded-[2.5rem] text-left border border-slate-50 shadow-sm">
+             <div className="w-14 h-14 bg-blue-50 text-[#1c2d51] rounded-2xl flex items-center justify-center mb-6"><Handshake size={24}/></div>
+             <h4 className="text-xl font-black text-[#1c2d51] mb-3">Venda de Imóveis</h4>
+             <p className="text-slate-400 text-xs leading-relaxed">Valorização e promoção para uma venda rápida e ao melhor preço.</p>
+          </div>
         </div>
-      </nav>
-    );
+      </div>
+    </section>
+  );
 
-    if (page === 'home') return (
-      <div className="font-brand text-slate-900 animate-in fade-in duration-700 min-h-full flex flex-col">
-        <Navbar />
-        <div className="flex-1">
-          <header className="py-32 px-12 text-center bg-slate-50 border-b border-slate-100 relative overflow-hidden">
-            <h1 className="text-7xl font-black text-[#1c2d51] tracking-tighter leading-none mb-8 max-w-4xl mx-auto italic">{tenant.slogan || 'Onde a tradição encontra o lar.'}</h1>
-            <p className="text-slate-500 max-w-xl mx-auto mb-12 font-medium">Confiança construída em cada m².</p>
-          </header>
-          <main className="py-24 px-12 grid grid-cols-3 gap-10 max-w-7xl mx-auto">
+  const CTABanner = () => (
+    <section className="py-24 px-12 text-center text-white" style={{ background: tenant.cor_primaria }}>
+       <h3 className="text-5xl font-black tracking-tighter mb-6">Quer vender ou arrendar o seu imóvel?</h3>
+       <p className="text-white/70 mb-10 text-lg max-w-xl mx-auto">Contacte-nos para uma avaliação gratuita e descubra como podemos ajudá-lo.</p>
+       <div className="flex justify-center gap-4">
+          <button className="bg-[#1c2d51] px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl">Fale Connosco</button>
+          <button className="bg-white text-[#1c2d51] px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest">Saber Mais</button>
+       </div>
+    </section>
+  );
+
+  const Navbar = () => (
+    <nav className="h-20 border-b border-slate-50 px-12 flex items-center justify-between bg-white sticky top-0 z-50">
+      <span className="font-black text-xl text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
+      <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
+        <span>Início</span><span>Imóveis</span><span>Serviços</span>
+      </div>
+    </nav>
+  );
+
+  return (
+    <div className="font-brand text-slate-900 animate-in fade-in duration-700 min-h-full flex flex-col bg-white">
+      <Navbar />
+      <div className="flex-1">
+        <header className="py-24 px-12 text-center bg-slate-50 relative overflow-hidden border-b border-slate-50">
+          <h1 className="text-7xl font-black text-[#1c2d51] tracking-tighter leading-none mb-8 max-w-4xl mx-auto">{tenant.slogan || 'Onde a tradição encontra o lar.'}</h1>
+          <div className="max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-xl flex gap-2">
+             <div className="flex-1 p-4 text-left border-r border-slate-50 text-xs font-bold text-slate-300">Localidade ou Tipologia</div>
+             <button className="bg-[#1c2d51] text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase">Pesquisar</button>
+          </div>
+        </header>
+
+        <main className="py-32 px-12 max-w-7xl mx-auto">
+          <div className="flex justify-between items-end mb-16">
+             <div>
+                <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter leading-none">Imóveis em Destaque</h2>
+                <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest mt-2">Melhores oportunidades do mercado</p>
+             </div>
+             <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-slate-200 px-6 py-3 rounded-xl">Ver todos <ChevronRight size={14}/></button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-12">
             {dummyProps.map(p => (
-              <div key={p.id} className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-                <div className="h-64 bg-slate-200 overflow-hidden"><img src={p.img} className="w-full h-full object-cover"/></div>
+              <div key={p.id} className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all border border-slate-50 group">
+                <div className="h-64 bg-slate-200 relative overflow-hidden">
+                   <img src={p.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"/>
+                   <div className="absolute top-4 left-4 flex gap-2">
+                      <div className="bg-[#1c2d51] text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase">Venda</div>
+                      <div className="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase">Destaque</div>
+                   </div>
+                   <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end text-white">
+                      <span className="text-xl font-black">{formatCurrency(p.price)}</span>
+                      <span className="text-[7px] font-black opacity-60 uppercase">Ref: {p.ref}</span>
+                   </div>
+                </div>
                 <div className="p-8">
-                    <div className="flex items-center gap-2 text-[8px] font-black uppercase text-slate-300 mb-2"><MapPin size={10}/> {p.loc}</div>
-                    <h4 className="font-black text-lg text-[#1c2d51] leading-tight mb-4">{p.title}</h4>
-                    <p className="font-black text-2xl text-[#1c2d51]">{formatCurrency(p.price)}</p>
+                    <h4 className="font-black text-lg text-[#1c2d51] leading-tight mb-2">{p.title}</h4>
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-300 mb-6"><MapPin size={10}/> {p.loc}</div>
+                    <div className="flex gap-4 pt-6 border-t border-slate-50 text-slate-400">
+                       <span className="flex items-center gap-2 text-[9px] font-black">T3</span>
+                       <span className="flex items-center gap-1.5"><Bed size={14}/> <span className="text-[9px] font-black">3</span></span>
+                       <span className="flex items-center gap-1.5"><Bath size={14}/> <span className="text-[9px] font-black">2</span></span>
+                       <span className="flex items-center gap-1.5"><Square size={14}/> <span className="text-[9px] font-black">125m²</span></span>
+                    </div>
                 </div>
               </div>
             ))}
-          </main>
-        </div>
-        <SharedFooter />
+          </div>
+        </main>
       </div>
-    );
-  }
-  return (
-    <div className="min-h-full flex flex-col">
-      <div className="flex-1 p-20 text-center font-brand text-slate-300 font-black uppercase text-sm tracking-widest">Layout de Preview em desenvolvimento.</div>
+
+      <ServiceSection />
+      <CTABanner />
       <SharedFooter />
     </div>
   );
