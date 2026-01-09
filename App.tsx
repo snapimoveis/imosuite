@@ -17,7 +17,8 @@ import AdminImoveis from './pages/admin/AdminImoveis.tsx';
 import AdminLeads from './pages/admin/AdminLeads.tsx';
 import AdminSettings from './pages/admin/AdminSettings.tsx';
 import AdminUsers from './pages/admin/AdminUsers.tsx';
-import AdminProfile from './pages/admin/AdminProfile.tsx'; // Nova Importação
+import AdminProfile from './pages/admin/AdminProfile.tsx';
+import AdminCMS from './pages/admin/AdminCMS.tsx'; // Importação do CMS
 import AdminShell from './components/admin/AdminShell.tsx';
 import PublicPortal from './pages/PublicPortal.tsx';
 import PublicImovelDetails from './pages/PublicImovelDetails.tsx';
@@ -64,10 +65,11 @@ const App: React.FC = () => {
             <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="imoveis" element={<AdminImoveis />} />
+              <Route path="cms" element={<AdminCMS />} /> {/* Nova Rota CMS */}
               <Route path="leads" element={<AdminLeads />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="settings" element={<AdminSettings />} />
-              <Route path="profile" element={<AdminProfile />} /> {/* Nova Rota */}
+              <Route path="profile" element={<AdminProfile />} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />
