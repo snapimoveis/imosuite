@@ -4,10 +4,10 @@ import { PropertyService } from '../../services/propertyService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Imovel, TipoImovel, ImovelMedia } from '../../types';
 import { 
-  Plus, Search, Edit2, Trash2, Eye, X, Loader2, AlertCircle, 
+  Plus, Search, Edit2, Trash2, Eye, EyeOff, X, Loader2, AlertCircle, 
   Building2, Zap, Sparkles, Check, 
   ChevronRight, ChevronLeft, Camera, Trash, Star,
-  MoveUp, MoveDown, ShieldCheck, Euro, UploadCloud
+  MoveUp, MoveDown, ShieldCheck, Euro, UploadCloud, GripVertical
 } from 'lucide-react';
 import { formatCurrency, generateSlug } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
@@ -59,6 +59,7 @@ const AdminImoveis: React.FC = () => {
   const [formData, setFormData] = useState<Partial<Imovel>>(initialFormState);
   const [tempMedia, setTempMedia] = useState<ImovelMedia[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
 
   const loadProperties = async () => {
     if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
@@ -78,6 +79,28 @@ const AdminImoveis: React.FC = () => {
 
   useEffect(() => { loadProperties(); }, [profile?.tenantId]);
 
+  const handleTogglePublish = async (imovel: Imovel) => {
+    if (!profile?.tenantId) return;
+    const newState = !imovel.publicacao?.publicar_no_site;
+    try {
+      await PropertyService.updateProperty(profile.tenantId, imovel.id, {
+        publicacao: { ...imovel.publicacao, publicar_no_site: newState }
+      });
+      loadProperties();
+    } catch (error) { alert("Erro ao atualizar visibilidade."); }
+  };
+
+  const handleToggleDestaque = async (imovel: Imovel) => {
+    if (!profile?.tenantId) return;
+    const newState = !imovel.publicacao?.destaque;
+    try {
+      await PropertyService.updateProperty(profile.tenantId, imovel.id, {
+        publicacao: { ...imovel.publicacao, destaque: newState }
+      });
+      loadProperties();
+    } catch (error) { alert("Erro ao atualizar destaque."); }
+  };
+
   const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
@@ -91,7 +114,6 @@ const AdminImoveis: React.FC = () => {
 
   const handleEdit = async (imovel: Imovel) => {
     setEditingId(imovel.id);
-    // Garantimos que objetos aninhados existem mesmo se vierem incompletos do BD
     setFormData({
       ...initialFormState,
       ...imovel,
@@ -190,6 +212,28 @@ const AdminImoveis: React.FC = () => {
       reader.onloadend = () => handleAddMedia(reader.result as string);
       reader.readAsDataURL(file);
     });
+  };
+
+  // --- DRAG AND DROP HANDLERS ---
+  const handleDragStart = (index: number) => {
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (index: number) => {
+    if (draggedItemIndex === null) return;
+    const items = [...tempMedia];
+    const draggedItem = items[draggedItemIndex];
+    items.splice(draggedItemIndex, 1);
+    items.splice(index, 0, draggedItem);
+    
+    // Reordenar
+    const reordered = items.map((item, i) => ({ ...item, order: i }));
+    setTempMedia(reordered);
+    setDraggedItemIndex(null);
   };
 
   return (
@@ -365,12 +409,36 @@ const AdminImoveis: React.FC = () => {
                       <textarea rows={6} className="admin-input py-6" value={formData.descricao?.completa_md || ''} onChange={e => setFormData((prev:any) => ({ ...prev, descricao: { ...(prev.descricao || {}), completa_md: e.target.value } }))}></textarea>
                    </div>
                    <div className="space-y-6">
-                      <label className="text-[10px] font-black uppercase text-slate-400">Media & Fotos</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase text-slate-400">Media & Fotos</label>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase italic">Arraste as fotos para mudar a ordem. A primeira será a capa.</span>
+                      </div>
                       <div onClick={() => fileInputRef.current?.click()} className="bg-slate-50 p-12 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4 cursor-pointer hover:bg-slate-100 transition-all"><UploadCloud className="mx-auto text-slate-300" size={48}/><div><p className="text-sm font-black text-[#1c2d51] uppercase tracking-tight">Carregar Fotos do Imóvel</p><p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Clique para selecionar ficheiros</p></div><input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple accept="image/*" /></div>
+                      
                       {tempMedia.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                           {tempMedia.map((m) => (
-                             <div key={m.id} className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${m.is_cover ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-100'}`}><img src={m.url} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2"><button onClick={() => setTempMedia(tempMedia.map(item => ({ ...item, is_cover: item.id === m.id })))} className="p-2 bg-white rounded-lg hover:text-blue-500 shadow-sm transition-transform active:scale-90"><Star size={14} fill={m.is_cover ? 'currentColor' : 'none'} /></button><button onClick={() => setTempMedia(tempMedia.filter(item => item.id !== m.id))} className="p-2 bg-white rounded-lg text-red-500 shadow-sm transition-transform active:scale-90"><Trash size={14}/></button></div></div>
+                           {tempMedia.map((m, idx) => (
+                             <div 
+                               key={m.id} 
+                               draggable
+                               onDragStart={() => handleDragStart(idx)}
+                               onDragOver={(e) => handleDragOver(e, idx)}
+                               onDrop={() => handleDrop(idx)}
+                               className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing ${m.is_cover || idx === 0 ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-100'}`}
+                             >
+                                <img src={m.url} className="w-full h-full object-cover" />
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="bg-white/90 backdrop-blur p-1 rounded-md text-slate-400 shadow-sm"><GripVertical size={12}/></div>
+                                </div>
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                                   <button onClick={() => {
+                                     const newMedia = tempMedia.map((item, i) => ({ ...item, is_cover: i === idx }));
+                                     setTempMedia(newMedia);
+                                   }} className="p-2 bg-white rounded-lg hover:text-blue-500 shadow-sm transition-transform active:scale-90"><Star size={14} fill={(m.is_cover || idx === 0) ? 'currentColor' : 'none'} /></button>
+                                   <button onClick={() => setTempMedia(tempMedia.filter((_, i) => i !== idx))} className="p-2 bg-white rounded-lg text-red-500 shadow-sm transition-transform active:scale-90"><Trash size={14}/></button>
+                                </div>
+                                {(m.is_cover || idx === 0) && <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-[7px] font-black uppercase px-2 py-0.5 rounded shadow-sm">Capa</div>}
+                             </div>
                            ))}
                         </div>
                       )}
@@ -400,14 +468,15 @@ const AdminImoveis: React.FC = () => {
               <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
                 <th className="px-8 py-5">Imóvel / Ref</th>
                 <th className="px-8 py-5">Tipo & Negócio</th>
+                <th className="px-8 py-5 text-center">Status</th>
                 <th className="px-8 py-5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
-                <tr><td colSpan={3} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" /></td></tr>
+                <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" /></td></tr>
               ) : properties.length === 0 ? (
-                <tr><td colSpan={3} className="py-20 text-center text-slate-300 font-bold uppercase text-[10px]">Sem imóveis no inventário.</td></tr>
+                <tr><td colSpan={4} className="py-20 text-center text-slate-300 font-bold uppercase text-[10px]">Sem imóveis no inventário.</td></tr>
               ) : properties.filter(p => p.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) || p.ref?.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
                 <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
@@ -417,12 +486,29 @@ const AdminImoveis: React.FC = () => {
                       </div>
                       <div>
                         <div className="font-black text-sm text-[#1c2d51]">{p.titulo}</div>
-                        {/* Fix: Optional chaining added here to financeiro access */}
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">REF: {p.ref} &bull; {formatCurrency(p.financeiro?.preco_venda || p.financeiro?.preco_arrendamento)}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-5"><span className="text-[10px] font-black uppercase text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">{p.tipo_imovel} &bull; {p.operacao}</span></td>
+                  <td className="px-8 py-5">
+                    <div className="flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => handleTogglePublish(p)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all ${p.publicacao?.publicar_no_site ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                        title={p.publicacao?.publicar_no_site ? "Ocultar do Site" : "Publicar no Site"}
+                      >
+                        {p.publicacao?.publicar_no_site ? <Eye size={14}/> : <EyeOff size={14}/>}
+                      </button>
+                      <button 
+                        onClick={() => handleToggleDestaque(p)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all ${p.publicacao?.destaque ? 'bg-amber-50 text-amber-500 border-amber-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}
+                        title={p.publicacao?.destaque ? "Remover Destaque" : "Marcar como Destaque"}
+                      >
+                        <Star size={14} fill={p.publicacao?.destaque ? "currentColor" : "none"}/>
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-8 py-5 text-right">
                     <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <button onClick={() => handleEdit(p)} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#1c2d51] hover:border-slate-300 hover:shadow-sm transition-all" title="Editar"><Edit2 size={16}/></button>

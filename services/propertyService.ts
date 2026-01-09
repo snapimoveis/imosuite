@@ -1,5 +1,5 @@
 
-import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, getDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, getDoc, writeBatch, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";
 
@@ -35,7 +35,7 @@ export const PropertyService = {
   async getPropertyMedia(tenantId: string, propertyId: string): Promise<ImovelMedia[]> {
     const mediaRef = collection(db, "tenants", tenantId, "properties", propertyId, "media");
     const snapshot = await getDocs(mediaRef);
-    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ImovelMedia));
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ImovelMedia)).sort((a, b) => (a.order || 0) - (b.order || 0));
   },
 
   async createProperty(tenantId: string, propertyData: Partial<Imovel>, mediaItems: ImovelMedia[] = []) {
@@ -67,7 +67,7 @@ export const PropertyService = {
         
         await updateDoc(docRef, {
           "media.total": mediaItems.length,
-          "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || null
+          "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || mediaItems[0].id
         });
       }
 
@@ -81,7 +81,6 @@ export const PropertyService = {
   async updateProperty(tenantId: string, propertyId: string, updates: Partial<Imovel>, mediaItems?: ImovelMedia[]) {
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
     
-    // Remove ID and timestamps from updates to avoid overwriting
     const { id, created_at, ...cleanUpdates } = updates as any;
     
     await updateDoc(propertyRef, cleanData({
@@ -89,12 +88,29 @@ export const PropertyService = {
       updated_at: serverTimestamp()
     }));
 
-    // Se houver media para atualizar, isto simplifica o processo (substitui/adiciona)
     if (mediaItems) {
-       // Nota: Numa app real, faríamos diffing. Aqui apenas garantimos que o total e a capa estão certos.
-       await updateDoc(propertyRef, {
+      const mediaColRef = collection(db, "tenants", tenantId, "properties", propertyId, "media");
+      
+      // Para o protótipo, vamos limpar e re-adicionar para garantir a ordem e integridade (Atomic Batch)
+      const existingMedia = await getDocs(mediaColRef);
+      const batch = writeBatch(db);
+      
+      existingMedia.docs.forEach(d => batch.delete(d.ref));
+      
+      mediaItems.forEach((item, index) => {
+        const newMediaRef = doc(mediaColRef);
+        batch.set(newMediaRef, {
+          ...item,
+          order: index,
+          created_at: item.created_at || new Date()
+        });
+      });
+
+      await batch.commit();
+
+      await updateDoc(propertyRef, {
         "media.total": mediaItems.length,
-        "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || null
+        "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || (mediaItems[0]?.id || null)
       });
     }
   },

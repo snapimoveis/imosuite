@@ -5,7 +5,8 @@ import { db } from '../../lib/firebase.ts';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import { useTenant } from '../../contexts/TenantContext.tsx';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Building2, MessageSquare, TrendingUp, Users, Eye, Loader2, AlertCircle, Globe } from 'lucide-react';
+import { Building2, MessageSquare, TrendingUp, Users, Eye, Loader2, AlertCircle, Globe, Edit3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { profile, loading: authLoading } = useAuth();
@@ -112,14 +113,24 @@ const Dashboard: React.FC = () => {
             <div className="w-16 h-16 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-6"><Globe size={32} /></div>
             <h3 className="text-xl font-black mb-2 tracking-tighter">O seu Site está Online</h3>
             <p className="text-slate-300 text-sm font-medium mb-8 max-w-xs">Partilhe o link da sua agência com clientes e nas redes sociais.</p>
-            <a 
-              href={`#/agencia/${tenant.slug || tenant.id}`} 
-              target="_blank" 
-              className="bg-white text-[#1c2d51] px-10 py-4 rounded-2xl font-black text-sm hover:scale-105 transition-all flex items-center gap-2"
-            >
-              Visitar Website <TrendingUp size={16}/>
-            </a>
-            <div className="mt-4 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">
+            
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+              <a 
+                href={`#/agencia/${tenant.slug || tenant.id}`} 
+                target="_blank" 
+                className="flex-1 bg-white text-[#1c2d51] px-6 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-all flex items-center justify-center gap-2"
+              >
+                Visitar Website <TrendingUp size={14}/>
+              </a>
+              <Link 
+                to="/admin/settings?tab=website" 
+                className="flex-1 bg-[#357fb2] text-white px-6 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-all flex items-center justify-center gap-2"
+              >
+                Personalizar Site <Edit3 size={14}/>
+              </Link>
+            </div>
+
+            <div className="mt-6 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">
               imosuite.pt/agencia/{tenant.slug || tenant.id}
             </div>
         </div>
