@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase.ts';
 import { Tenant, Imovel } from '../types';
 import { 
@@ -20,16 +20,30 @@ const PublicPortal: React.FC = () => {
     const fetchData = async () => {
       if (!slug) return;
       try {
+        let tData: Tenant | null = null;
+        
+        // 1. Tentar procurar por SLUG (SEO Friendly)
         const tRef = collection(db, "tenants");
         const tQuery = query(tRef, where("slug", "==", slug), limit(1));
         const tSnap = await getDocs(tQuery);
         
         if (!tSnap.empty) {
-          const tData = { id: tSnap.docs[0].id, ...tSnap.docs[0].data() } as Tenant;
+          tData = { id: tSnap.docs[0].id, ...tSnap.docs[0].data() } as Tenant;
+        } else {
+          // 2. Se não encontrar por slug, tentar por ID direto (Fallback para links gerados por ID)
+          const docRef = doc(db, "tenants", slug);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            tData = { id: docSnap.id, ...docSnap.data() } as Tenant;
+          }
+        }
+        
+        if (tData) {
           setTenant(tData);
 
           const pRef = collection(db, "tenants", tData.id, "properties");
           
+          // Buscar em destaque ou recentes
           const highlightQuery = query(pRef, where("publicacao.destaque", "==", true), where("publicacao.publicar_no_site", "==", true), limit(9));
           let pSnap = await getDocs(highlightQuery);
           
@@ -52,19 +66,38 @@ const PublicPortal: React.FC = () => {
   const handleContactClick = (e: React.MouseEvent, propertySlug: string) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/agencia/${tenant?.slug}/imovel/${propertySlug}?contact=true`);
+    // Navega sempre usando o slug do tenant carregado
+    navigate(`/agencia/${tenant?.slug || tenant?.id}/imovel/${propertySlug}?contact=true`);
   };
 
-  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-white"><Loader2 className="animate-spin text-slate-200 mb-4" size={48} /><p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A sintonizar experiência...</p></div>;
-  if (!tenant) return <div className="h-screen flex flex-col items-center justify-center p-10 text-center"><Building2 size={48} className="text-slate-200 mb-4"/><h2 className="text-2xl font-black text-slate-900 mb-2">Portal Indisponível</h2><Link to="/" className="text-blue-600 font-bold underline">Voltar para o ImoSuite</Link></div>;
+  if (loading) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-white">
+      <Loader2 className="animate-spin text-slate-200 mb-4" size={48} />
+      <p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A sintonizar experiência...</p>
+    </div>
+  );
 
-  const templateId = tenant.template_id || 'heritage';
+  if (!tenant) return (
+    <div className="h-screen flex flex-col items-center justify-center p-10 text-center font-brand">
+      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
+        <Building2 size={40} className="text-slate-200"/>
+      </div>
+      <h2 className="text-3xl font-black text-[#1c2d51] mb-2 tracking-tighter">Portal Indisponível</h2>
+      <p className="text-slate-400 mb-8 max-w-xs font-medium">A agência que procura não existe ou o link está incorreto.</p>
+      <Link to="/" className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-slate-900/10 hover:scale-105 transition-all">
+        Voltar para o ImoSuite
+      </Link>
+    </div>
+  );
 
-  // --- 1. LAYOUT HERITAGE ---
-  const renderHeritage = () => (
+  // --- LAYOUT HERITAGE (Standard) ---
+  return (
     <div className="bg-[#FDFCFB] font-brand min-h-screen">
       <nav className="h-20 px-8 flex items-center justify-between border-b border-slate-100 bg-white sticky top-0 z-50">
-        <span className="text-xl font-black text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
+        <div className="flex items-center gap-3">
+          {tenant.logo_url && <img src={tenant.logo_url} className="h-8 w-auto object-contain" />}
+          <span className="text-xl font-black text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
+        </div>
         <div className="hidden md:flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
           <a href="#" className="hover:text-[#1c2d51]">Início</a>
           <a href="#" className="hover:text-[#1c2d51]">Imóveis</a>
@@ -72,6 +105,7 @@ const PublicPortal: React.FC = () => {
         </div>
         <button className="bg-[#1c2d51] text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest">Contacto</button>
       </nav>
+      
       <header className="py-24 px-8 text-center bg-slate-50 relative overflow-hidden border-b border-slate-100">
         <div className="max-w-4xl mx-auto relative z-10">
           <h1 className="text-5xl md:text-7xl font-black text-[#1c2d51] mb-8 leading-tight tracking-tighter">{tenant.slogan || 'O seu próximo capítulo começa aqui.'}</h1>
@@ -84,18 +118,30 @@ const PublicPortal: React.FC = () => {
           </div>
         </div>
       </header>
+      
       <main className="max-w-7xl mx-auto py-24 px-8">
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <h2 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Imóveis em Destaque</h2>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">A nossa seleção exclusiva</p>
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {properties.map(p => (
-            <Link key={p.id} to={`/agencia/${tenant.slug}/imovel/${p.slug}`} className="bg-white rounded-3xl overflow-hidden border border-slate-100 group shadow-sm hover:shadow-2xl transition-all flex flex-col h-full">
-              <div className="h-64 overflow-hidden relative">
-                <img src={p.media.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-[8px] font-black uppercase">{p.operacao}</div>
+          {properties.length === 0 ? (
+            <div className="col-span-3 py-20 text-center text-slate-300 font-bold uppercase text-xs tracking-widest border-2 border-dashed border-slate-100 rounded-[3rem]">
+              Sem imóveis publicados no momento.
+            </div>
+          ) : properties.map(p => (
+            <Link key={p.id} to={`/agencia/${tenant.slug || tenant.id}/imovel/${p.slug}`} className="bg-white rounded-3xl overflow-hidden border border-slate-100 group shadow-sm hover:shadow-2xl transition-all flex flex-col h-full">
+              <div className="h-64 overflow-hidden relative bg-slate-100">
+                <img src={p.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute top-4 left-4 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[8px] font-black uppercase shadow-sm">{p.operacao}</div>
               </div>
               <div className="p-8 flex-1 flex flex-col">
                 <h3 className="text-lg font-black text-[#1c2d51] mb-4 flex-1 line-clamp-2">{p.titulo}</h3>
                 <div className="flex justify-between items-center py-6 border-t border-slate-50 mb-6">
-                  <span className="text-xl font-black text-[#1c2d51]">{formatCurrency((p.operacao === 'venda' ? p.financeiro.preco_venda : p.financeiro.preco_arrendamento) || 0)}</span>
+                  <span className="text-xl font-black text-[#1c2d51]">{formatCurrency((p.operacao === 'venda' ? p.financeiro?.preco_venda : p.financeiro?.preco_arrendamento) || 0)}</span>
                   <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#1c2d51] group-hover:text-white transition-all"><ChevronRight size={18}/></div>
                 </div>
                 <button onClick={(e) => handleContactClick(e, p.slug)} className="w-full bg-[#1c2d51] text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
@@ -108,13 +154,6 @@ const PublicPortal: React.FC = () => {
       </main>
     </div>
   );
-
-  const renderTemplate = () => {
-    // Only Heritage is fully detailed in this snippet for brevity, others follow same nested logic
-    return renderHeritage();
-  };
-
-  return renderTemplate();
 };
 
 export default PublicPortal;

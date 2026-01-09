@@ -3,11 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase.ts';
 import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useTenant } from '../../contexts/TenantContext.tsx';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Building2, MessageSquare, TrendingUp, Users, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { Building2, MessageSquare, TrendingUp, Users, Eye, Loader2, AlertCircle, Globe } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { profile, loading: authLoading } = useAuth();
+  const { tenant } = useTenant();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState([
@@ -28,12 +30,9 @@ const Dashboard: React.FC = () => {
       setIsLoading(true);
       try {
         const statsPromises = [
-          // Buscar imóveis (com limite para evitar carga excessiva e testar permissões)
-          getDocs(query(collection(db, "tenants", profile.tenantId, "properties"), limit(100))).catch(e => { console.warn("Permissão Imóveis:", e.message); return { size: 0 }; }),
-          // Buscar leads
-          getDocs(query(collection(db, "tenants", profile.tenantId, "leads"), limit(100))).catch(e => { console.warn("Permissão Leads:", e.message); return { size: 0 }; }),
-          // Buscar equipa (apenas se administrador)
-          getDocs(query(collection(db, "users"), where("tenantId", "==", profile.tenantId))).catch(e => { console.warn("Permissão Equipa:", e.message); return { size: 0 }; })
+          getDocs(query(collection(db, "tenants", profile.tenantId, "properties"), limit(100))).catch(() => ({ size: 0 })),
+          getDocs(query(collection(db, "tenants", profile.tenantId, "leads"), limit(100))).catch(() => ({ size: 0 })),
+          getDocs(query(collection(db, "users"), where("tenantId", "==", profile.tenantId))).catch(() => ({ size: 0 }))
         ];
 
         const [propsSnap, leadsSnap, teamSnap] = await Promise.all(statsPromises);
@@ -46,12 +45,8 @@ const Dashboard: React.FC = () => {
         ]);
         setError(null);
       } catch (err: any) {
-        console.error("Dashboard Global Error:", err);
-        if (err.code === 'permission-denied') {
-          setError("A configurar permissões...");
-        } else {
-          setError("Erro ao carregar dados.");
-        }
+        console.error("Dashboard Error:", err);
+        setError("Erro ao carregar dados.");
       } finally {
         setIsLoading(false);
       }
@@ -88,7 +83,7 @@ const Dashboard: React.FC = () => {
           <div key={stat.name} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-md">
             <div className="flex justify-between items-start mb-4">
               <div className="p-3 bg-slate-50 rounded-2xl">{stat.icon}</div>
-              <div className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">Estável</div>
+              <div className="bg-emerald-50 text-emerald-600 text-[8px] font-black px-3 py-1 rounded-full uppercase">Ativo</div>
             </div>
             <div className="text-3xl font-black text-[#1c2d51]">{stat.value}</div>
             <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{stat.name}</div>
@@ -98,10 +93,10 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
-          <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest mb-8">Atividade Recente</h3>
+          <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest mb-8">Crescimento de Inventário</h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={[{name: 'Base', val: 0}, {name: 'Hoje', val: parseInt(stats[0].value) || 0}]}>
+              <AreaChart data={[{name: 'Mês Ant.', val: 0}, {name: 'Hoje', val: parseInt(stats[0].value) || 0}]}>
                 <defs><linearGradient id="color" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1c2d51" stopOpacity={0.1}/><stop offset="95%" stopColor="#1c2d51" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} />
@@ -114,10 +109,19 @@ const Dashboard: React.FC = () => {
 
         <div className="bg-[#1c2d51] p-8 rounded-[3rem] shadow-xl shadow-slate-900/10 flex flex-col items-center justify-center text-center text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-            <div className="w-16 h-16 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-6"><TrendingUp size={32} /></div>
-            <h3 className="text-xl font-black mb-2 tracking-tighter">Portal da Agência</h3>
-            <p className="text-slate-300 text-sm font-medium mb-8 max-w-xs">O seu site público está configurado e pronto para receber visitas.</p>
-            <a href={`#/agencia/${profile?.tenantId || ''}`} target="_blank" className="bg-white text-[#1c2d51] px-8 py-4 rounded-2xl font-black text-sm hover:scale-105 transition-all">Visitar Website</a>
+            <div className="w-16 h-16 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-6"><Globe size={32} /></div>
+            <h3 className="text-xl font-black mb-2 tracking-tighter">O seu Site está Online</h3>
+            <p className="text-slate-300 text-sm font-medium mb-8 max-w-xs">Partilhe o link da sua agência com clientes e nas redes sociais.</p>
+            <a 
+              href={`#/agencia/${tenant.slug || tenant.id}`} 
+              target="_blank" 
+              className="bg-white text-[#1c2d51] px-10 py-4 rounded-2xl font-black text-sm hover:scale-105 transition-all flex items-center gap-2"
+            >
+              Visitar Website <TrendingUp size={16}/>
+            </a>
+            <div className="mt-4 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">
+              imosuite.pt/agencia/{tenant.slug || tenant.id}
+            </div>
         </div>
       </div>
     </div>
