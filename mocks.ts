@@ -10,7 +10,7 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'apartamento-t2-vista-rio-lisboa',
     tipo_imovel: 'apartamento',
     subtipo_imovel: null,
-    // Add missing required tipology property
+    // tipology property
     tipology: 'T2',
     tipologia: 'T2',
     estado_conservacao: 'usado',
@@ -100,7 +100,7 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'moradia-luxo-v4-cascais',
     tipo_imovel: 'moradia',
     subtipo_imovel: null,
-    // Add missing required tipology property
+    // tipology property
     tipology: 'V4',
     tipologia: 'V4',
     estado_conservacao: 'novo',
@@ -141,10 +141,10 @@ export const MOCK_IMOVEIS: Imovel[] = [
     certificacao: {
       certificado_energetico: 'A+',
       licenca_utilizacao: '456/2023',
-      licenca_util_numero: '456',
-      licenca_util_data: '2023-05-01',
+      licenca_utilizacao_numero: '456',
+      licenca_utilizacao_data: '2023-05-01',
       isento_licenca_utilizacao: false
-    } as any,
+    },
     financeiro: {
       preco_venda: 1250000,
       preco_arrendamento: null,
@@ -190,7 +190,7 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'estudio-moderno-porto-centro',
     tipo_imovel: 'apartamento',
     subtipo_imovel: null,
-    // Add missing required tipology property
+    // tipology property
     tipology: 'T0',
     tipologia: 'T0',
     estado_conservacao: 'renovado',
@@ -231,10 +231,10 @@ export const MOCK_IMOVEIS: Imovel[] = [
     certificacao: {
       certificado_energetico: 'C',
       licenca_utilizacao: '789/1950',
-      licenca_util_numero: '789',
-      licenca_util_data: '1950-10-10',
+      licenca_utilizacao_numero: '789',
+      licenca_utilizacao_data: '1950-10-10',
       isento_licenca_utilizacao: false
-    } as any,
+    },
     financeiro: {
       preco_venda: null,
       preco_arrendamento: 950,
