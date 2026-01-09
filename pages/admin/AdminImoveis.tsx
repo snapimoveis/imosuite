@@ -159,7 +159,8 @@ const AdminImoveis: React.FC = () => {
       reader.onloadend = () => {
         const isVideo = file.type.startsWith('video/');
         const newMedia: ImovelMedia = {
-          id: Math.random().toString(36).substr(2, 9),
+          // Fix: Uso de crypto.randomUUID() para ID único de media
+          id: crypto.randomUUID(),
           type: isVideo ? 'video' : 'image',
           url: reader.result as string,
           storage_path: '',
@@ -320,7 +321,7 @@ const AdminImoveis: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-6">
             {tempMedia.map((m, idx) => (
-              <div key={idx} className={`relative aspect-square rounded-[2rem] overflow-hidden group shadow-md border-2 ${m.is_cover ? 'border-emerald-500' : 'border-transparent'}`}>
+              <div key={m.id} className={`relative aspect-square rounded-[2rem] overflow-hidden group shadow-md border-2 ${m.is_cover ? 'border-emerald-500' : 'border-transparent'}`}>
                 <img src={m.url} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
                    <div className="flex justify-end gap-1">
@@ -328,7 +329,7 @@ const AdminImoveis: React.FC = () => {
                       <button onClick={() => reorderMedia(idx, 'down')} className="p-1.5 bg-white/90 rounded-lg text-slate-700 hover:bg-white"><MoveDown size={12}/></button>
                    </div>
                    <div className="flex justify-center gap-2">
-                      <button onClick={() => setTempMedia(tempMedia.map((item, i) => ({ ...item, is_cover: i === idx })))} className={`p-2 rounded-xl shadow-lg transition-all ${m.is_cover ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 hover:text-[#1c2d51]'}`}><Star size={16}/></button>
+                      <button onClick={() => setTempMedia(tempMedia.map((item, i) => ({ ...item, is_cover: i === idx })))} className={`p-2 rounded-xl shadow-lg transition-all ${m.is_cover ? 'bg-emerald-50 text-white' : 'bg-white text-slate-400 hover:text-[#1c2d51]'}`}><Star size={16}/></button>
                       <button onClick={() => setTempMedia(tempMedia.filter((_, i) => i !== idx))} className="bg-white p-2 rounded-xl text-red-500 shadow-lg hover:bg-red-50 transition-all"><Trash size={16}/></button>
                    </div>
                 </div>

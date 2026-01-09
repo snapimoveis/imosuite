@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
+// Fix: Modular Firestore imports for collection, query, and filters
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
-import { db } from '../../lib/firebase.ts';
-import { useAuth } from '../../contexts/AuthContext.tsx';
-import { useTenant } from '../../contexts/TenantContext.tsx';
+import { db } from '../../lib/firebase';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTenant } from '../../contexts/TenantContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Building2, MessageSquare, TrendingUp, Users, Eye, Loader2, AlertCircle, Globe, Edit3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -83,7 +84,7 @@ const Dashboard: React.FC = () => {
         {stats.map((stat) => (
           <div key={stat.name} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-md">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-slate-50 rounded-2xl">{stat.icon}</div>
+              <div className="flex-shrink-0 p-3 bg-slate-50 rounded-2xl">{stat.icon}</div>
               <div className="bg-emerald-50 text-emerald-600 text-[8px] font-black px-3 py-1 rounded-full uppercase">Ativo</div>
             </div>
             <div className="text-3xl font-black text-[#1c2d51]">{stat.value}</div>

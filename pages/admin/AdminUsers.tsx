@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
+// Fix: Use standard modular Firestore imports
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../../lib/firebase.ts';
+import { db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Users, UserPlus, MoreVertical, Shield, Mail, Clock, AlertCircle, Loader2 } from 'lucide-react';

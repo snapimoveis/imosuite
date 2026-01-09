@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { useTenant } from '../../contexts/TenantContext.tsx';
-import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useTenant } from '../../contexts/TenantContext';
+import { useAuth } from '../../contexts/AuthContext';
+// Fix: Use standard modular Firestore imports
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../../lib/firebase.ts';
+import { db } from '../../lib/firebase';
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 
   Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
@@ -12,7 +13,7 @@ import {
   Quote, Heart, Search, LayoutGrid, List, ArrowUpRight, Bed, Bath, Square,
   MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight
 } from 'lucide-react';
-import { Tenant } from '../../types.ts';
+import { Tenant } from '../../types';
 import { formatCurrency, generateSlug } from '../../lib/utils';
 import { generateAgencySlogan } from '../../services/geminiService';
 
@@ -22,7 +23,7 @@ const TEMPLATE_OPTIONS = [
   { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo', color: '#000000' },
   { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico', color: '#2563eb' },
   { id: 'luxe', name: 'Luxe', icon: <Brush size={20}/>, desc: 'Artístico e Lifestyle', color: '#2D2926' },
-];
+] as const;
 
 const AdminSettings: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
@@ -32,7 +33,8 @@ const AdminSettings: React.FC = () => {
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [previewingTemplate, setPreviewingTemplate] = useState<string | null>(null);
+  // Fix: Explicit type for previewingTemplate to avoid string union errors
+  const [previewingTemplate, setPreviewingTemplate] = useState<Tenant['template_id'] | null>(null);
   const [isGeneratingSlogan, setIsGeneratingSlogan] = useState(false);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -100,14 +102,20 @@ const AdminSettings: React.FC = () => {
         localTenant.slug = normalizedSlug;
       }
 
+      // Fix: Cast doc data to avoid type issues with complex types
       const { id, ...dataToSave } = localTenant;
       const updates = {
-        ...dataToSave,
+        ...(dataToSave as any),
         updated_at: serverTimestamp()
       };
 
       await setDoc(doc(db, 'tenants', tId), updates, { merge: true });
       setTenant({ ...localTenant, id: tId });
+      
+      // Injeção de cores na UI do Admin
+      const root = document.documentElement;
+      root.style.setProperty('--primary', localTenant.cor_primaria);
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
@@ -165,6 +173,14 @@ const AdminSettings: React.FC = () => {
                         {isGeneratingSlogan ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                       </button>
                     </div>
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Público</label>
+                    <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.email} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Telefone Público</label>
+                    <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.telefone || ''} onChange={e => setLocalTenant({...localTenant, telefone: e.target.value})} />
                  </div>
               </div>
             </div>
@@ -229,12 +245,12 @@ const AdminSettings: React.FC = () => {
                           {localTenant.hero_image_url ? (
                             <div className="flex items-center gap-3 w-full">
                               <div className="w-10 h-10 rounded-lg overflow-hidden bg-white"><img src={localTenant.hero_image_url} className="w-full h-full object-cover" /></div>
-                              <span className="text-[10px] font-black text-[#1c2d51] uppercase">Imagem Personalizada Ativa</span>
+                              <span className="text-[10px] font-black text-[#1c2d51] uppercase truncate">Imagem Personalizada</span>
                             </div>
                           ) : (
                             <>
                               <ImageIcon size={20} className="text-slate-300" />
-                              <span className="text-[10px] font-black text-slate-400 uppercase">Usar imagem padrão ou Upload</span>
+                              <span className="text-[10px] font-black text-slate-400 uppercase">Usar padrão ou Upload</span>
                             </>
                           )}
                           <input type="file" ref={heroInputRef} onChange={(e) => handleFileChange(e, 'hero')} className="hidden" accept="image/*" />
@@ -272,7 +288,10 @@ const AdminSettings: React.FC = () => {
           templateId={previewingTemplate} 
           onClose={() => setPreviewingTemplate(null)} 
           onSelect={() => { 
-            setLocalTenant({ ...localTenant, template_id: previewingTemplate }); 
+            const templateId = previewingTemplate;
+            if (templateId) {
+              setLocalTenant({ ...localTenant, template_id: templateId }); 
+            }
             setPreviewingTemplate(null); 
           }} 
           tenantData={localTenant}
@@ -313,7 +332,7 @@ const TemplatePreviewModal = ({ templateId, onClose, onSelect, tenantData }: any
 
       <div className="flex-1 overflow-y-auto bg-slate-100 p-8 sm:p-12 lg:p-20">
         <div className="max-w-[1440px] mx-auto min-h-full bg-white shadow-[0_40px_100px_rgba(0,0,0,0.2)] rounded-[3rem] overflow-hidden">
-          <PreviewEngine templateId={templateId} page={page} color={template.color} tenant={tenantData} />
+          <PreviewEngine templateId={templateId} page={page} color={template?.color} tenant={tenantData} />
         </div>
       </div>
     </div>

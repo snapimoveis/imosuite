@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+// Standard modular Firestore imports for profile tracking
 import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase.ts';
+import { auth, db } from '../lib/firebase';
 
 interface UserProfile {
   id: string;

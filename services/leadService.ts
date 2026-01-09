@@ -1,4 +1,5 @@
 
+// Fix: Use standard modular Firestore imports
 import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Lead } from "../types";
@@ -25,7 +26,7 @@ export const LeadService = {
       tenant_id: tenantId,
       estado: 'novo',
       lido: false,
-      created_at: new Date().toISOString() // Fallback for simple sorting if needed
+      created_at: serverTimestamp() // Better to use serverTimestamp for consistency
     });
   },
 

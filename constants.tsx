@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Home, Building2, Landmark, LayoutGrid, Users, MessageSquare, Settings, BarChart3, Search, Globe } from 'lucide-react';
+import { Tenant, TenantCMS } from './types';
 
 export const ADMIN_NAV_ITEMS = [
   { name: 'Dashboard', path: '/admin', icon: <BarChart3 className="w-5 h-5" /> },
@@ -11,7 +12,8 @@ export const ADMIN_NAV_ITEMS = [
   { name: 'Configurações', path: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
-export const DEFAULT_TENANT_CMS = {
+// Fix: Add explicit TenantCMS type to ensure homepage_sections are correctly typed as CMSSection[]
+export const DEFAULT_TENANT_CMS: TenantCMS = {
   homepage_sections: [
     { id: 'h1', type: 'hero', enabled: true, order: 0, content: { title: 'Encontre o seu lar perfeito', subtitle: 'As melhores oportunidades em Portugal.' } },
     { id: 'h2', type: 'featured', enabled: true, order: 1, content: { title: 'Imóveis em Destaque' } },
@@ -31,13 +33,20 @@ export const DEFAULT_TENANT_CMS = {
       { id: 'f2', label: 'Termos', path: '/termos', order: 1, is_external: false }
     ]
   },
-  pages: {
-    'quem-somos': { title: 'Quem Somos', slug: 'quem-somos', content_md: '# Nossa História\nTrabalhamos para realizar sonhos.', enabled: true },
-    'contactos': { title: 'Contactos', slug: 'contactos', content_md: 'Pode encontrar-nos na morada principal.', enabled: true }
+  pages: [
+    { id: 'p1', title: 'Quem Somos', slug: 'quem-somos', content_md: '# Nossa História\nTrabalhamos para realizar sonhos.', enabled: true },
+    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Pode encontrar-nos na morada principal.', enabled: true }
+  ],
+  social: {
+    facebook: '',
+    instagram: '',
+    linkedin: '',
+    whatsapp: ''
   }
 };
 
-export const DEFAULT_TENANT = {
+// Fix: Add explicit Tenant type to ensure template_id is correctly typed as a literal union
+export const DEFAULT_TENANT: Tenant = {
   id: 'default-tenant-uuid',
   slug: 'demo-imosuite',
   nome: 'ImoSuite Demo',

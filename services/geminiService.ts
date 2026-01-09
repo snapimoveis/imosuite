@@ -5,7 +5,8 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
  * Gera descrições profissionais para imóveis em Portugal seguindo os critérios do ImoSuite.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  // Use API key directly from process.env as per guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const ctx = {
     titulo: property.titulo,
@@ -54,7 +55,9 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
       },
     });
     
-    return JSON.parse(response.text || "{}");
+    // response.text is a getter that returns the string output directly
+    const text = response.text;
+    return JSON.parse(text || "{}");
   } catch (error: any) {
     console.error("Gemini AI Error:", error);
     throw new Error("Falha ao gerar texto com IA. Verifique os dados do imóvel.");
@@ -62,7 +65,8 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
 };
 
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  // Use API key directly from process.env as per guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -71,6 +75,7 @@ export const generateAgencySlogan = async (agencyName: string): Promise<string> 
         systemInstruction: "És um especialista em branding imobiliário em Portugal."
       }
     });
+    // Use .text property directly
     return response.text?.trim().replace(/"/g, '') || "A sua agência de confiança.";
   } catch { 
     return "Líderes em soluções imobiliárias."; 

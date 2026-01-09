@@ -1,4 +1,5 @@
 
+// Standard modular Firestore imports for version 9+
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from './firebase';
 

@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+// Fix: Modular Firestore imports for doc, setDoc, and serverTimestamp
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../../lib/firebase.ts';
-import { useTenant } from '../../contexts/TenantContext.tsx';
+import { auth, db } from '../../lib/firebase';
+import { useTenant } from '../../contexts/TenantContext';
 import { Building2, ArrowRight, Loader2, AlertCircle, Sparkles, CheckCircle2, Globe } from 'lucide-react';
-import { generateUniqueSlug } from '../../lib/utils.ts';
+import { generateUniqueSlug } from '../../lib/utils';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();

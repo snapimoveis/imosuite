@@ -1,4 +1,5 @@
 
+// Standard modular Firestore imports for version 9+
 import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
+// Fix: Modular Firestore imports for doc, updateDoc, and serverTimestamp
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { 
@@ -52,7 +53,7 @@ const OnboardingFlow: React.FC = () => {
     try {
       const tenantRef = doc(db, 'tenants', profile.tenantId);
       const updates = {
-        template_id: selectedTemplate,
+        template_id: selectedTemplate as any,
         slogan: identity.slogan,
         cor_primaria: identity.primaryColor,
         cor_secundaria: identity.secondaryColor,

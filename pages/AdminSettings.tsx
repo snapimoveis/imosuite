@@ -1,25 +1,28 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { useTenant } from '../../contexts/TenantContext.tsx';
-import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useTenant } from '../contexts/TenantContext.tsx';
+import { useAuth } from '../contexts/AuthContext.tsx';
+// Fix: Modular Firestore imports
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase.ts';
+import { db } from '../lib/firebase.ts';
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 
   Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
   Settings, AlertTriangle, Eye, ChevronLeft, ChevronRight, Info,
   Quote, Heart, Search, LayoutGrid, List, ArrowUpRight
 } from 'lucide-react';
-import { Tenant } from '../../types.ts';
-import { formatCurrency } from '../../lib/utils';
+import { Tenant } from '../types.ts';
+import { formatCurrency } from '../lib/utils';
 
+// Fix: Use const as literal and include all options from type union
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
+  { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Design Moderno e Limpo', color: '#357fb2' },
   { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo', color: '#000000' },
   { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico', color: '#2563eb' },
   { id: 'luxe', name: 'Luxe', icon: <Brush size={20}/>, desc: 'Artístico e Lifestyle', color: '#2D2926' },
-];
+] as const;
 
 const AdminSettings: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
@@ -29,7 +32,8 @@ const AdminSettings: React.FC = () => {
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [previewingTemplate, setPreviewingTemplate] = useState<string | null>(null);
+  // Fix: Explicitly type previewingTemplate to allow literal union matching
+  const [previewingTemplate, setPreviewingTemplate] = useState<Tenant['template_id'] | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
   const queryParams = new URLSearchParams(location.search);
@@ -127,7 +131,17 @@ const AdminSettings: React.FC = () => {
       </div>
 
       {previewingTemplate && (
-        <TemplatePreviewModal templateId={previewingTemplate} onClose={() => setPreviewingTemplate(null)} onSelect={() => { setLocalTenant({ ...localTenant, template_id: previewingTemplate }); setPreviewingTemplate(null); }} />
+        <TemplatePreviewModal 
+          templateId={previewingTemplate} 
+          onClose={() => setPreviewingTemplate(null)} 
+          onSelect={() => { 
+            const templateId = previewingTemplate;
+            if (templateId) {
+              setLocalTenant({ ...localTenant, template_id: templateId }); 
+            }
+            setPreviewingTemplate(null); 
+          }} 
+        />
       )}
     </div>
   );

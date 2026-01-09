@@ -2,26 +2,26 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 
-import { TenantProvider } from './contexts/TenantContext.tsx';
-import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
-import Navbar from './components/Navbar.tsx';
-import Footer from './components/Footer.tsx';
-import Marketing from './pages/Marketing.tsx';
-import FeaturesPage from './pages/Features.tsx';
-import PricingPage from './pages/Pricing.tsx';
-import Register from './pages/onboarding/Register.tsx';
-import Login from './pages/Login.tsx';
-import OnboardingFlow from './pages/onboarding/OnboardingFlow.tsx';
-import Dashboard from './pages/admin/Dashboard.tsx';
-import AdminImoveis from './pages/admin/AdminImoveis.tsx';
-import AdminLeads from './pages/admin/AdminLeads.tsx';
-import AdminSettings from './pages/admin/AdminSettings.tsx';
-import AdminUsers from './pages/admin/AdminUsers.tsx';
-import AdminProfile from './pages/admin/AdminProfile.tsx';
-import AdminCMS from './pages/admin/AdminCMS.tsx'; // Importação do CMS
-import AdminShell from './components/admin/AdminShell.tsx';
-import PublicPortal from './pages/PublicPortal.tsx';
-import PublicImovelDetails from './pages/PublicImovelDetails.tsx';
+import { TenantProvider } from './contexts/TenantContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Marketing from './pages/Marketing';
+import FeaturesPage from './pages/Features';
+import PricingPage from './pages/Pricing';
+import Register from './pages/onboarding/Register';
+import Login from './pages/Login';
+import OnboardingFlow from './pages/onboarding/OnboardingFlow';
+import Dashboard from './pages/admin/Dashboard';
+import AdminImoveis from './pages/admin/AdminImoveis';
+import AdminLeads from './pages/admin/AdminLeads';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminProfile from './pages/admin/AdminProfile';
+import AdminCMS from './pages/admin/AdminCMS';
+import AdminShell from './components/admin/AdminShell';
+import PublicPortal from './pages/PublicPortal';
+import PublicImovelDetails from './pages/PublicImovelDetails';
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -65,7 +65,7 @@ const App: React.FC = () => {
             <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="imoveis" element={<AdminImoveis />} />
-              <Route path="cms" element={<AdminCMS />} /> {/* Nova Rota CMS */}
+              <Route path="cms" element={<AdminCMS />} />
               <Route path="leads" element={<AdminLeads />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="settings" element={<AdminSettings />} />

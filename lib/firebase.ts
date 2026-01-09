@@ -1,7 +1,8 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+// Using standard modular Firestore import from the official package
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAv_79arQMs-2v5RU2pzdaTvYHT4XJ5_lU",
@@ -14,10 +15,8 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Configuração recomendada para Web SDK v10
-export const db = initializeFirestore(app, {
-  experimentalAutoDetectLongPolling: true // Melhor que forçar polling, detecta apenas se necessário
-});
+// Correct usage of getFirestore with the app instance for modular SDK
+export const db = getFirestore(app);
 
 export const auth = getAuth(app);
 export default app;

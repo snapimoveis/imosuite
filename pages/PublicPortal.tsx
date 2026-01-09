@@ -1,8 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+// Fix: Use standard modular Firestore imports
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../lib/firebase.ts';
+import { db } from '../lib/firebase';
 import { Tenant, Imovel, CMSSection, MenuItem } from '../types';
 import { 
   Loader2, Building2, ChevronRight, Mail, Phone, 
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import ImovelCard from '../components/ImovelCard';
 import { formatCurrency } from '../lib/utils';
-import { DEFAULT_TENANT_CMS } from '../constants.tsx';
+import { DEFAULT_TENANT_CMS } from '../constants';
 
 const PublicPortal: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -98,7 +99,7 @@ const PublicPortal: React.FC = () => {
         {cms.homepage_sections
           .filter(s => s.enabled)
           .sort((a,b) => a.order - b.order)
-          .map(section => (
+          .map((section: CMSSection) => (
             <SectionRenderer 
               key={section.id} 
               section={section} 

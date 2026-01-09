@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+// Standard modular Firestore imports for realtime updates
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase.ts';
+import { db } from '../lib/firebase';
 import { Tenant } from '../types';
-import { DEFAULT_TENANT } from '../constants.tsx';
-import { useAuth } from './AuthContext.tsx';
+import { DEFAULT_TENANT } from '../constants';
+import { useAuth } from './AuthContext';
 
 interface TenantContextType {
   tenant: Tenant;
@@ -45,7 +46,6 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     
     const unsubscribe = onSnapshot(tenantRef, (docSnap) => {
       if (docSnap.exists()) {
-        // Fix: Cast docSnap.data() to any to resolve spread type error
         const tenantData = { id: docSnap.id, ...(docSnap.data() as any) } as Tenant;
         setTenant(tenantData);
         
