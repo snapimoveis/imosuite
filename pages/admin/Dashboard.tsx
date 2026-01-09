@@ -19,26 +19,25 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchRealStats = async () => {
-      // Se ainda está a carregar o Auth, esperamos
+      // Se ainda está a carregar o Auth ou se o tenantId é pendente/demo, não fazemos fetch ainda
       if (authLoading) return;
-
-      // Se não há perfil ou o tenantId é inválido/pendente
       if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
-        // Se já passou algum tempo e continua pendente, paramos o loading para mostrar estado vazio
-        const timeout = setTimeout(() => {
-          setIsLoading(false);
-        }, 2000);
-        return () => clearTimeout(timeout);
+        setIsLoading(false);
+        return;
       }
 
+      setIsLoading(true);
       try {
+        // Consultar propriedades do tenant específico
         const propsRef = collection(db, "tenants", profile.tenantId, "properties");
         const propsSnap = await getDocs(propsRef);
         
+        // Consultar equipa vinculada a este tenant
         const usersRef = collection(db, "users");
         const teamQuery = query(usersRef, where("tenantId", "==", profile.tenantId));
         const teamSnap = await getDocs(teamQuery);
 
+        // Consultar leads deste tenant
         const leadsRef = collection(db, "tenants", profile.tenantId, "leads");
         const leadsSnap = await getDocs(leadsRef);
 
@@ -51,17 +50,21 @@ const Dashboard: React.FC = () => {
         setError(null);
       } catch (err: any) {
         console.error("Erro ao carregar stats do dashboard:", err);
-        setError("Não foi possível carregar todos os dados.");
+        // Se o erro for de permissão, mostramos uma mensagem amigável em vez de quebrar a UI
+        if (err.code === 'permission-denied') {
+          setError("A configurar permissões de acesso...");
+        } else {
+          setError("Não foi possível carregar os dados.");
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRealStats();
-  }, [profile, authLoading]);
+  }, [profile?.tenantId, authLoading]);
 
-  // Se o Auth ainda está a carregar ou se estamos no estado inicial de fetch
-  if (authLoading || (isLoading && profile?.tenantId === 'pending')) {
+  if (authLoading || (isLoading && (!profile || profile.tenantId === 'pending'))) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-slate-300">
         <Loader2 className="animate-spin mb-4 text-[#1c2d51]" size={32} />
@@ -134,7 +137,7 @@ const Dashboard: React.FC = () => {
             <h3 className="text-xl font-black text-[#1c2d51] mb-2 tracking-tighter">Inventário Online</h3>
             <p className="text-slate-400 text-sm font-medium mb-8 max-w-xs">Os seus imóveis estão agora visíveis no portal público da sua agência.</p>
             <a 
-              href={`#/agencia/${profile?.tenantId === 'pending' ? '' : profile?.tenantId || ''}`} 
+              href={`#/agencia/${profile?.tenantId === 'pending' || !profile?.tenantId ? '' : profile.tenantId}`} 
               target="_blank" 
               className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-[#1c2d51]/20 hover:scale-105 transition-all"
             >

@@ -99,7 +99,10 @@ const AdminImoveis: React.FC = () => {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const loadProperties = async () => {
-    if (!profile?.tenantId || profile.tenantId === 'pending') return;
+    if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await PropertyService.getProperties(profile.tenantId);
@@ -111,7 +114,7 @@ const AdminImoveis: React.FC = () => {
     }
   };
 
-  useEffect(() => { loadProperties(); }, [profile]);
+  useEffect(() => { loadProperties(); }, [profile?.tenantId]);
 
   const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 1));
@@ -129,10 +132,13 @@ const AdminImoveis: React.FC = () => {
     setFormData(imovel);
     setCurrentStep(1);
     
-    // Carregar media da subcoleção se necessário
     if (profile?.tenantId) {
-      const media = await PropertyService.getPropertyMedia(profile.tenantId, imovel.id);
-      setTempMedia(media);
+      try {
+        const media = await PropertyService.getPropertyMedia(profile.tenantId, imovel.id);
+        setTempMedia(media);
+      } catch (err) {
+        console.error("Erro ao carregar media:", err);
+      }
     }
     
     setIsModalOpen(true);
@@ -178,28 +184,17 @@ const AdminImoveis: React.FC = () => {
     }
   };
 
-  // Improved handleAIGenerate with proper type safety and defensive spreading
   const handleAIGenerate = async () => {
     setIsGeneratingAI(true);
     try {
-      // Call service to generate text from Gemini API
       const desc = await generatePropertyDescription(formData);
-      
-      // Update local state with the generated description, ensuring defensive spreading
-      setFormData(prev => {
-        if (!prev) return prev;
-        return { 
-          ...prev, 
-          descricao: { 
-            ...(prev.descricao || { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null }), 
-            completa_md: desc,
-            gerada_por_ia: true,
-            ultima_geracao_ia_at: new Date().toISOString()
-          } 
-        };
-      });
-    } catch (error) {
-      console.error("AI Generation failed:", error);
+      // Fix: Ensure setFormData correctly handles the partial state update and desc is treated as string
+      setFormData((prev: Partial<Imovel>) => ({ 
+        ...prev, 
+        descricao: { ...(prev.descricao || { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null }), completa_md: desc } 
+      }));
+    } catch (error: any) {
+      console.error(error);
     } finally {
       setIsGeneratingAI(false);
     }
@@ -217,14 +212,15 @@ const AdminImoveis: React.FC = () => {
       alt: formData.titulo || '',
       created_at: new Date()
     };
-    setTempMedia([...tempMedia, newMedia]);
+    setTempMedia(prev => [...prev, newMedia]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach(file => {
+    // Fix: Explicitly type file as Browser File (Blob) to avoid collision with Gemini SDK's internal Blob interface
+    Array.from(files).forEach((file: File) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         handleAddMedia(reader.result as string);
@@ -345,26 +341,26 @@ const AdminImoveis: React.FC = () => {
                    <SectionTitle title="3. Localização" subtitle="Dados geográficos detalhados" />
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <InputGroup label="Distrito">
-                        <input className="admin-input" value={formData.localizacao?.distrito} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, distrito: e.target.value}})} />
+                        <input className="admin-input" value={formData.localizacao?.distrito} onChange={e => setFormData({...formData, localizacao: { ...formData.localizacao!, distrito: e.target.value }})} />
                       </InputGroup>
                       <InputGroup label="Concelho" required>
-                        <input className="admin-input" value={formData.localizacao?.concelho} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, concelho: e.target.value}})} />
+                        <input className="admin-input" value={formData.localizacao?.concelho} onChange={e => setFormData({...formData, localizacao: { ...formData.localizacao!, concelho: e.target.value }})} />
                       </InputGroup>
                       <InputGroup label="Freguesia">
-                        <input className="admin-input" value={formData.localizacao?.freguesia || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, freguesia: e.target.value}})} />
+                        <input className="admin-input" value={formData.localizacao?.freguesia || ''} onChange={e => setFormData({...formData, localizacao: { ...formData.localizacao!, freguesia: e.target.value }})} />
                       </InputGroup>
                       <div className="md:col-span-2">
                         <InputGroup label="Morada Completa">
-                          <input className="admin-input" value={formData.localizacao?.morada || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, morada: e.target.value}})} />
+                          <input className="admin-input" value={formData.localizacao?.morada || ''} onChange={e => setFormData({...formData, localizacao: { ...formData.localizacao!, morada: e.target.value }})} />
                         </InputGroup>
                       </div>
                       <InputGroup label="Código Postal">
-                        <input className="admin-input" placeholder="1000-000" value={formData.localizacao?.codigo_postal || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, codigo_postal: e.target.value}})} />
+                        <input className="admin-input" placeholder="1000-000" value={formData.localizacao?.codigo_postal || ''} onChange={e => setFormData({...formData, localizacao: { ...formData.localizacao!, codigo_postal: e.target.value }})} />
                       </InputGroup>
                    </div>
                    <div className="p-6 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-between">
                       <div className="flex items-center gap-3 text-blue-600"><ShieldCheck size={24}/><div><p className="text-xs font-black uppercase">Privacidade</p><p className="text-[10px] uppercase font-bold opacity-70">Expor morada exata no site público?</p></div></div>
-                      <button onClick={() => setFormData({...formData, localizacao: {...formData.localizacao!, expor_morada: !formData.localizacao?.expor_morada}})} className={`w-14 h-8 rounded-full relative transition-all ${formData.localizacao?.expor_morada ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                      <button onClick={() => setFormData({...formData, localizacao: { ...formData.localizacao!, expor_morada: !formData.localizacao?.expor_morada }})} className={`w-14 h-8 rounded-full relative transition-all ${formData.localizacao?.expor_morada ? 'bg-blue-600' : 'bg-slate-200'}`}>
                          <div className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-all ${formData.localizacao?.expor_morada ? 'right-1' : 'left-1'}`}></div>
                       </button>
                    </div>
@@ -376,23 +372,23 @@ const AdminImoveis: React.FC = () => {
                    <SectionTitle title="4. Áreas & Divisões" subtitle="Dimensões e espaços funcionais" />
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <InputGroup label="Área Útil (m²)">
-                         <input type="number" className="admin-input" value={formData.areas?.area_util_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_util_m2: Number(e.target.value)}})} />
+                         <input type="number" className="admin-input" value={formData.areas?.area_util_m2 || ''} onChange={e => setFormData({...formData, areas: { ...formData.areas!, area_util_m2: Number(e.target.value) }})} />
                       </InputGroup>
                       <InputGroup label="Area Bruta (m²)">
-                         <input type="number" className="admin-input" value={formData.areas?.area_bruta_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_bruta_m2: Number(e.target.value)}})} />
+                         <input type="number" className="admin-input" value={formData.areas?.area_bruta_m2 || ''} onChange={e => setFormData({...formData, areas: { ...formData.areas!, area_bruta_m2: Number(e.target.value) }})} />
                       </InputGroup>
                       <InputGroup label="Andar">
-                         <input className="admin-input" value={formData.areas?.andar || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, andar: e.target.value}})} />
+                         <input className="admin-input" value={formData.areas?.andar || ''} onChange={e => setFormData({...formData, areas: { ...formData.areas!, andar: e.target.value }})} />
                       </InputGroup>
                    </div>
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                      <Counter label="Quartos" value={formData.divisoes?.quartos || 0} onChange={v => setFormData({...formData, divisoes: {...formData.divisoes!, quartos: v}})} />
-                      <Counter label="Casas Banho" value={formData.divisoes?.casas_banho || 0} onChange={v => setFormData({...formData, divisoes: {...formData.divisoes!, casas_banho: v}})} />
+                      <Counter label="Quartos" value={formData.divisoes?.quartos || 0} onChange={v => setFormData({...formData, divisoes: { ...formData.divisoes!, quartos: v }})} />
+                      <Counter label="Casas Banho" value={formData.divisoes?.casas_banho || 0} onChange={v => setFormData({...formData, divisoes: { ...formData.divisoes!, casas_banho: v }})} />
                       <div className="p-6 bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center col-span-2">
                          <span className="text-[10px] font-black uppercase text-slate-400 mb-2">Lugar de Garagem</span>
                          <div className="flex items-center gap-6">
-                            <button onClick={() => setFormData({...formData, divisoes: {...formData.divisoes!, garagem: { tem: !formData.divisoes?.garagem?.tem, lugares: 1}}})} className={`px-4 py-2 rounded-xl text-[10px] font-black border uppercase ${formData.divisoes?.garagem?.tem ? 'bg-[#1c2d51] text-white' : 'bg-white'}`}>Sim</button>
-                            <input type="number" placeholder="Nº" className="w-16 bg-white border-none rounded-xl p-2 text-center font-bold" value={formData.divisoes?.garagem?.lugares || ''} onChange={e => setFormData({...formData, divisoes: {...formData.divisoes!, garagem: {...formData.divisoes!.garagem, lugares: Number(e.target.value)}}})} />
+                            <button onClick={() => setFormData({...formData, divisoes: { ...formData.divisoes!, garagem: { tem: !formData.divisoes?.garagem?.tem, lugares: 1}}})} className={`px-4 py-2 rounded-xl text-[10px] font-black border uppercase ${formData.divisoes?.garagem?.tem ? 'bg-[#1c2d51] text-white' : 'bg-white'}`}>Sim</button>
+                            <input type="number" placeholder="Nº" className="w-16 bg-white border-none rounded-xl p-2 text-center font-bold" value={formData.divisoes?.garagem?.lugares || ''} onChange={e => setFormData({...formData, divisoes: { ...formData.divisoes!, garagem: { ...formData.divisoes!.garagem, lugares: Number(e.target.value) } }})} />
                          </div>
                       </div>
                    </div>
@@ -407,26 +403,40 @@ const AdminImoveis: React.FC = () => {
                          <InputGroup label={formData.operacao === 'venda' ? 'Preço de Venda (€)' : 'Preço Arrendamento (€)'} required>
                             <div className="relative">
                                <Euro className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18}/>
-                               <input type="number" className="admin-input pl-12" value={(formData.operacao === 'venda' ? formData.financeiro?.preco_venda : formData.financeiro?.preco_arrendamento) || ''} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro!, [formData.operacao === 'venda' ? 'preco_venda' : 'preco_arrendamento']: Number(e.target.value)}})} />
+                               <input 
+                                 type="number" 
+                                 className="admin-input pl-12" 
+                                 value={(formData.operacao === 'venda' ? formData.financeiro?.preco_venda : formData.financeiro?.preco_arrendamento) || ''} 
+                                 onChange={e => {
+                                   const val = Number(e.target.value);
+                                   setFormData(prev => ({
+                                     ...prev,
+                                     financeiro: {
+                                       ...(prev.financeiro || { preco_venda: null, preco_arrendamento: null, negociavel: false, condominio_mensal: null, imi_anual: null, caucao_meses: null, despesas_incluidas: [] }),
+                                       [formData.operacao === 'venda' ? 'preco_venda' : 'preco_arrendamento']: val
+                                     }
+                                   }));
+                                 }} 
+                               />
                             </div>
                          </InputGroup>
                          <div className="grid grid-cols-2 gap-4">
                            <InputGroup label="Condomínio /mês">
-                              <input type="number" className="admin-input" value={formData.financeiro?.condominio_mensal || ''} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro!, condominio_mensal: Number(e.target.value)}})} />
+                              <input type="number" className="admin-input" value={formData.financeiro?.condominio_mensal || ''} onChange={e => setFormData(prev => ({ ...prev, financeiro: { ...prev.financeiro!, condominio_mensal: Number(e.target.value) } }))} />
                            </InputGroup>
                            <InputGroup label="IMI Anual">
-                              <input type="number" className="admin-input" value={formData.financeiro?.imi_anual || ''} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro!, imi_anual: Number(e.target.value)}})} />
+                              <input type="number" className="admin-input" value={formData.financeiro?.imi_anual || ''} onChange={e => setFormData(prev => ({ ...prev, financeiro: { ...prev.financeiro!, imi_anual: Number(e.target.value) } }))} />
                            </InputGroup>
                          </div>
                       </div>
                       <div className="space-y-6">
                          <InputGroup label="Certificado Energético">
-                            <select className="admin-input" value={formData.certificacao?.certificado_energetico} onChange={e => setFormData({...formData, certificacao: {...formData.certificacao!, certificado_energetico: e.target.value}})}>
+                            <select className="admin-input" value={formData.certificacao?.certificado_energetico} onChange={e => setFormData(prev => ({ ...prev, certificacao: { ...prev.certificacao!, certificado_energetico: e.target.value } }))}>
                                {['A+', 'A', 'B', 'B-', 'C', 'D', 'E', 'F', 'G', 'Isento', 'Em preparação'].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                          </InputGroup>
                          <InputGroup label="Licença Utilização">
-                            <input placeholder="Ex: 123/2020" className="admin-input" value={formData.certificacao?.licenca_utilizacao_numero || ''} onChange={e => setFormData({...formData, certificacao: {...formData.certificacao!, licenca_utilizacao_numero: e.target.value}})} />
+                            <input placeholder="Ex: 123/2020" className="admin-input" value={formData.certificacao?.licenca_utilizacao_numero || ''} onChange={e => setFormData(prev => ({ ...prev, certificacao: { ...prev.certificacao!, licenca_utilizacao_numero: e.target.value } }))} />
                          </InputGroup>
                       </div>
                    </div>
@@ -444,7 +454,7 @@ const AdminImoveis: React.FC = () => {
                             Gerar com IA Gemini
                          </button>
                       </div>
-                      <textarea rows={6} className="admin-input py-6" value={formData.descricao?.completa_md || ''} onChange={e => setFormData({...formData, descricao: {...formData.descricao!, completa_md: e.target.value}})}></textarea>
+                      <textarea rows={6} className="admin-input py-6" value={formData.descricao?.completa_md || ''} onChange={e => setFormData(prev => ({ ...prev, descricao: { ...prev.descricao!, completa_md: e.target.value } }))}></textarea>
                    </div>
                    <div className="space-y-6">
                       <label className="text-[10px] font-black uppercase text-slate-400">Media & Fotos</label>
@@ -462,15 +472,15 @@ const AdminImoveis: React.FC = () => {
 
                       {tempMedia.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                           {tempMedia.map((m, idx) => (
+                           {tempMedia.map((m) => (
                              <div key={m.id} className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${m.is_cover ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-100'}`}>
                                 <img src={m.url} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                                    <button onClick={() => {
                                      const newMedia = tempMedia.map(item => ({ ...item, is_cover: item.id === m.id }));
                                      setTempMedia(newMedia);
-                                   }} className="p-2 bg-white rounded-lg hover:text-blue-500 shadow-sm"><Star size={14} fill={m.is_cover ? 'currentColor' : 'none'} /></button>
-                                   <button onClick={() => setTempMedia(tempMedia.filter(item => item.id !== m.id))} className="p-2 bg-white rounded-lg text-red-500 shadow-sm"><Trash size={14}/></button>
+                                   }} className="p-2 bg-white rounded-lg hover:text-blue-500 shadow-sm transition-transform active:scale-90"><Star size={14} fill={m.is_cover ? 'currentColor' : 'none'} /></button>
+                                   <button onClick={() => setTempMedia(tempMedia.filter(item => item.id !== m.id))} className="p-2 bg-white rounded-lg text-red-500 shadow-sm transition-transform active:scale-90"><Trash size={14}/></button>
                                 </div>
                              </div>
                            ))}
@@ -509,7 +519,7 @@ const AdminImoveis: React.FC = () => {
               <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
                 <th className="px-8 py-5">Imóvel / Ref</th>
                 <th className="px-8 py-5">Tipo & Negócio</th>
-                <th className="px-8 py-5 text-right">Acções</th>
+                <th className="px-8 py-5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -534,16 +544,18 @@ const AdminImoveis: React.FC = () => {
                     <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">{p.tipo_imovel} &bull; {p.operacao}</span>
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <button 
                         onClick={() => handleEdit(p)}
-                        className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#1c2d51] hover:border-[#1c2d51] hover:shadow-lg transition-all"
+                        className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#1c2d51] hover:border-slate-300 hover:shadow-sm transition-all"
+                        title="Editar"
                       >
                         <Edit2 size={16}/>
                       </button>
                       <button 
                         onClick={() => handleDelete(p.id)}
-                        className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-red-400 hover:bg-red-50 hover:border-red-100 hover:shadow-lg transition-all"
+                        className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-red-400 hover:bg-red-50 hover:border-red-100 hover:shadow-sm transition-all"
+                        title="Apagar"
                       >
                         <Trash2 size={16}/>
                       </button>
