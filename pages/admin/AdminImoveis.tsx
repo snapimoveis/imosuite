@@ -90,6 +90,28 @@ const AdminImoveis: React.FC = () => {
     }
   };
 
+  const handleToggleDestaque = async (imovel: Imovel) => {
+    if (!profile?.tenantId) return;
+    const currentDestaque = imovel.publicacao?.destaque || false;
+    try {
+      await PropertyService.updateProperty(profile.tenantId, imovel.id, {
+        ...imovel,
+        publicacao: {
+          ...imovel.publicacao,
+          destaque: !currentDestaque
+        }
+      });
+      // Update local state for immediate UI feedback
+      setProperties(prev => prev.map(p => p.id === imovel.id ? { 
+        ...p, 
+        publicacao: { ...p.publicacao, destaque: !currentDestaque } 
+      } : p));
+    } catch (err) {
+      console.error("Erro ao alternar destaque:", err);
+      alert("Não foi possível atualizar o estado de destaque.");
+    }
+  };
+
   const handleSave = async () => {
     if (!profile?.tenantId || !user) return;
     setIsSaving(true);
@@ -231,7 +253,7 @@ const AdminImoveis: React.FC = () => {
           <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">4. Áreas e Dimensões</h4></div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Área útil (m²)</label><input type="number" className="admin-input" value={formData.areas?.area_util_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_util_m2: Number(e.target.value)}})} /></div>
-            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Área bruta (m²)</label><input type="number" className="admin-input" value={formData.areas?.area_bruta_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_bruta_m2: Number(e.target.value)}})} /></div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Area bruta (m²)</label><input type="number" className="admin-input" value={formData.areas?.area_bruta_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_bruta_m2: Number(e.target.value)}})} /></div>
             <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Área de terreno (se aplicável)</label><input type="number" className="admin-input" value={formData.areas?.area_terreno_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_terreno_m2: Number(e.target.value)}})} /></div>
             <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Número de pisos</label><input type="number" className="admin-input" value={formData.areas?.pisos || 1} onChange={e => setFormData({...formData, areas: {...formData.areas!, pisos: Number(e.target.value)}})} /></div>
             <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Andar (se apto)</label><input className="admin-input" value={formData.areas?.andar || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, andar: e.target.value}})} /></div>
@@ -476,6 +498,13 @@ const AdminImoveis: React.FC = () => {
                     <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${p.publicacao?.publicar_no_site ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{p.publicacao?.publicar_no_site ? 'Online' : 'Oculto'}</span>
                   </td>
                   <td className="px-8 py-6 text-right flex justify-end gap-2">
+                    <button 
+                      onClick={() => handleToggleDestaque(p)} 
+                      title={p.publicacao?.destaque ? "Remover Destaque" : "Marcar como Destaque"}
+                      className={`p-3 rounded-xl transition-all ${p.publicacao?.destaque ? 'text-amber-500 bg-amber-50' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'}`}
+                    >
+                      <Star size={18} fill={p.publicacao?.destaque ? "currentColor" : "none"} />
+                    </button>
                     <button onClick={() => handleEdit(p)} className="p-3 text-slate-300 hover:text-[#1c2d51] hover:bg-slate-100 rounded-xl transition-all"><Brush size={18}/></button>
                     <button onClick={() => handleDelete(p.id)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash size={18}/></button>
                   </td>
