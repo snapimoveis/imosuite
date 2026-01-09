@@ -4,17 +4,24 @@ import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";
 
 /**
- * Limpa o objeto para o Firestore, tratando Timestamps e removendo undefined.
+ * Normaliza dados para o Firestore.
+ * Remove campos 'id', 'tenant_id', 'owner_uid' e 'created_at' em updates para evitar violações de regras de segurança.
  */
-const cleanForFirestore = (obj: any): any => {
+const prepareData = (obj: any, isUpdate: boolean = false): any => {
   if (obj === null || obj === undefined) return null;
   if (obj instanceof Timestamp || obj instanceof Date) return obj;
-  if (Array.isArray(obj)) return obj.map(item => cleanForFirestore(item));
+  if (Array.isArray(obj)) return obj.map(item => prepareData(item, isUpdate));
   if (typeof obj === 'object') {
     const cleaned: any = {};
     Object.keys(obj).forEach(key => {
+      // Bloquear campos protegidos pelo Firestore Rules em atualizações
+      if (key === 'id') return;
+      if (isUpdate && (key === 'tenant_id' || key === 'owner_uid' || key === 'created_at' || key === 'tracking')) return;
+      
       const value = obj[key];
-      if (value !== undefined) cleaned[key] = cleanForFirestore(value);
+      if (value !== undefined) {
+        cleaned[key] = prepareData(value, isUpdate);
+      }
     });
     return cleaned;
   }
@@ -27,12 +34,17 @@ export const PropertyService = {
     try {
       const propertiesRef = collection(db, "tenants", tenantId, "properties");
       const snapshot = await getDocs(propertiesRef);
-      return snapshot.docs.map(propertyDoc => ({ 
-        id: propertyDoc.id, 
-        ...(propertyDoc.data() as any) 
-      } as Imovel));
+      return snapshot.docs.map(doc => {
+        const data = doc.data() as any;
+        return { 
+          id: doc.id, 
+          ...data,
+          // Garante que caracteristicas seja sempre um array para evitar erros de .includes()
+          caracteristicas: Array.isArray(data.caracteristicas) ? data.caracteristicas : []
+        } as Imovel;
+      });
     } catch (error) {
-      console.error("Erro ao listar:", error);
+      console.error("Erro ao listar imóveis:", error);
       return [];
     }
   },
@@ -44,25 +56,22 @@ export const PropertyService = {
       return snapshot.docs
         .map(d => ({ id: d.id, ...(d.data() as any) } as ImovelMedia))
         .sort((a, b) => (a.order || 0) - (b.order || 0));
-    } catch (error) {
-      return [];
-    }
+    } catch (error) { return []; }
   },
 
   async createProperty(tenantId: string, propertyData: Partial<Imovel>, mediaItems: ImovelMedia[] = []) {
-    if (!tenantId || tenantId === 'pending') throw new Error("Tenant não identificado");
+    if (!tenantId || tenantId === 'pending') throw new Error("Tenant inválido.");
     
     const propertiesRef = collection(db, "tenants", tenantId, "properties");
-    
-    // Preparar dados de criação
-    const { id, ...dataToSave } = propertyData;
-    const finalData = cleanForFirestore({
-      ...dataToSave,
+    const finalData = prepareData({
+      ...propertyData,
       tenant_id: tenantId,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
-      tracking: { views: 0, favorites: 0 }
-    });
+      tracking: { views: 0, favorites: 0 },
+      // Fallback para array vazio
+      caracteristicas: propertyData.caracteristicas || []
+    }, false);
 
     const docRef = await addDoc(propertiesRef, finalData);
 
@@ -71,11 +80,18 @@ export const PropertyService = {
       const batch = writeBatch(db);
       mediaItems.forEach((item, index) => {
         const newMediaRef = doc(mediaColRef);
-        const { id: _, ...mD } = item;
-        batch.set(newMediaRef, cleanForFirestore({ ...mD, order: index, created_at: serverTimestamp() }));
+        const mediaData = {
+          ...item,
+          order: index,
+          created_at: serverTimestamp()
+        };
+        batch.set(newMediaRef, prepareData(mediaData));
       });
       await batch.commit();
-      await updateDoc(docRef, { "media.total": mediaItems.length, "media.cover_media_id": mediaItems[0].id || "auto" });
+      await updateDoc(docRef, { 
+        "media.total": mediaItems.length, 
+        "media.cover_media_id": mediaItems[0].id || "auto" 
+      });
     }
     return docRef;
   },
@@ -85,15 +101,13 @@ export const PropertyService = {
     
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
     
-    // REMOVER campos que causam erro de permissão em updates
-    const { id, tenant_id, created_at, owner_uid, tracking, ...allowedUpdates } = updates as any;
-    
-    const cleanUpdates = cleanForFirestore({
-      ...allowedUpdates,
-      updated_at: serverTimestamp()
-    });
+    // Garante que caracteristicas seja um array se estiver presente nos updates
+    if (updates.caracteristicas && !Array.isArray(updates.caracteristicas)) {
+      updates.caracteristicas = [];
+    }
 
-    await updateDoc(propertyRef, cleanUpdates);
+    const cleanUpdates = prepareData(updates, true);
+    await updateDoc(propertyRef, { ...cleanUpdates, updated_at: serverTimestamp() });
 
     if (mediaItems) {
       const mediaColRef = collection(db, "tenants", tenantId, "properties", propertyId, "media");
@@ -101,11 +115,14 @@ export const PropertyService = {
       const batch = writeBatch(db);
       
       existingMedia.docs.forEach(d => batch.delete(d.ref));
-      
       mediaItems.forEach((item, index) => {
         const newMediaRef = doc(mediaColRef);
-        const { id: _, created_at: __, ...mD } = item;
-        batch.set(newMediaRef, cleanForFirestore({ ...mD, order: index, created_at: item.created_at || serverTimestamp() }));
+        const mediaData = {
+          ...item,
+          order: index,
+          created_at: item.created_at || serverTimestamp()
+        };
+        batch.set(newMediaRef, prepareData(mediaData));
       });
       
       await batch.commit();
@@ -117,7 +134,6 @@ export const PropertyService = {
   },
 
   async deleteProperty(tenantId: string, propertyId: string) {
-    const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
-    return await deleteDoc(propertyRef);
+    return await deleteDoc(doc(db, "tenants", tenantId, "properties", propertyId));
   }
 };

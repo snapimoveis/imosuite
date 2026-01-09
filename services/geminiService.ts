@@ -2,34 +2,33 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
 /**
- * Gera descrições profissionais para imóveis usando o Gemini 3 Flash.
- * Chave obtida via process.env.API_KEY injetada no build/runtime.
+ * Gera descrições profissionais para imóveis em Portugal.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
   const apiKey = process.env.API_KEY;
-  
-  if (!apiKey) {
-    throw new Error("Configuração da IA em falta (API_KEY). Verifique as variáveis de ambiente no Vercel.");
-  }
+  if (!apiKey) throw new Error("Chave API do Gemini não encontrada no sistema.");
 
+  // Inicialização no momento do uso para evitar erros de ciclo de vida do browser
   const ai = new GoogleGenAI({ apiKey });
   
-  const propertyContext = {
+  const ctx = {
     titulo: property.titulo,
     tipo: property.tipo_imovel,
     tipologia: property.tipologia,
-    concelho: property.localizacao?.concelho,
-    distrito: property.localizacao?.distrito,
-    preco: property.financeiro?.preco_venda || property.financeiro?.preco_arrendamento,
-    caracteristicas: property.caracteristicas || []
+    operacao: property.operacao,
+    local: property.localizacao?.concelho,
+    caract: property.caracteristicas || []
   };
 
   const prompt = `
-    És um redator imobiliário experiente em Portugal. 
-    Gera uma descrição curta (até 350 carac.) e uma completa (Markdown) para este imóvel.
-    Utiliza português de Portugal (PT-PT).
+    Como especialista imobiliário em Portugal, gera uma descrição para o anúncio:
+    ${JSON.stringify(ctx)}
     
-    Dados: ${JSON.stringify(propertyContext)}
+    Regras:
+    - Português de Portugal (PT-PT).
+    - Versão Curta: máx 350 carac.
+    - Versão Completa: Markdown estruturado.
+    - Tom profissional e persuasivo.
   `;
 
   try {
@@ -57,23 +56,21 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
       hashtags: result.hashtags || []
     };
   } catch (error: any) {
-    console.error("Erro Gemini:", error);
-    throw new Error(error.message || "Erro na comunicação com a IA.");
+    console.error("Gemini Error:", error);
+    throw new Error(error.message || "A IA não conseguiu processar o pedido.");
   }
 };
 
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return "A sua imobiliária de confiança.";
+  if (!apiKey) return "Excelência imobiliária.";
   
   const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Gere um slogan curto para a imobiliária "${agencyName}" em Portugal. Retorne apenas o texto.`,
+      contents: `Gere um slogan comercial em português para a imobiliária "${agencyName}". Apenas o texto.`,
     });
-    return response.text?.trim() || "Excelência no mercado imobiliário.";
-  } catch {
-    return "A sua imobiliária de confiança.";
-  }
+    return response.text?.trim() || "A sua imobiliária de confiança.";
+  } catch { return "Excelência no mercado."; }
 };
