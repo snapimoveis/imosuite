@@ -27,7 +27,16 @@ export const MOCK_IMOVEIS: Imovel[] = [
     media: [
       { id: 'm1', imovel_id: '1', url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80', tipo: 'foto', ordem: 0, principal: true }
     ],
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    // Added missing properties to satisfy Imovel interface
+    disponibilidade_imediata: true,
+    tem_elevador: true,
+    tem_piscina: false,
+    tem_jardim: false,
+    tem_varanda_terraco: true,
+    expor_morada_publica: false,
+    negociavel: true,
+    comissao_incluida: true
   },
   {
     id: '2',
@@ -54,7 +63,16 @@ export const MOCK_IMOVEIS: Imovel[] = [
     media: [
       { id: 'm2', imovel_id: '2', url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80', tipo: 'foto', ordem: 0, principal: true }
     ],
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    // Added missing properties to satisfy Imovel interface
+    disponibilidade_imediata: true,
+    tem_elevador: false,
+    tem_piscina: true,
+    tem_jardim: true,
+    tem_varanda_terraco: true,
+    expor_morada_publica: false,
+    negociavel: false,
+    comissao_incluida: true
   },
   {
     id: '3',
@@ -81,6 +99,15 @@ export const MOCK_IMOVEIS: Imovel[] = [
     media: [
       { id: 'm3', imovel_id: '3', url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80', tipo: 'foto', ordem: 0, principal: true }
     ],
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    // Added missing properties to satisfy Imovel interface
+    disponibilidade_imediata: true,
+    tem_elevador: true,
+    tem_piscina: false,
+    tem_jardim: false,
+    tem_varanda_terraco: false,
+    expor_morada_publica: true,
+    negociavel: false,
+    comissao_incluida: true
   }
 ];
