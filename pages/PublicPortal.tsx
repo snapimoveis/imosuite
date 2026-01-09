@@ -22,7 +22,7 @@ const PublicPortal: React.FC = () => {
       try {
         let tData: Tenant | null = null;
         
-        // 1. Encontrar Agência
+        // 1. Localizar agência via slug para garantir segurança de dados (Tenant Isolation)
         const tRef = collection(db, "tenants");
         const tQuery = query(tRef, where("slug", "==", slug), limit(1));
         const tSnap = await getDocs(tQuery);
@@ -30,6 +30,7 @@ const PublicPortal: React.FC = () => {
         if (!tSnap.empty) {
           tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
         } else {
+          // Fallback por ID se slug falhar
           const docRef = doc(db, "tenants", slug);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
@@ -43,32 +44,33 @@ const PublicPortal: React.FC = () => {
           root.style.setProperty('--primary', tData.cor_primaria);
           root.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
 
-          // 2. Carregar todos os imóveis da agência (mais resiliente)
+          // 2. Carregar APENAS imóveis desta agência específica (Prevenção de Vazamento)
           const pRef = collection(db, "tenants", tData.id, "properties");
           const pSnap = await getDocs(pRef);
           
-          const allProps = pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel));
+          const allProps = pSnap.docs.map(doc => ({ 
+            id: doc.id, 
+            tenant_id: tData!.id, // Forçar o tenant_id correto no objeto para as rotas
+            ...(doc.data() as any) 
+          } as Imovel));
           
-          // 3. Filtrar e Ordenar em JavaScript (Garante funcionamento sem índices compostos)
+          // 3. Processamento em memória para evitar erros de índice composto do Firestore
           const processed = allProps
             .filter(p => p.publicacao?.publicar_no_site === true)
             .sort((a, b) => {
-              // Destaques primeiro
               const destA = a.publicacao?.destaque ? 1 : 0;
               const destB = b.publicacao?.destaque ? 1 : 0;
               if (destA !== destB) return destB - destA;
-              
-              // Depois por data (mais recentes primeiro)
               const dateA = a.created_at?.seconds || 0;
               const dateB = b.created_at?.seconds || 0;
               return dateB - dateA;
             })
-            .slice(0, 9); // Limitar a 9 na homepage
+            .slice(0, 12);
 
           setProperties(processed);
         }
       } catch (err) {
-        console.error("Erro ao carregar portal:", err);
+        console.error("Erro fatal ao carregar portal:", err);
       } finally {
         setLoading(false);
       }
@@ -79,7 +81,7 @@ const PublicPortal: React.FC = () => {
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-white">
       <Loader2 className="animate-spin text-slate-200 mb-4" size={48} />
-      <p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A carregar portal imobiliário...</p>
+      <p className="font-brand font-black text-slate-400 uppercase tracking-widest text-[10px]">A sincronizar portefólio...</p>
     </div>
   );
 
@@ -93,7 +95,7 @@ const PublicPortal: React.FC = () => {
 
   return (
     <div className="bg-white font-brand min-h-screen flex flex-col" style={{ '--primary': tenant.cor_primaria } as any}>
-      {/* Navegação */}
+      {/* Navegação Branded */}
       <nav className="h-20 px-8 flex items-center justify-between border-b border-slate-50 bg-white sticky top-0 z-50">
         <div className="flex items-center gap-3">
           {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" alt={tenant.nome} /> : <span className="text-xl font-black text-[var(--primary)] tracking-tighter">{tenant.nome}</span>}
@@ -107,7 +109,7 @@ const PublicPortal: React.FC = () => {
         <button className="bg-[var(--primary)] text-white px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10 active:scale-95 transition-all">Contactar</button>
       </nav>
       
-      {/* Hero */}
+      {/* Hero Dinâmico */}
       <header className="py-24 px-8 text-center bg-slate-50 relative overflow-hidden flex flex-col justify-center items-center min-h-[60vh]">
         <div className="absolute inset-0 z-0">
            <img src={tenant.hero_image_url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1600'} className="w-full h-full object-cover opacity-[0.1]" alt="Hero" />
@@ -131,12 +133,12 @@ const PublicPortal: React.FC = () => {
         </div>
       </header>
       
-      {/* Imóveis em Destaque */}
+      {/* Grelha de Inventário Isolada */}
       <main className="max-w-7xl mx-auto py-32 px-8 flex-1 w-full">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>
             <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] tracking-tighter">Imóveis em Destaque</h2>
-            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Seleção especial das melhores oportunidades do mercado</p>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Seleção exclusiva da agência {tenant.nome}</p>
           </div>
           <button className="flex items-center gap-2 px-8 py-4 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Ver todos os imóveis <ChevronRight size={14}/></button>
         </div>
@@ -144,7 +146,7 @@ const PublicPortal: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {properties.length === 0 ? (
             <div className="col-span-full py-32 text-center bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-100">
-              <p className="text-slate-400 font-black uppercase text-xs tracking-widest italic">Nenhum imóvel em destaque no momento.</p>
+              <p className="text-slate-400 font-black uppercase text-xs tracking-widest italic">Nenhum imóvel disponível no site da agência.</p>
             </div>
           ) : (
             properties.map(p => (
@@ -154,30 +156,17 @@ const PublicPortal: React.FC = () => {
         </div>
       </main>
 
-      {/* Secção de Serviços */}
+      {/* Serviços */}
       <section className="py-32 bg-slate-50/50 border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] tracking-tighter mb-4">Os Nossos Serviços</h2>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-20">Acompanhamento personalizado em todas as fases do seu projeto imobiliário</p>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-20">Acompanhamento personalizado em todas as fases</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <ServiceCard icon={<Building2 size={32}/>} title="Compra de Imóveis" desc="Encontramos o imóvel perfeito para si, seja para habitação própria ou investimento. Análise de mercado e negociação incluídas." />
-            <ServiceCard icon={<Key size={32}/>} title="Arrendamento" desc="Gestão completa de arrendamento, desde a seleção de inquilinos até à elaboração de contratos e cobrança de rendas." />
-            <ServiceCard icon={<Handshake size={32}/>} title="Venda de Imóveis" desc="Valorização e promoção do seu imóvel para uma venda rápida e ao melhor preço de mercado." />
+            <ServiceCard icon={<Building2 size={32}/>} title="Compra de Imóveis" desc="Encontramos o imóvel perfeito para si, seja para habitação própria ou investimento." />
+            <ServiceCard icon={<Key size={32}/>} title="Arrendamento" desc="Gestão completa de arrendamento, desde a seleção de inquilinos à cobrança." />
+            <ServiceCard icon={<Handshake size={32}/>} title="Venda de Imóveis" desc="Valorização e promoção do seu imóvel para uma venda rápida e ao melhor preço." />
           </div>
-        </div>
-      </section>
-
-      {/* Banner CTA */}
-      <section className="py-32 bg-[var(--primary)] text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div className="max-w-4xl mx-auto px-8 text-center relative z-10">
-           <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-tight">Quer vender ou arrendar o seu imóvel?</h2>
-           <p className="text-xl text-white/70 font-medium mb-12 max-w-2xl mx-auto">Contacte-nos para uma avaliação gratuita e descubra como podemos ajudá-lo a obter o melhor resultado.</p>
-           <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button className="bg-[#1c2d51] text-white px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-1 transition-all">Fale Connosco <ArrowRight size={18}/></button>
-              <button className="bg-white text-[#1c2d51] px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">Saber Mais</button>
-           </div>
         </div>
       </section>
 
@@ -188,14 +177,13 @@ const PublicPortal: React.FC = () => {
             <div className="mb-8">
               {tenant.logo_url ? <img src={tenant.logo_url} className="h-12 w-auto object-contain" alt={tenant.nome} /> : <span className="text-2xl font-black text-[#1c2d51] tracking-tighter">{tenant.nome}</span>}
             </div>
-            <p className="text-lg max-w-sm font-medium leading-relaxed text-slate-400">{tenant.slogan || 'Especialistas no mercado imobiliário.'}</p>
+            <p className="text-lg max-w-sm font-medium leading-relaxed text-slate-400">{tenant.slogan || 'Líderes no mercado local.'}</p>
           </div>
           <div>
             <h4 className="font-black text-[#1c2d51] mb-8 uppercase tracking-widest text-[10px]">Links Rápidos</h4>
             <ul className="space-y-4 text-sm font-bold">
-              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Catálogo de Imóveis</a></li>
-              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Venda o seu Imóvel</a></li>
-              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Área de Cliente</a></li>
+              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Imóveis</a></li>
+              <li><a href="#" className="hover:text-[var(--primary)] transition-colors">Venda</a></li>
             </ul>
           </div>
           <div>
@@ -208,7 +196,7 @@ const PublicPortal: React.FC = () => {
         </div>
         <div className="max-w-7xl mx-auto px-8 pt-16 mt-16 border-t border-slate-50 text-[10px] font-black uppercase tracking-widest flex justify-between items-center text-slate-300">
           <span>&copy; {new Date().getFullYear()} {tenant.nome}.</span>
-          <span className="flex items-center gap-1.5 opacity-40">Powered by <Building2 size={12}/> ImoSuite</span>
+          <span className="flex items-center gap-1.5 opacity-40">Powered by ImoSuite</span>
         </div>
       </footer>
     </div>
