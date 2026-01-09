@@ -19,7 +19,8 @@ const AdminUsers: React.FC = () => {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("tenantId", "==", profile.tenantId));
         const snapshot = await getDocs(q);
-        setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        // Fix: Cast doc.data() to any to resolve spread type error
+        setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })));
       } catch (err) {
         console.error("Erro ao carregar equipa:", err);
       } finally {

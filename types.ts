@@ -143,5 +143,7 @@ export interface Lead {
   property_id: string;
   property_ref: string;
   estado: 'novo' | 'em_analise' | 'respondido' | 'arquivado';
+  // Fix: Added missing 'lido' property used in AdminLeads
+  lido: boolean;
   created_at: any;
 }

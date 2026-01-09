@@ -151,7 +151,8 @@ const OnboardingFlow: React.FC = () => {
         concelho: property.concelho,
         distrito: 'Lisboa',
       });
-      setProperty(prev => ({ ...prev, descricao: desc }));
+      // Fix: Extracting 'completa' property from the AI generated description object
+      setProperty(prev => ({ ...prev, descricao: desc.completa }));
     } finally {
       setIsGeneratingDescription(false);
     }

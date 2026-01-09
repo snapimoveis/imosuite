@@ -10,7 +10,8 @@ export const LeadService = {
       const leadsRef = collection(db, "tenants", tenantId, "leads");
       const q = query(leadsRef, orderBy("created_at", "desc"));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Lead));
+      // Fix: Cast d.data() to any to resolve spread type error
+      return snapshot.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lead));
     } catch (error) {
       console.error("Erro ao carregar leads:", error);
       return [];

@@ -32,13 +32,15 @@ const PublicImovelDetails: React.FC = () => {
           const tQuery = query(collection(db, "tenants"), where("slug", "==", searchSlug), limit(1));
           const tSnap = await getDocs(tQuery);
           if (!tSnap.empty) {
-            const tData = { id: tSnap.docs[0].id, ...tSnap.docs[0].data() } as Tenant;
+            // Fix: Cast doc data to any to resolve spread type error
+            const tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
             setTenant(tData);
             
             const iQuery = query(collection(db, "tenants", tData.id, "properties"), where("slug", "==", slug), limit(1));
             const iSnap = await getDocs(iQuery);
             if (!iSnap.empty) {
-              const data = { id: iSnap.docs[0].id, ...iSnap.docs[0].data() } as Imovel;
+              // Fix: Cast doc data to any to resolve spread type error
+              const data = { id: iSnap.docs[0].id, ...(iSnap.docs[0].data() as any) } as Imovel;
               setImovel(data);
             }
           }

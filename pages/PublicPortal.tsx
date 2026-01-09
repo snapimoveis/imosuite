@@ -28,13 +28,15 @@ const PublicPortal: React.FC = () => {
         const tSnap = await getDocs(tQuery);
         
         if (!tSnap.empty) {
-          tData = { id: tSnap.docs[0].id, ...tSnap.docs[0].data() } as Tenant;
+          // Fix: Cast doc data to any to resolve spread type error
+          tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
         } else {
           // 2. Se não encontrar por slug, tentar por ID direto (Fallback para links gerados por ID)
           const docRef = doc(db, "tenants", slug);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            tData = { id: docSnap.id, ...docSnap.data() } as Tenant;
+            // Fix: Cast docSnap.data() to any to resolve spread type error
+            tData = { id: docSnap.id, ...(docSnap.data() as any) } as Tenant;
           }
         }
         
@@ -52,7 +54,8 @@ const PublicPortal: React.FC = () => {
             pSnap = await getDocs(recentQuery);
           }
 
-          setProperties(pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Imovel)));
+          // Fix: Cast doc.data() to any to resolve spread type error
+          setProperties(pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel)));
         }
       } catch (err) {
         console.error("Erro ao carregar portal:", err);

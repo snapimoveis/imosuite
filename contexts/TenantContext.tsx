@@ -45,7 +45,8 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     
     const unsubscribe = onSnapshot(tenantRef, (docSnap) => {
       if (docSnap.exists()) {
-        const tenantData = { id: docSnap.id, ...docSnap.data() } as Tenant;
+        // Fix: Cast docSnap.data() to any to resolve spread type error
+        const tenantData = { id: docSnap.id, ...(docSnap.data() as any) } as Tenant;
         setTenant(tenantData);
         
         // Aplicar cores ao CSS

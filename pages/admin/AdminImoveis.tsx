@@ -69,7 +69,16 @@ const AdminImoveis: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await PropertyService.getProperties(profile.tenantId);
-      setProperties(data);
+      
+      const enriched = await Promise.all(data.map(async (p) => {
+        if (!p.media?.items || p.media.items.length === 0) {
+          const items = await PropertyService.getPropertyMedia(profile.tenantId, p.id);
+          return { ...p, media: { ...p.media, items } };
+        }
+        return p;
+      }));
+      
+      setProperties(enriched);
     } catch (error) {
       console.error(error);
     } finally {
@@ -110,10 +119,12 @@ const AdminImoveis: React.FC = () => {
     setTempMedia([]);
     setCurrentStep(1);
     setIsModalOpen(true);
+    setSaveError(null);
   };
 
   const handleEdit = async (imovel: Imovel) => {
     setEditingId(imovel.id);
+    setSaveError(null);
     setFormData({
       ...initialFormState,
       ...imovel,
@@ -168,7 +179,8 @@ const AdminImoveis: React.FC = () => {
       loadProperties();
       setEditingId(null);
     } catch (err: any) {
-      setSaveError(err.message || "Erro ao salvar.");
+      console.error("Save Error:", err);
+      setSaveError(err.message || "Erro de permissão ou conexão ao guardar.");
     } finally {
       setIsSaving(false);
     }
@@ -176,14 +188,22 @@ const AdminImoveis: React.FC = () => {
 
   const handleAIGenerate = async () => {
     setIsGeneratingAI(true);
+    setSaveError(null);
     try {
-      const desc = await generatePropertyDescription(formData);
+      const result = await generatePropertyDescription(formData);
       setFormData((prev: any) => ({ 
         ...prev, 
-        descricao: { ...(prev.descricao || {}), completa_md: desc } 
+        descricao: { 
+          ...(prev.descricao || {}), 
+          curta: result.curta,
+          completa_md: result.completa,
+          gerada_por_ia: true,
+          ultima_geracao_ia_at: new Date()
+        } 
       }));
     } catch (error: any) {
       console.error(error);
+      setSaveError("Erro ao gerar descrição com IA. Verifique os dados do imóvel.");
     } finally {
       setIsGeneratingAI(false);
     }
@@ -214,7 +234,6 @@ const AdminImoveis: React.FC = () => {
     });
   };
 
-  // --- DRAG AND DROP HANDLERS ---
   const handleDragStart = (index: number) => {
     setDraggedItemIndex(index);
   };
@@ -230,8 +249,11 @@ const AdminImoveis: React.FC = () => {
     items.splice(draggedItemIndex, 1);
     items.splice(index, 0, draggedItem);
     
-    // Reordenar
-    const reordered = items.map((item, i) => ({ ...item, order: i }));
+    const reordered = items.map((item, i) => ({ 
+      ...item, 
+      order: i,
+      is_cover: i === 0 
+    }));
     setTempMedia(reordered);
     setDraggedItemIndex(null);
   };
@@ -264,8 +286,12 @@ const AdminImoveis: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto p-10">
               {saveError && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold mb-8 border border-red-100">
-                  <AlertCircle size={18} /> {saveError}
+                <div className="bg-red-50 text-red-600 p-6 rounded-[2rem] flex items-center gap-4 text-sm font-bold mb-8 border border-red-100 animate-in shake duration-300">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-red-500 shadow-sm"><AlertCircle size={20} /></div>
+                  <div>
+                    <p className="uppercase text-[10px] tracking-widest opacity-60">Mensagem do Sistema</p>
+                    <p>{saveError}</p>
+                  </div>
                 </div>
               )}
 
@@ -400,15 +426,27 @@ const AdminImoveis: React.FC = () => {
 
               {currentStep === 6 && (
                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                   <SectionTitle title="6. Marketing & Media" subtitle="A imagem que vende o imóvel" />
-                   <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                         <span className="text-[10px] font-black uppercase text-slate-400">Descrição Completa</span>
-                         <button onClick={handleAIGenerate} disabled={isGeneratingAI} className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase hover:opacity-70 disabled:opacity-30">{isGeneratingAI ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Gerar com IA Gemini</button>
-                      </div>
-                      <textarea rows={6} className="admin-input py-6" value={formData.descricao?.completa_md || ''} onChange={e => setFormData((prev:any) => ({ ...prev, descricao: { ...(prev.descricao || {}), completa_md: e.target.value } }))}></textarea>
+                   <div className="flex items-center justify-between">
+                     <SectionTitle title="6. Marketing & Media" subtitle="A imagem que vende o imóvel" />
+                     <button onClick={handleAIGenerate} disabled={isGeneratingAI} className="flex items-center gap-2 bg-blue-50 text-blue-600 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all disabled:opacity-30">
+                        {isGeneratingAI ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} 
+                        {isGeneratingAI ? "A Gerar Conteúdo..." : "Gerar com IA Gemini"}
+                     </button>
                    </div>
-                   <div className="space-y-6">
+
+                   <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Descrição Curta (SEO & Redes)</label>
+                        <textarea rows={2} className="admin-input" value={formData.descricao?.curta || ''} onChange={e => setFormData((prev:any) => ({ ...prev, descricao: { ...(prev.descricao || {}), curta: e.target.value } }))} placeholder="Uma frase impactante para as listagens..."></textarea>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Descrição Completa (Markdown)</label>
+                        <textarea rows={8} className="admin-input font-medium leading-relaxed" value={formData.descricao?.completa_md || ''} onChange={e => setFormData((prev:any) => ({ ...prev, descricao: { ...(prev.descricao || {}), completa_md: e.target.value } }))} placeholder="Descrição detalhada do imóvel..."></textarea>
+                      </div>
+                   </div>
+
+                   <div className="space-y-6 pt-6">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] font-black uppercase text-slate-400">Media & Fotos</label>
                         <span className="text-[9px] text-slate-400 font-bold uppercase italic">Arraste as fotos para mudar a ordem. A primeira será a capa.</span>
@@ -482,7 +520,11 @@ const AdminImoveis: React.FC = () => {
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden font-black text-slate-300 flex items-center justify-center border border-slate-200 flex-shrink-0">
-                        {p.media?.cover_media_id || p.media?.total > 0 ? <img src={p.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=100'} className="w-full h-full object-cover" /> : p.titulo?.charAt(0)}
+                        {p.media?.items && p.media.items.length > 0 ? (
+                          <img src={p.media.items[0].url} className="w-full h-full object-cover" alt={p.titulo} />
+                        ) : (
+                          p.titulo?.charAt(0) || "?"
+                        )}
                       </div>
                       <div>
                         <div className="font-black text-sm text-[#1c2d51]">{p.titulo}</div>
