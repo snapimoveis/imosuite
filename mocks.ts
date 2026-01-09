@@ -10,6 +10,8 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'apartamento-t2-vista-rio-lisboa',
     tipo_imovel: 'apartamento',
     subtipo_imovel: null,
+    // Add missing required tipology property
+    tipology: 'T2',
     tipologia: 'T2',
     estado_conservacao: 'usado',
     ano_construcao: 2020,
@@ -98,6 +100,8 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'moradia-luxo-v4-cascais',
     tipo_imovel: 'moradia',
     subtipo_imovel: null,
+    // Add missing required tipology property
+    tipology: 'V4',
     tipologia: 'V4',
     estado_conservacao: 'novo',
     ano_construcao: 2023,
@@ -186,6 +190,8 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'estudio-moderno-porto-centro',
     tipo_imovel: 'apartamento',
     subtipo_imovel: null,
+    // Add missing required tipology property
+    tipology: 'T0',
     tipologia: 'T0',
     estado_conservacao: 'renovado',
     ano_construcao: 1950,

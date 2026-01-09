@@ -2,33 +2,37 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
 /**
- * Gera descrições profissionais para imóveis em Portugal.
+ * Gera descrições profissionais para imóveis em Portugal seguindo os critérios do ImoSuite.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
-  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error("Chave API do Gemini não encontrada no sistema.");
+  // Acesso direto via process.env conforme as diretrizes obrigatórias
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("Configuração da VITE_GEMINI_API_KEY não detetada no ambiente.");
 
-  // Inicialização no momento do uso para evitar erros de ciclo de vida do browser
   const ai = new GoogleGenAI({ apiKey });
   
+  // Extração de contexto para a IA
   const ctx = {
     titulo: property.titulo,
     tipo: property.tipo_imovel,
     tipologia: property.tipologia,
     operacao: property.operacao,
-    local: property.localizacao?.concelho,
-    caract: property.caracteristicas || []
+    local: `${property.localizacao?.concelho}, ${property.localizacao?.distrito}`,
+    caract: property.caracteristicas || [],
+    areas: property.areas,
+    publico_alvo: property.operacao === 'venda' ? 'Investidores ou Famílias para habitação própria' : 'Arrendatários de longo prazo ou temporários'
   };
 
   const prompt = `
-    Como especialista imobiliário em Portugal, gera uma descrição para o anúncio:
+    Atua como um redator imobiliário premium em Portugal. 
+    Gera uma descrição para o seguinte imóvel:
     ${JSON.stringify(ctx)}
     
-    Regras:
-    - Português de Portugal (PT-PT).
-    - Versão Curta: máx 350 carac.
-    - Versão Completa: Markdown estruturado.
-    - Tom profissional e persuasivo.
+    Requisitos Obrigatórios:
+    - Linguagem: Português de Portugal (PT-PT).
+    - Público-alvo: ${ctx.publico_alvo}.
+    - Tom: Profissional, sofisticado e focado no estilo de vida.
+    - Estrutura: Destaca a localização (${ctx.local}) e os extras (${ctx.caract.join(', ')}).
   `;
 
   try {
@@ -40,9 +44,18 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            curta: { type: Type.STRING },
-            completa: { type: Type.STRING },
-            hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            curta: { 
+              type: Type.STRING, 
+              description: "Resumo para SEO e redes sociais, máximo 350 caracteres." 
+            },
+            completa: { 
+              type: Type.STRING, 
+              description: "Descrição completa em formato Markdown, com parágrafos e bullets." 
+            },
+            hashtags: { 
+              type: Type.ARRAY, 
+              items: { type: Type.STRING } 
+            },
           },
           required: ["curta", "completa"],
         },
@@ -56,21 +69,26 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
       hashtags: result.hashtags || []
     };
   } catch (error: any) {
-    console.error("Gemini Error:", error);
-    throw new Error(error.message || "A IA não conseguiu processar o pedido.");
+    console.error("Gemini AI Error:", error);
+    throw new Error("A IA não conseguiu gerar o texto. Verifique a ligação ou a chave API.");
   }
 };
 
+/**
+ * Gera slogans para a agência baseados no nome comercial.
+ */
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return "Excelência imobiliária.";
+  if (!apiKey) return "Excelência no mercado imobiliário.";
   
   const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Gere um slogan comercial em português para a imobiliária "${agencyName}". Apenas o texto.`,
+      contents: `Gere um slogan comercial curto e impactante (PT-PT) para a imobiliária "${agencyName}". Apenas o texto.`,
     });
-    return response.text?.trim() || "A sua imobiliária de confiança.";
-  } catch { return "Excelência no mercado."; }
+    return response.text?.trim().replace(/"/g, '') || "A sua agência de confiança.";
+  } catch { 
+    return "Líderes em soluções imobiliárias."; 
+  }
 };

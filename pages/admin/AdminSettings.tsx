@@ -10,7 +10,7 @@ import {
   Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
   Settings, AlertTriangle, Eye, ChevronLeft, ChevronRight, Info,
   Quote, Heart, Search, LayoutGrid, List, ArrowUpRight, Bed, Bath, Square,
-  MessageSquare, Camera, Share2, Sparkles
+  MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon
 } from 'lucide-react';
 import { Tenant } from '../../types.ts';
 import { formatCurrency, generateSlug } from '../../lib/utils';
@@ -33,7 +33,9 @@ const AdminSettings: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewingTemplate, setPreviewingTemplate] = useState<string | null>(null);
   const [isGeneratingSlogan, setIsGeneratingSlogan] = useState(false);
+  
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
   
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
@@ -49,12 +51,20 @@ const AdminSettings: React.FC = () => {
   }, [tenant, tenantLoading]);
 
   const handleLogoClick = () => logoInputRef.current?.click();
+  const handleHeroClick = () => heroInputRef.current?.click();
 
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'hero') => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onloadend = async () => setLocalTenant(prev => ({ ...prev, logo_url: reader.result as string }));
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      if (type === 'logo') {
+        setLocalTenant(prev => ({ ...prev, logo_url: base64 }));
+      } else {
+        setLocalTenant(prev => ({ ...prev, hero_image_url: base64 }));
+      }
+    };
     reader.readAsDataURL(file);
   };
 
@@ -90,13 +100,19 @@ const AdminSettings: React.FC = () => {
         localTenant.slug = normalizedSlug;
       }
 
+      // Preparar objeto para gravação (removendo ID interno para evitar erro de permissão)
+      const { id, ...dataToSave } = localTenant;
+
       const updates = {
-        ...localTenant,
-        id: tId,
+        ...dataToSave,
         updated_at: serverTimestamp()
       };
+
       await setDoc(doc(db, 'tenants', tId), updates, { merge: true });
-      setTenant({ ...tenant, ...updates });
+      
+      // Atualizar contexto local
+      setTenant({ ...localTenant, id: tId });
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
@@ -140,15 +156,15 @@ const AdminSettings: React.FC = () => {
               <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Dados da Empresa</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nome da Agência</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nome Comercial</label>
                     <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">NIF</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">NIF / Identificação</label>
                     <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value})} />
                  </div>
                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slogan / Frase de Impacto</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slogan / Frase de Capa</label>
                     <div className="relative">
                       <input className="w-full p-4 pr-14 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} />
                       <button onClick={handleGenerateSlogan} disabled={isGeneratingSlogan} className="absolute right-2 top-2 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm hover:bg-blue-50 transition-colors">
@@ -161,23 +177,42 @@ const AdminSettings: React.FC = () => {
           )}
 
           {activeTab === 'branding' && (
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 animate-in fade-in">
-              <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Identidade Visual</h3>
-              <div className="flex flex-col md:flex-row gap-10">
-                 <div className="flex-1 space-y-6">
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
+              <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Branding & Cores</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                 <div className="space-y-8">
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor de Destaque</label>
+                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Primária (Navegação/Botões)</label>
                        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
                           <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_primaria} onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value})} />
                           <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_primaria}</span>
                        </div>
                     </div>
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Secundária (Acentos/Ícones)</label>
+                       <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
+                          <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_secundaria} onChange={e => setLocalTenant({...localTenant, cor_secundaria: e.target.value})} />
+                          <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_secundaria}</span>
+                       </div>
+                    </div>
                  </div>
-                 <div className="flex-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-4 block">Logótipo</label>
-                    <div onClick={handleLogoClick} className="h-40 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6">
-                       {localTenant.logo_url ? <img src={localTenant.logo_url} className="h-full w-auto object-contain" /> : <Camera size={32}/>}
-                       <input type="file" ref={logoInputRef} onChange={handleLogoChange} className="hidden" />
+
+                 <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-4 block">Logótipo da Agência</label>
+                    <div onClick={handleLogoClick} className="h-52 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6 relative group">
+                       {localTenant.logo_url ? (
+                         <>
+                           <img src={localTenant.logo_url} className="h-full w-auto object-contain" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[10px] uppercase">Alterar Logo</div>
+                         </>
+                       ) : (
+                         <>
+                           <Camera size={32} className="mb-2"/>
+                           <span className="text-[10px] font-black uppercase">Upload PNG/JPG</span>
+                         </>
+                       )}
+                       <input type="file" ref={logoInputRef} onChange={(e) => handleFileChange(e, 'logo')} className="hidden" accept="image/*" />
                     </div>
                  </div>
               </div>
@@ -185,21 +220,40 @@ const AdminSettings: React.FC = () => {
           )}
 
           {activeTab === 'website' && (
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
-              <div className="border-b pb-6 space-y-6">
-                 <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Acesso Público</h3>
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slug do Website (Link)</label>
-                    <div className="flex items-center bg-slate-50 rounded-2xl px-6 py-4">
-                      <span className="text-slate-300 font-bold text-sm">imosuite.pt/#/agencia/</span>
-                      <input className="flex-1 bg-transparent outline-none font-black text-[#1c2d51] text-sm lowercase" value={localTenant.slug} onChange={e => setLocalTenant({...localTenant, slug: e.target.value})} />
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-12 animate-in fade-in">
+              <div className="space-y-6">
+                 <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Endereço & Hero</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slug do Website</label>
+                       <div className="flex items-center bg-slate-50 rounded-2xl px-6 py-4">
+                         <span className="text-slate-300 font-bold text-sm">/agencia/</span>
+                         <input className="flex-1 bg-transparent outline-none font-black text-[#1c2d51] text-sm lowercase" value={localTenant.slug} onChange={e => setLocalTenant({...localTenant, slug: e.target.value})} />
+                       </div>
                     </div>
-                    <p className="text-[9px] text-slate-400 font-bold ml-2 uppercase italic">Este é o link que partilha com os seus clientes.</p>
+                    
+                    <div className="space-y-4">
+                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Imagem de Capa (Hero)</label>
+                       <div onClick={handleHeroClick} className="h-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center gap-4 px-6 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden relative">
+                          {localTenant.hero_image_url ? (
+                            <div className="flex items-center gap-3 w-full">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white"><img src={localTenant.hero_image_url} className="w-full h-full object-cover" /></div>
+                              <span className="text-[10px] font-black text-[#1c2d51] uppercase">Imagem Personalizada Ativa</span>
+                            </div>
+                          ) : (
+                            <>
+                              <ImageIcon size={20} className="text-slate-300" />
+                              <span className="text-[10px] font-black text-slate-400 uppercase">Usar imagem padrão ou Upload</span>
+                            </>
+                          )}
+                          <input type="file" ref={heroInputRef} onChange={(e) => handleFileChange(e, 'hero')} className="hidden" accept="image/*" />
+                       </div>
+                    </div>
                  </div>
               </div>
 
-              <div className="space-y-6">
-                <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Catálogo de Templates</h3>
+              <div className="space-y-6 border-t pt-10">
+                <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Temas de Design</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {TEMPLATE_OPTIONS.map((tmpl) => (
                     <div key={tmpl.id} className={`group relative p-8 rounded-[2.5rem] border-2 transition-all ${localTenant.template_id === tmpl.id ? 'border-[#1c2d51] bg-[#1c2d51]/5' : 'border-slate-50 hover:border-slate-200 shadow-sm'}`}>

@@ -10,6 +10,7 @@ export interface Tenant {
   morada?: string;
   nif?: string;
   logo_url?: string;
+  hero_image_url?: string; // Novo campo
   slogan?: string;
   template_id?: string;
   cor_primaria: string;
@@ -30,6 +31,7 @@ export interface Imovel {
   titulo: string;
   tipo_imovel: TipoImovel;
   subtipo_imovel: string | null;
+  tipology: string; // Tipologia
   tipologia: string;
   estado_conservacao: 'novo' | 'usado' | 'renovado' | 'para_renovar';
   ano_construcao: number | null;
@@ -100,7 +102,6 @@ export interface Imovel {
   media: {
     cover_media_id: string | null;
     total: number;
-    // Fix: Added optional items to support mocks and detail views while keeping stats
     items?: ImovelMedia[];
   };
 
@@ -143,7 +144,6 @@ export interface Lead {
   property_id: string;
   property_ref: string;
   estado: 'novo' | 'em_analise' | 'respondido' | 'arquivado';
-  // Fix: Added missing 'lido' property used in AdminLeads
   lido: boolean;
   created_at: any;
 }
