@@ -5,7 +5,7 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
  * Gera descrições profissionais para imóveis em Portugal.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
-  const apiKey = process.env.API_KEY;
+  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error("Chave API do Gemini não encontrada no sistema.");
 
   // Inicialização no momento do uso para evitar erros de ciclo de vida do browser
