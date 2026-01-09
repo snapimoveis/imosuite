@@ -2,8 +2,8 @@
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from './firebase';
 
-export function formatCurrency(value: number | undefined): string {
-  if (value === undefined) return 'N/A';
+export function formatCurrency(value: number | null | undefined): string {
+  if (value === undefined || value === null) return 'Sob Consulta';
   return new Intl.NumberFormat('pt-PT', {
     style: 'currency',
     currency: 'EUR',
@@ -11,12 +11,18 @@ export function formatCurrency(value: number | undefined): string {
   }).format(value);
 }
 
-export function formatDate(dateString: string): string {
-  return new Intl.DateTimeFormat('pt-PT', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  }).format(new Date(dateString));
+export function formatDate(dateString: any): string {
+  if (!dateString) return 'N/A';
+  try {
+    const d = typeof dateString === 'string' ? new Date(dateString) : dateString.toDate?.() || new Date(dateString);
+    return new Intl.DateTimeFormat('pt-PT', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(d);
+  } catch (e) {
+    return 'Data inválida';
+  }
 }
 
 export function cn(...classes: (string | boolean | undefined)[]) {
@@ -42,7 +48,6 @@ export function generateSlug(text: string): string {
 
 /**
  * Consulta o Firestore para garantir um slug único.
- * Se existir, adiciona -2, -3, etc.
  */
 export async function generateUniqueSlug(baseName: string): Promise<string> {
   const baseSlug = generateSlug(baseName);
