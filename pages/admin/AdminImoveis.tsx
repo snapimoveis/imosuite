@@ -125,7 +125,7 @@ const AdminImoveis: React.FC = () => {
       loadProperties();
     } catch (err: any) {
       console.error(err);
-      setSaveError("Erro ao gravar. Verifique se preencheu os campos obrigatórios e se a ligação à base de dados está ativa.");
+      setSaveError("Erro ao gravar. Verifique se preencheu os campos obrigatórios.");
     } finally { setIsSaving(false); }
   };
 
@@ -207,6 +207,91 @@ const AdminImoveis: React.FC = () => {
           </div>
         </div>
       );
+      case 2: return (
+        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">2. Localização</h4></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Distrito</label><input className="admin-input" value={formData.localizacao?.distrito} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, distrito: e.target.value}})} /></div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Concelho</label><input className="admin-input" value={formData.localizacao?.concelho} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, concelho: e.target.value}})} /></div>
+            <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Morada</label><input className="admin-input" value={formData.localizacao?.morada || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, morada: e.target.value}})} placeholder="Rua, Avenida..." /></div>
+          </div>
+        </div>
+      );
+      case 3: return (
+        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">3. Áreas e Pisos</h4></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Área Útil (m²)</label><input type="number" className="admin-input" value={formData.areas?.area_util_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_util_m2: Number(e.target.value)}})} /></div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Área Bruta (m²)</label><input type="number" className="admin-input" value={formData.areas?.area_bruta_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_bruta_m2: Number(e.target.value)}})} /></div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Andar</label><input className="admin-input" value={formData.areas?.andar || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, andar: e.target.value}})} /></div>
+          </div>
+        </div>
+      );
+      case 4: return (
+        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">4. Divisões e Garagem</h4></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Quartos</label><input type="number" className="admin-input" value={formData.divisoes?.quartos || 0} onChange={e => setFormData({...formData, divisoes: {...formData.divisoes!, quartos: Number(e.target.value)}})} /></div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Casas de Banho</label><input type="number" className="admin-input" value={formData.divisoes?.casas_banho || 0} onChange={e => setFormData({...formData, divisoes: {...formData.divisoes!, casas_banho: Number(e.target.value)}})} /></div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Lugares Garagem</label><input type="number" className="admin-input" value={formData.divisoes?.garagem?.lugares || 0} onChange={e => setFormData({...formData, divisoes: {...formData.divisoes!, garagem: {...formData.divisoes!.garagem, tem: Number(e.target.value) > 0, lugares: Number(e.target.value)}}})} /></div>
+          </div>
+        </div>
+      );
+      case 5: return (
+        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">5. Informação Financeira</h4></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Operação</label>
+              <select className="admin-input" value={formData.operacao} onChange={e => setFormData({...formData, operacao: e.target.value as any})}>
+                <option value="venda">Venda</option>
+                <option value="arrendamento">Arrendamento</option>
+              </select>
+            </div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Preço (€)</label><input type="number" className="admin-input" value={formData.financeiro?.preco_venda || formData.financeiro?.preco_arrendamento || ''} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro!, preco_venda: formData.operacao === 'venda' ? Number(e.target.value) : null, preco_arrendamento: formData.operacao === 'arrendamento' ? Number(e.target.value) : null}})} /></div>
+          </div>
+        </div>
+      );
+      case 6: return (
+        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">6. Certificação e Licenças</h4></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Certificado Energético</label>
+              <select className="admin-input" value={formData.certificacao?.certificado_energetico} onChange={e => setFormData({...formData, certificacao: {...formData.certificacao!, certificado_energetico: e.target.value}})}>
+                {['A+', 'A', 'B', 'B-', 'C', 'D', 'E', 'F', 'Em preparação', 'Isento'].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nº Licença Utilização</label><input className="admin-input" value={formData.certificacao?.licenca_utilizacao_numero || ''} onChange={e => setFormData({...formData, certificacao: {...formData.certificacao!, licenca_utilizacao_numero: e.target.value}})} /></div>
+          </div>
+        </div>
+      );
+      case 7: return (
+        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">7. Características Extra</h4></div>
+          <div className="space-y-4">
+             <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Adicionar Características (Separadas por vírgula)</label>
+             <input className="admin-input" placeholder="Ar Condicionado, Piscina, Cozinha Equipada..." onKeyDown={e => {
+               if (e.key === 'Enter') {
+                 e.preventDefault();
+                 const val = (e.currentTarget as HTMLInputElement).value;
+                 if (val) {
+                   const newFeatures = [...currentFeatures, ...val.split(',').map(s => s.trim()).filter(s => s && !currentFeatures.includes(s))];
+                   setFormData({...formData, caracteristicas: newFeatures});
+                   (e.currentTarget as HTMLInputElement).value = '';
+                 }
+               }
+             }} />
+             <div className="flex flex-wrap gap-2 pt-4">
+               {currentFeatures.map(f => (
+                 <span key={f} className="bg-[#1c2d51] text-white px-4 py-2 rounded-full text-[10px] font-bold flex items-center gap-2">
+                   {f} <X size={12} className="cursor-pointer" onClick={() => setFormData({...formData, caracteristicas: currentFeatures.filter(item => item !== f)})} />
+                 </span>
+               ))}
+             </div>
+          </div>
+        </div>
+      );
       case 8: return (
         <div className="space-y-8 animate-in slide-in-from-right duration-300">
           <div className="flex items-center justify-between bg-[#1c2d51] p-8 rounded-[3rem] text-white shadow-2xl">
@@ -252,6 +337,30 @@ const AdminImoveis: React.FC = () => {
           </div>
         </div>
       );
+      case 10: return (
+        <div className="space-y-8 animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-3 border-b pb-4"><h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">10. Publicação e Visibilidade</h4></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 flex items-center justify-between">
+              <div><h4 className="font-black text-[#1c2d51] text-sm mb-1">Publicar no Website</h4><p className="text-[10px] text-slate-400 font-bold uppercase">Tornar o imóvel visível ao público.</p></div>
+              <input type="checkbox" className="w-6 h-6 rounded-lg" checked={formData.publicacao?.publicar_no_site} onChange={e => setFormData({...formData, publicacao: {...formData.publicacao!, publicar_no_site: e.target.checked}})} />
+            </div>
+            <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 flex items-center justify-between">
+              <div><h4 className="font-black text-[#1c2d51] text-sm mb-1">Imóvel em Destaque</h4><p className="text-[10px] text-slate-400 font-bold uppercase">Exibir na página inicial da agência.</p></div>
+              <input type="checkbox" className="w-6 h-6 rounded-lg" checked={formData.publicacao?.destaque} onChange={e => setFormData({...formData, publicacao: {...formData.publicacao!, destaque: e.target.checked}})} />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Estado do Negócio</label>
+              <select className="admin-input" value={formData.publicacao?.estado} onChange={e => setFormData({...formData, publicacao: {...formData.publicacao!, estado: e.target.value as any}})}>
+                <option value="publicado">Publicado (Ativo)</option>
+                <option value="rascunho">Rascunho</option>
+                <option value="reservado">Reservado</option>
+                <option value="vendido">Vendido / Arrendado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      );
       default: return null;
     }
   };
@@ -284,10 +393,10 @@ const AdminImoveis: React.FC = () => {
             </div>
 
             <div className="px-12 py-8 border-t bg-slate-50/50 flex items-center justify-between">
-               <button onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 1} className="text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0 flex items-center gap-2 transition-all"><ChevronLeft size={16}/> Anterior</button>
+               <button onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))} disabled={currentStep === 1} className="text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0 flex items-center gap-2 transition-all"><ChevronLeft size={16}/> Anterior</button>
                <div className="flex gap-4">
                  {currentStep < 10 ? (
-                   <button onClick={() => setCurrentStep(prev => prev + 1)} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl">Próximo Passo <ChevronRight size={16}/></button>
+                   <button onClick={() => setCurrentStep(prev => Math.min(10, prev + 1))} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl">Próximo Passo <ChevronRight size={16}/></button>
                  ) : (
                    <button onClick={handleSave} disabled={isSaving} className="bg-emerald-600 text-white px-14 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 shadow-xl disabled:opacity-50">
                      {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Check size={20}/>} {editingId ? 'Gravar Alterações' : 'Publicar Agora'}
