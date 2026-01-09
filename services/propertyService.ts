@@ -1,7 +1,20 @@
 
-import { collection, getDocs, addDoc, updateDoc, doc, query, where, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Imovel } from "../types";
+import { Imovel, ImovelMedia } from "../types";
+
+// Função utilitária para garantir que não enviamos undefined para o Firestore
+const cleanData = (obj: any): any => {
+  const newObj = { ...obj };
+  Object.keys(newObj).forEach(key => {
+    if (newObj[key] === undefined) {
+      newObj[key] = null;
+    } else if (newObj[key] !== null && typeof newObj[key] === 'object' && !(newObj[key] instanceof Date)) {
+      newObj[key] = cleanData(newObj[key]);
+    }
+  });
+  return newObj;
+};
 
 export const PropertyService = {
   async getProperties(tenantId: string): Promise<Imovel[]> {
@@ -19,33 +32,43 @@ export const PropertyService = {
     }
   },
 
-  async createProperty(tenantId: string, property: Partial<Imovel>) {
-    // Validação crítica: Impedir gravação se o tenantId não estiver carregado
-    if (!tenantId || tenantId === 'pending' || tenantId === 'default') {
-      console.error("Tentativa de criar imóvel com ID inválido:", tenantId);
-      throw new Error("O ID da sua agência ainda não foi carregado. Aguarde um momento.");
+  async createProperty(tenantId: string, propertyData: Partial<Imovel>, mediaItems: ImovelMedia[] = []) {
+    if (!tenantId || tenantId === 'pending') {
+      throw new Error("Agência não carregada.");
     }
     
     try {
       const propertiesRef = collection(db, "tenants", tenantId, "properties");
-      const data = {
-        ...property,
+      
+      // Preparar dados com timestamps e defaults
+      const finalData = cleanData({
+        ...propertyData,
         tenant_id: tenantId,
         created_at: serverTimestamp(),
-        visualizacoes: 0,
-        publicado: property.publicado ?? true,
-        destaque: property.destaque ?? false,
-        estado: 'disponivel',
-        media: property.media || [],
-        caracteristicas: property.caracteristicas || [],
-        garagem: property.garagem || 0,
-        casas_banho: property.casas_banho || 0,
-        quartos: property.quartos || 0,
-        area_util_m2: property.area_util_m2 || 0,
-        tipologia: property.tipologia || 'N/A',
-        distrito: property.distrito || 'Lisboa'
-      };
-      return await addDoc(propertiesRef, data);
+        updated_at: serverTimestamp(),
+        tracking: { views: 0, favorites: 0 }
+      });
+
+      const docRef = await addDoc(propertiesRef, finalData);
+
+      // Se houver media, salvar na subcoleção
+      if (mediaItems.length > 0) {
+        const mediaColRef = collection(db, "tenants", tenantId, "properties", docRef.id, "media");
+        for (const item of mediaItems) {
+          await addDoc(mediaColRef, {
+            ...item,
+            created_at: serverTimestamp()
+          });
+        }
+        
+        // Atualizar o total de media no documento pai
+        await updateDoc(docRef, {
+          "media.total": mediaItems.length,
+          "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || null
+        });
+      }
+
+      return docRef;
     } catch (error: any) {
       console.error("Erro Firestore ao criar imóvel:", error);
       throw error;
@@ -54,6 +77,9 @@ export const PropertyService = {
 
   async updateProperty(tenantId: string, propertyId: string, updates: Partial<Imovel>) {
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
-    return await updateDoc(propertyRef, updates);
+    return await updateDoc(propertyRef, cleanData({
+      ...updates,
+      updated_at: serverTimestamp()
+    }));
   }
 };

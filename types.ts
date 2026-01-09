@@ -16,84 +16,132 @@ export interface Tenant {
   cor_secundaria: string;
   ativo: boolean;
   onboarding_completed?: boolean;
-  created_at: string;
+  created_at: any;
   updated_at?: any;
 }
 
-export type TipoImovel = 'Apartamento' | 'Moradia' | 'Casa rústica' | 'Ruína' | 'Escritório' | 'Espaço comercial' | 'Armazém' | 'Lugar de garagem' | 'Arrecadação' | 'Prédio' | 'Terreno';
+export type TipoImovel = 'apartamento' | 'moradia' | 'casa_rustica' | 'ruina' | 'escritorio' | 'comercial' | 'armazem' | 'garagem' | 'arrecadacao' | 'predio' | 'terreno';
 
 export interface Imovel {
   id: string;
   tenant_id: string;
-  referencia: string;
-  titulo: string;
+  ref: string;
   slug: string;
-  tipo_negocio: 'venda' | 'arrendamento' | 'venda_arrendamento';
-  tipo_arrendamento?: 'residencial' | 'temporario' | 'ferias';
+  titulo: string;
   tipo_imovel: TipoImovel;
-  tipologia?: string;
-  estado_conservacao?: 'novo' | 'usado' | 'renovado' | 'para_renovar';
-  preco?: number;
-  preco_arrendamento?: number;
-  duracao_minima_contrato?: string;
-  disponibilidade_imediata: boolean;
-  area_bruta_m2?: number;
-  area_util_m2?: number;
-  area_terreno_m2?: number;
-  quartos?: number;
-  casas_banho?: number;
-  garagem: number;
-  n_lugares_garagem?: number;
-  ano_construcao?: number;
-  n_pisos?: number;
-  andar?: string;
-  tem_elevador: boolean;
-  tem_piscina: boolean;
-  tem_jardim: boolean;
-  tem_varanda_terraco: boolean;
-  distrito: string;
-  concelho: string;
-  freguesia?: string;
-  morada?: string;
-  codigo_postal?: string;
-  expor_morada_publica: boolean;
-  descricao_curta?: string;
-  descricao_md?: string;
+  subtipo_imovel: string | null;
+  tipologia: string;
+  estado_conservacao: 'novo' | 'usado' | 'renovado' | 'para_renovar';
+  ano_construcao: number | null;
+
+  operacao: 'venda' | 'arrendamento' | 'venda_arrendamento';
+  arrendamento_tipo: 'residencial' | 'temporario' | 'ferias' | null;
+  arrendamento_duracao_min_meses: number | null;
+  disponivel_imediato: boolean;
+
+  localizacao: {
+    pais: string;
+    distrito: string;
+    concelho: string;
+    freguesia: string | null;
+    codigo_postal: string | null;
+    morada: string | null;
+    porta: string | null;
+    lat: number | null;
+    lng: number | null;
+    expor_morada: boolean;
+  };
+
+  areas: {
+    area_util_m2: number | null;
+    area_bruta_m2: number | null;
+    area_terreno_m2: number | null;
+    pisos: number | null;
+    andar: number | string | null;
+    elevador: boolean;
+  };
+
+  divisoes: {
+    quartos: number;
+    casas_banho: number;
+    garagem: {
+      tem: boolean;
+      lugares: number;
+    };
+  };
+
   caracteristicas: string[];
-  certificado_energetico?: 'A+' | 'A' | 'B' | 'B-' | 'C' | 'D' | 'E' | 'F' | 'G' | 'Isento' | 'Em preparação';
-  licenca_utilizacao?: string;
-  imi_estimado?: number;
-  condominio_mensal?: number;
-  negociavel: boolean;
-  comissao_incluida: boolean;
-  publicado: boolean;
-  destaque: boolean;
-  estado: 'disponivel' | 'reservado' | 'vendido' | 'arrendado';
-  visualizacoes: number;
-  media: ImovelMedia[];
-  created_at: string;
+
+  certificacao: {
+    certificado_energetico: string;
+    licenca_utilizacao: string | null;
+    licenca_utilizacao_numero: string | null;
+    licenca_utilizacao_data: string | null;
+    isento_licenca_utilizacao: boolean;
+  };
+
+  financeiro: {
+    preco_venda: number | null;
+    preco_arrendamento: number | null;
+    negociavel: boolean;
+    condominio_mensal: number | null;
+    imi_anual: number | null;
+    caucao_meses: number | null;
+    despesas_incluidas: string[];
+  };
+
+  descricao: {
+    curta: string;
+    completa_md: string;
+    gerada_por_ia: boolean;
+    ultima_geracao_ia_at: any | null;
+  };
+
+  media: {
+    cover_media_id: string | null;
+    total: number;
+    // Fix: Added optional items to support mocks and detail views while keeping stats
+    items?: ImovelMedia[];
+  };
+
+  publicacao: {
+    estado: 'rascunho' | 'publicado' | 'reservado' | 'vendido' | 'arrendado';
+    publicar_no_site: boolean;
+    destaque: boolean;
+    badges: string[];
+    data_publicacao: any | null;
+  };
+
+  tracking: {
+    views: number;
+    favorites: number;
+  };
+
+  owner_uid: string;
+  created_at: any;
+  updated_at: any;
 }
 
 export interface ImovelMedia {
   id: string;
-  imovel_id: string;
+  type: 'image' | 'video' | 'floorplan' | 'document' | 'tour360';
   url: string;
-  tipo: 'foto' | 'video' | 'planta' | 'pdf';
-  ordem: number;
-  principal: boolean;
-  alt?: string;
+  storage_path: string;
+  order: number;
+  is_cover: boolean;
+  alt: string;
+  created_at: any;
 }
 
 export interface Lead {
   id: string;
-  tenant_id: string;
-  imovel_id?: string;
+  tipo: 'contacto' | 'visita';
   nome: string;
   email: string;
   telefone?: string;
   mensagem: string;
-  tipo: 'contacto' | 'visita';
+  property_id: string;
+  property_ref: string;
   estado: 'novo' | 'em_analise' | 'respondido' | 'arquivado';
-  lido: boolean;
-  created_at: string;
+  created_at: any;
 }

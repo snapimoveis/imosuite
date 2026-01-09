@@ -5,53 +5,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Imovel, TipoImovel, ImovelMedia } from '../../types';
 import { 
   Plus, Search, Edit2, Trash2, Eye, X, Loader2, AlertCircle, 
-  ImageIcon, MapPin, Building2, Zap, Sparkles, Check, 
-  ChevronRight, ChevronLeft, Info, Camera, Trash, Star,
-  MoveUp, MoveDown, Globe, ShieldCheck, Euro
+  MapPin, Building2, Zap, Sparkles, Check, 
+  ChevronRight, ChevronLeft, Camera, Trash, Star,
+  MoveUp, MoveDown, ShieldCheck, Euro, LayoutGrid, Info
 } from 'lucide-react';
 import { formatCurrency, generateSlug } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
 
-// Helper components moved to the top to resolve hoisting and children prop issues in TypeScript
-const SectionTitle = ({ title, subtitle }: { title: string, subtitle: string }) => (
-  <div>
-     <h4 className="text-2xl font-black text-[#1c2d51] tracking-tighter">{title}</h4>
-     <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">{subtitle}</p>
-  </div>
-);
-
-const InputGroup = ({ label, children, required }: { label: string, children: React.ReactNode, required?: boolean }) => (
-  <div className="space-y-2">
-     <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2 flex items-center gap-1">
-       {label} {required && <span className="text-red-400">*</span>}
-     </label>
-     {children}
-  </div>
-);
-
-const Counter = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
-  <div className="bg-slate-50 p-6 rounded-[2rem] flex flex-col items-center justify-center text-center gap-3">
-     <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{label}</span>
-     <div className="flex items-center gap-4">
-        <button onClick={() => onChange(Math.max(0, value - 1))} className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#1c2d51] hover:bg-slate-100">-</button>
-        <span className="text-2xl font-black text-[#1c2d51]">{value}</span>
-        <button onClick={() => onChange(value + 1)} className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-[#1c2d51] hover:bg-slate-100">+</button>
-     </div>
-  </div>
-);
-
-const ToggleItem = ({ icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) => (
-  <button 
-    onClick={onClick}
-    className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-3 text-center ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51]' : 'bg-white text-slate-300 border-slate-50'}`}
-  >
-     {icon}
-     <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-  </button>
-);
-
 const AdminImoveis: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [properties, setProperties] = useState<Imovel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,62 +21,89 @@ const AdminImoveis: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   
-  // Multi-step form state
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 6;
 
-  const [formData, setFormData] = useState<Partial<Imovel>>({
+  // Initial state strictly following the new Nested Schema
+  const initialFormState: Partial<Imovel> = {
     titulo: '',
-    referencia: '',
-    tipo_imovel: 'Apartamento',
+    ref: '',
+    tipo_imovel: 'apartamento',
     tipologia: 'T2',
-    tipo_negocio: 'venda',
     estado_conservacao: 'usado',
-    ano_construcao: new Date().getFullYear(),
-    preco: undefined,
-    preco_arrendamento: undefined,
-    disponibilidade_imediata: true,
-    distrito: 'Lisboa',
-    concelho: '',
-    fregiesia: '',
-    morada: '',
-    codigo_postal: '',
-    expor_morada_publica: false,
-    area_util_m2: undefined,
-    area_bruta_m2: undefined,
-    area_terreno_m2: undefined,
-    quartos: 2,
-    casas_banho: 1,
-    garagem: 0,
-    n_lugares_garagem: 0,
-    tem_elevador: false,
-    tem_piscina: false,
-    tem_jardim: false,
-    tem_varanda_terraco: false,
-    caracteristicas: [],
-    certificado_energetico: 'Em preparação',
-    licenca_utilizacao: '',
-    negociavel: false,
-    comissao_incluida: true,
-    descricao_curta: '',
-    descricao_md: '',
-    publicado: true,
-    destaque: false,
-    media: []
-  });
+    ano_construcao: null,
+    operacao: 'venda',
+    arrendamento_tipo: null,
+    disponivel_imediato: true,
+    localizacao: {
+      pais: 'PT',
+      distrito: 'Lisboa',
+      concelho: '',
+      freguesia: '',
+      codigo_postal: '', // Fix: Added missing required property
+      morada: '',
+      porta: '',
+      lat: null,
+      lng: null,
+      expor_morada: false
+    },
+    areas: {
+      area_util_m2: null,
+      area_bruta_m2: null,
+      area_terreno_m2: null,
+      pisos: 1,
+      andar: '',
+      elevador: false
+    },
+    divisoes: {
+      quartos: 2,
+      casas_banho: 1,
+      garagem: { tem: false, lugares: 0 }
+    },
+    financeiro: {
+      preco_venda: null,
+      preco_arrendamento: null,
+      negociavel: false,
+      condominio_mensal: null,
+      imi_anual: null,
+      caucao_meses: null,
+      despesas_incluidas: []
+    },
+    descricao: {
+      curta: '',
+      completa_md: '',
+      gerada_por_ia: false,
+      ultima_geracao_ia_at: null
+    },
+    certificacao: {
+      certificado_energetico: 'Em preparação',
+      licenca_utilizacao: '',
+      licenca_utilizacao_numero: '',
+      licenca_utilizacao_data: '',
+      isento_licenca_utilizacao: false
+    },
+    publicacao: {
+      estado: 'publicado',
+      publicar_no_site: true,
+      destaque: false,
+      badges: [],
+      data_publicacao: null
+    },
+    media: { cover_media_id: null, total: 0 },
+    caracteristicas: []
+  };
 
+  const [formData, setFormData] = useState<Partial<Imovel>>(initialFormState);
+  const [tempMedia, setTempMedia] = useState<ImovelMedia[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const loadProperties = async () => {
-    if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
-      if (profile?.tenantId !== 'pending') setIsLoading(false);
-      return;
-    }
+    if (!profile?.tenantId || profile.tenantId === 'pending') return;
     try {
       const data = await PropertyService.getProperties(profile.tenantId);
       setProperties(data);
     } catch (error) {
-      console.error("Erro ao carregar imóveis:", error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -122,56 +111,31 @@ const AdminImoveis: React.FC = () => {
 
   useEffect(() => { loadProperties(); }, [profile]);
 
-  const validateStep = (step: number) => {
-    switch(step) {
-      case 1: return formData.titulo && formData.tipo_imovel && formData.referencia;
-      case 2: return formData.distrito && formData.concelho;
-      case 3: return (formData.area_util_m2 || 0) > 0;
-      case 4: return (formData.preco || formData.preco_arrendamento || 0) > 0;
-      default: return true;
-    }
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
-    } else {
-      setSaveError("Por favor, preencha os campos obrigatórios desta secção.");
-      setTimeout(() => setSaveError(null), 3000);
-    }
-  };
-
+  const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
   const handleSave = async () => {
-    if (!profile?.tenantId) return;
+    if (!profile?.tenantId || !user) return;
     setIsSaving(true);
     setSaveError(null);
 
     try {
       const slug = generateSlug(`${formData.titulo}-${Date.now()}`);
-      
-      const payload = {
+      const finalPayload = {
         ...formData,
         slug,
-        visualizacoes: 0,
-        estado: 'disponivel',
-        created_at: new Date().toISOString()
+        owner_uid: user.uid
       };
 
-      await PropertyService.createProperty(profile.tenantId, payload as any);
+      await PropertyService.createProperty(profile.tenantId, finalPayload, tempMedia);
       
       setIsModalOpen(false);
       loadProperties();
-      // Reset form
-      setFormData({
-        titulo: '', referencia: '', tipo_imovel: 'Apartamento', tipologia: 'T2', 
-        tipo_negocio: 'venda', estado_conservacao: 'usado', preco: undefined, 
-        area_util_m2: undefined, caracteristicas: [], media: []
-      });
+      setFormData(initialFormState);
+      setTempMedia([]);
       setCurrentStep(1);
     } catch (err: any) {
-      setSaveError(err.message || "Erro ao salvar o imóvel.");
+      setSaveError(err.message || "Erro ao salvar.");
     } finally {
       setIsSaving(false);
     }
@@ -181,7 +145,10 @@ const AdminImoveis: React.FC = () => {
     setIsGeneratingAI(true);
     try {
       const desc = await generatePropertyDescription(formData);
-      setFormData(prev => ({ ...prev, descricao_md: desc }));
+      setFormData(prev => ({ 
+        ...prev, 
+        descricao: { ...prev.descricao!, completa_md: desc } 
+      }));
     } catch (error) {
       console.error(error);
     } finally {
@@ -193,75 +160,43 @@ const AdminImoveis: React.FC = () => {
     if (!url) return;
     const newMedia: ImovelMedia = {
       id: Math.random().toString(36).substr(2, 9),
-      imovel_id: '',
+      type: 'image',
       url,
-      tipo: 'foto',
-      ordem: (formData.media?.length || 0),
-      principal: (formData.media?.length === 0)
+      storage_path: '',
+      order: tempMedia.length,
+      is_cover: tempMedia.length === 0,
+      alt: formData.titulo || '',
+      created_at: new Date()
     };
-    setFormData(prev => ({ ...prev, media: [...(prev.media || []), newMedia] }));
+    setTempMedia([...tempMedia, newMedia]);
   };
-
-  const removeMedia = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      media: prev.media?.filter(m => m.id !== id)
-    }));
-  };
-
-  const setPrincipalMedia = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      media: prev.media?.map(m => ({ ...m, principal: m.id === id }))
-    }));
-  };
-
-  const moveMedia = (index: number, direction: 'up' | 'down') => {
-    if (!formData.media) return;
-    const newMedia = [...formData.media];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newMedia.length) return;
-    
-    [newMedia[index], newMedia[targetIndex]] = [newMedia[targetIndex], newMedia[index]];
-    // Update order
-    const orderedMedia = newMedia.map((m, i) => ({ ...m, ordem: i }));
-    setFormData(prev => ({ ...prev, media: orderedMedia }));
-  };
-
-  const filteredProperties = properties.filter(p => 
-    p.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.referencia?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="space-y-6 font-brand">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-[#1c2d51]">Gestão de Imóveis</h1>
-          <p className="text-sm text-slate-400 font-medium uppercase tracking-widest mt-1">Inventário da Agência</p>
+          <p className="text-sm text-slate-400 font-medium uppercase tracking-widest mt-1">Inventário Completo</p>
         </div>
         <button 
           onClick={() => { setIsModalOpen(true); setCurrentStep(1); }} 
-          disabled={profile?.tenantId === 'pending'}
-          className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50"
+          className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-slate-900/10"
         >
           <Plus size={20} /> Novo Imóvel
         </button>
       </div>
 
-      {/* FORM MODAL - PROFESSIONAL MULTI-STEP */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-5xl h-full max-h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden">
-            {/* Header Steps */}
             <div className="px-10 py-6 border-b border-slate-50 flex items-center justify-between shrink-0">
                <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-blue-50 text-[#1c2d51] rounded-xl flex items-center justify-center"><Building2 size={20}/></div>
-                  <h3 className="text-xl font-black text-[#1c2d51]">Inserir Novo Imóvel</h3>
+                  <h3 className="text-xl font-black text-[#1c2d51]">Novo Imóvel Profissional</h3>
                </div>
                <div className="hidden md:flex items-center gap-2">
-                  {[1,2,3,4,5].map(s => (
-                    <div key={s} className={`h-1.5 w-12 rounded-full transition-all ${currentStep >= s ? 'bg-[#1c2d51]' : 'bg-slate-100'}`}></div>
+                  {[1,2,3,4,5,6].map(s => (
+                    <div key={s} className={`h-1.5 w-10 rounded-full transition-all ${currentStep >= s ? 'bg-[#1c2d51]' : 'bg-slate-100'}`}></div>
                   ))}
                </div>
                <button onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-slate-900"><X size={24}/></button>
@@ -274,25 +209,23 @@ const AdminImoveis: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 1: IDENTIFICATION & OPERATION */}
               {currentStep === 1 && (
                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                   <SectionTitle title="1. Identificação & Operação" subtitle="Dados base do imóvel para portais" />
+                   <SectionTitle title="1. Identificação" subtitle="Dados base e classificação" />
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <InputGroup label="Referência Interna (Obrigatória)" required>
-                         <input placeholder="Ex: IMO-2024-001" className="admin-input" value={formData.referencia} onChange={e => setFormData({...formData, referencia: e.target.value})} />
+                      <InputGroup label="Referência Interna" required>
+                         <input placeholder="IMOS-2024-001" className="admin-input" value={formData.ref} onChange={e => setFormData({...formData, ref: e.target.value})} />
                       </InputGroup>
-                      <InputGroup label="Título Comercial (SEO)" required>
-                         <input placeholder="Ex: Apartamento T2 com Vista Rio em Lisboa" className="admin-input" value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} />
+                      <InputGroup label="Título Comercial" required>
+                         <input placeholder="Ex: Apartamento T3 com Terraço" className="admin-input" value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} />
                       </InputGroup>
                       <InputGroup label="Tipo de Imóvel">
-                         <select className="admin-input" value={formData.tipo_imovel} onChange={e => setFormData({...formData, tipo_imovel: e.target.value as TipoImovel})}>
-                            <option>Apartamento</option>
-                            <option>Moradia</option>
-                            <option>Casa rústica</option>
-                            <option>Terreno</option>
-                            <option>Escritório</option>
-                            <option>Armazém</option>
+                         <select className="admin-input" value={formData.tipo_imovel} onChange={e => setFormData({...formData, tipo_imovel: e.target.value as any})}>
+                            <option value="apartamento">Apartamento</option>
+                            <option value="moradia">Moradia</option>
+                            <option value="predio">Prédio</option>
+                            <option value="terreno">Terreno</option>
+                            <option value="comercial">Comercial</option>
                          </select>
                       </InputGroup>
                       <InputGroup label="Tipologia">
@@ -300,174 +233,182 @@ const AdminImoveis: React.FC = () => {
                             <option>T0</option><option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5+</option>
                          </select>
                       </InputGroup>
-                      <InputGroup label="Operação">
-                         <div className="flex gap-2">
-                            {['venda', 'arrendamento'].map(op => (
-                              <button key={op} onClick={() => setFormData({...formData, tipo_negocio: op as any})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${formData.tipo_negocio === op ? 'bg-[#1c2d51] text-white border-[#1c2d51]' : 'bg-white text-slate-400 border-slate-100'}`}>
-                                {op}
-                              </button>
-                            ))}
-                         </div>
-                      </InputGroup>
-                      <InputGroup label="Estado de Conservação">
+                      <InputGroup label="Estado">
                          <select className="admin-input" value={formData.estado_conservacao} onChange={e => setFormData({...formData, estado_conservacao: e.target.value as any})}>
-                            <option value="novo">Novo / Em construção</option>
-                            <option value="usado">Usado / Bom estado</option>
+                            <option value="novo">Novo</option>
+                            <option value="usado">Usado</option>
                             <option value="renovado">Renovado</option>
                             <option value="para_renovar">Para recuperar</option>
                          </select>
+                      </InputGroup>
+                      <InputGroup label="Ano de Construção">
+                        <input type="number" className="admin-input" value={formData.ano_construcao || ''} onChange={e => setFormData({...formData, ano_construcao: Number(e.target.value) || null})} />
                       </InputGroup>
                    </div>
                 </div>
               )}
 
-              {/* STEP 2: LOCALIZAÇÃO */}
               {currentStep === 2 && (
                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                   <SectionTitle title="2. Localização Exata" subtitle="Onde se encontra a propriedade" />
+                   <SectionTitle title="2. Operação & Regime" subtitle="Como será comercializado" />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <InputGroup label="Tipo de Operação">
+                        <div className="flex gap-2">
+                           {['venda', 'arrendamento'].map(op => (
+                             <button key={op} onClick={() => setFormData({...formData, operacao: op as any})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${formData.operacao === op ? 'bg-[#1c2d51] text-white' : 'bg-white text-slate-300'}`}>{op}</button>
+                           ))}
+                        </div>
+                      </InputGroup>
+                      {formData.operacao === 'arrendamento' && (
+                        <InputGroup label="Tipo Arrendamento">
+                           <select className="admin-input" value={formData.arrendamento_tipo || ''} onChange={e => setFormData({...formData, arrendamento_tipo: e.target.value as any})}>
+                              <option value="residencial">Habitação Permanente</option>
+                              <option value="temporario">Temporário / Nomad</option>
+                              <option value="ferias">Alojamento Local / Férias</option>
+                           </select>
+                        </InputGroup>
+                      )}
+                      <div className="p-6 bg-slate-50 rounded-3xl flex items-center justify-between col-span-2">
+                         <div className="flex items-center gap-3"><Zap className="text-[#1c2d51]"/><span className="text-xs font-black uppercase">Disponível Imediatamente?</span></div>
+                         <button onClick={() => setFormData({...formData, disponivel_imediato: !formData.disponivel_imediato})} className={`w-14 h-8 rounded-full relative transition-all ${formData.disponivel_imediato ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                            <div className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-all ${formData.disponivel_imediato ? 'right-1' : 'left-1'}`}></div>
+                         </button>
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {currentStep === 3 && (
+                <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                   <SectionTitle title="3. Localização" subtitle="Dados geográficos detalhados" />
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <InputGroup label="Distrito">
-                        <select className="admin-input" value={formData.distrito} onChange={e => setFormData({...formData, distrito: e.target.value})}>
-                           <option>Lisboa</option><option>Porto</option><option>Setúbal</option><option>Faro</option><option>Braga</option>
-                        </select>
+                        <input className="admin-input" value={formData.localizacao?.distrito} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, distrito: e.target.value}})} />
                       </InputGroup>
                       <InputGroup label="Concelho" required>
-                         <input placeholder="Ex: Cascais" className="admin-input" value={formData.concelho} onChange={e => setFormData({...formData, concelho: e.target.value})} />
+                        <input className="admin-input" value={formData.localizacao?.concelho} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, concelho: e.target.value}})} />
                       </InputGroup>
                       <InputGroup label="Freguesia">
-                         <input placeholder="Ex: Carcavelos" className="admin-input" value={formData.freguesia} onChange={e => setFormData({...formData, freguesia: e.target.value})} />
+                        <input className="admin-input" value={formData.localizacao?.freguesia || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, freguesia: e.target.value}})} />
+                      </InputGroup>
+                      <div className="md:col-span-2">
+                        <InputGroup label="Morada Completa">
+                          <input className="admin-input" value={formData.localizacao?.morada || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, morada: e.target.value}})} />
+                        </InputGroup>
+                      </div>
+                      <InputGroup label="Código Postal">
+                        <input className="admin-input" placeholder="1000-000" value={formData.localizacao?.codigo_postal || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, codigo_postal: e.target.value}})} />
                       </InputGroup>
                    </div>
-                   <InputGroup label="Morada Completa">
-                      <input placeholder="Rua de Exemplo, nº 123" className="admin-input" value={formData.morada} onChange={e => setFormData({...formData, morada: e.target.value})} />
-                   </InputGroup>
-                   <div className="p-6 bg-blue-50 rounded-3xl flex items-center justify-between border border-blue-100">
-                      <div className="flex items-center gap-3">
-                         <ShieldCheck className="text-blue-600" size={24}/>
-                         <div>
-                            <p className="text-xs font-black text-[#1c2d51] uppercase tracking-tighter">Privacidade da Morada</p>
-                            <p className="text-[10px] text-blue-600 font-bold uppercase">Expor morada publicamente no site?</p>
-                         </div>
-                      </div>
-                      <button onClick={() => setFormData({...formData, expor_morada_publica: !formData.expor_morada_publica})} className={`w-14 h-8 rounded-full relative p-1 transition-all ${formData.expor_morada_publica ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                         <div className={`w-6 h-6 bg-white rounded-full shadow transition-all ${formData.expor_morada_publica ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                   <div className="p-6 bg-blue-50 border border-blue-100 rounded-3xl flex items-center justify-between">
+                      <div className="flex items-center gap-3 text-blue-600"><ShieldCheck size={24}/><div><p className="text-xs font-black uppercase">Privacidade</p><p className="text-[10px] uppercase font-bold opacity-70">Expor morada exata no site público?</p></div></div>
+                      <button onClick={() => setFormData({...formData, localizacao: {...formData.localizacao!, expor_morada: !formData.localizacao?.expor_morada}})} className={`w-14 h-8 rounded-full relative transition-all ${formData.localizacao?.expor_morada ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                         <div className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-all ${formData.localizacao?.expor_morada ? 'right-1' : 'left-1'}`}></div>
                       </button>
                    </div>
                 </div>
               )}
 
-              {/* STEP 3: AREAS & CHARACTERISTICS */}
-              {currentStep === 3 && (
+              {currentStep === 4 && (
                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                   <SectionTitle title="3. Áreas & Características" subtitle="Espaço físico e funcionalidades" />
+                   <SectionTitle title="4. Áreas & Divisões" subtitle="Dimensões e espaços funcionais" />
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <InputGroup label="Área Útil (m²)" required>
-                         <input type="number" className="admin-input" value={formData.area_util_m2 || ''} onChange={e => setFormData({...formData, area_util_m2: Number(e.target.value)})} />
+                      <InputGroup label="Área Útil (m²)">
+                         <input type="number" className="admin-input" value={formData.areas?.area_util_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_util_m2: Number(e.target.value)}})} />
                       </InputGroup>
                       <InputGroup label="Área Bruta (m²)">
-                         <input type="number" className="admin-input" value={formData.area_bruta_m2 || ''} onChange={e => setFormData({...formData, area_bruta_m2: Number(e.target.value)})} />
+                         <input type="number" className="admin-input" value={formData.areas?.area_bruta_m2 || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, area_bruta_m2: Number(e.target.value)}})} />
                       </InputGroup>
                       <InputGroup label="Andar">
-                         <input placeholder="Ex: 2º Esq" className="admin-input" value={formData.andar || ''} onChange={e => setFormData({...formData, andar: e.target.value})} />
+                         <input className="admin-input" value={formData.areas?.andar || ''} onChange={e => setFormData({...formData, areas: {...formData.areas!, andar: e.target.value}})} />
                       </InputGroup>
                    </div>
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                      <Counter label="Quartos" value={formData.quartos || 0} onChange={v => setFormData({...formData, quartos: v})} />
-                      <Counter label="WCs" value={formData.casas_banho || 0} onChange={v => setFormData({...formData, casas_banho: v})} />
-                      <Counter label="Lugares Garagem" value={formData.n_lugares_garagem || 0} onChange={v => setFormData({...formData, n_lugares_garagem: v})} />
-                      <Counter label="Nº Pisos" value={formData.n_pisos || 1} onChange={v => setFormData({...formData, n_pisos: v})} />
-                   </div>
-                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <ToggleItem icon={<Zap size={14}/>} label="Elevador" active={formData.tem_elevador || false} onClick={() => setFormData({...formData, tem_elevador: !formData.tem_elevador})} />
-                      <ToggleItem icon={<Star size={14}/>} label="Piscina" active={formData.tem_piscina || false} onClick={() => setFormData({...formData, tem_piscina: !formData.tem_piscina})} />
-                      <ToggleItem icon={<Globe size={14}/>} label="Jardim" active={formData.tem_jardim || false} onClick={() => setFormData({...formData, tem_jardim: !formData.tem_jardim})} />
-                      <ToggleItem icon={<ImageIcon size={14}/>} label="Varanda" active={formData.tem_varanda_terraco || false} onClick={() => setFormData({...formData, tem_varanda_terraco: !formData.tem_varanda_terraco})} />
-                   </div>
-                </div>
-              )}
-
-              {/* STEP 4: PREÇO & LEGAL */}
-              {currentStep === 4 && (
-                <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                   <SectionTitle title="4. Preço & Dados Legais" subtitle="Condições financeiras e certificações" />
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="bg-slate-50 p-8 rounded-[2.5rem] space-y-6">
-                        <InputGroup label={formData.tipo_negocio === 'venda' ? 'Preço de Venda (€)' : 'Preço Arrendamento /mês (€)'} required>
-                           <div className="relative">
-                              <Euro className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                              <input type="number" className="admin-input pl-14" value={(formData.tipo_negocio === 'venda' ? formData.preco : formData.preco_arrendamento) || ''} onChange={e => setFormData(formData.tipo_negocio === 'venda' ? {...formData, preco: Number(e.target.value)} : {...formData, preco_arrendamento: Number(e.target.value)})} />
-                           </div>
-                        </InputGroup>
-                        <div className="flex gap-4">
-                           <button onClick={() => setFormData({...formData, negociavel: !formData.negociavel})} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${formData.negociavel ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-100'}`}>Negociável</button>
-                           <button onClick={() => setFormData({...formData, comissao_incluida: !formData.comissao_incluida})} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${formData.comissao_incluida ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-400 border-slate-100'}`}>Comissão Incluída</button>
-                        </div>
-                      </div>
-                      <div className="space-y-6">
-                        <InputGroup label="Certificado Energético">
-                           <select className="admin-input" value={formData.certificado_energetico} onChange={e => setFormData({...formData, certificado_energetico: e.target.value as any})}>
-                              <option>A+</option><option>A</option><option>B</option><option>B-</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>Isento</option><option>Em preparação</option>
-                           </select>
-                        </InputGroup>
-                        <InputGroup label="Licença de Utilização">
-                           <input placeholder="Ex: Licença nº 123/2020" className="admin-input" value={formData.licenca_utilizacao} onChange={e => setFormData({...formData, licenca_utilizacao: e.target.value})} />
-                        </InputGroup>
-                      </div>
-                   </div>
-                </div>
-              )}
-
-              {/* STEP 5: MEDIA & DESCRIPTION (AI) */}
-              {currentStep === 5 && (
-                <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                   <SectionTitle title="5. Marketing & Media" subtitle="A cara do seu anúncio" />
-                   
-                   <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Descrição Completa</label>
-                         <button 
-                           onClick={handleAIGenerate}
-                           disabled={isGeneratingAI}
-                           className="flex items-center gap-2 text-[10px] font-black uppercase text-blue-600 hover:text-blue-700 disabled:opacity-50"
-                         >
-                           {isGeneratingAI ? <Loader2 className="animate-spin" size={14}/> : <Sparkles size={14}/>}
-                           Gerar com IA Gemini
-                         </button>
-                      </div>
-                      <textarea rows={6} className="admin-input py-6 text-sm font-medium leading-relaxed" placeholder="Escreva sobre o imóvel..." value={formData.descricao_md} onChange={e => setFormData({...formData, descricao_md: e.target.value})}></textarea>
-                   </div>
-
-                   <div className="space-y-6">
-                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Galeria de Imagens</label>
-                      <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4">
-                         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm mx-auto flex items-center justify-center text-slate-300"><Camera size={32}/></div>
-                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cole o URL das imagens abaixo</p>
-                         <div className="flex gap-2 max-w-lg mx-auto">
-                            <input id="mediaUrl" placeholder="https://..." className="admin-input bg-white" onKeyPress={e => e.key === 'Enter' && handleAddMedia((e.target as HTMLInputElement).value)} />
-                            <button onClick={() => {
-                              const input = document.getElementById('mediaUrl') as HTMLInputElement;
-                              handleAddMedia(input.value);
-                              input.value = '';
-                            }} className="bg-[#1c2d51] text-white px-6 rounded-xl font-black uppercase text-xs">Adicionar</button>
+                      <Counter label="Quartos" value={formData.divisoes?.quartos || 0} onChange={v => setFormData({...formData, divisoes: {...formData.divisoes!, quartos: v}})} />
+                      <Counter label="Casas Banho" value={formData.divisoes?.casas_banho || 0} onChange={v => setFormData({...formData, divisoes: {...formData.divisoes!, casas_banho: v}})} />
+                      <div className="p-6 bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center col-span-2">
+                         <span className="text-[10px] font-black uppercase text-slate-400 mb-2">Lugar de Garagem</span>
+                         <div className="flex items-center gap-6">
+                            <button onClick={() => setFormData({...formData, divisoes: {...formData.divisoes!, garagem: { tem: !formData.divisoes?.garagem?.tem, lugares: 1}}})} className={`px-4 py-2 rounded-xl text-[10px] font-black border uppercase ${formData.divisoes?.garagem?.tem ? 'bg-[#1c2d51] text-white' : 'bg-white'}`}>Sim</button>
+                            <input type="number" placeholder="Nº" className="w-16 bg-white border-none rounded-xl p-2 text-center font-bold" value={formData.divisoes?.garagem?.lugares || ''} onChange={e => setFormData({...formData, divisoes: {...formData.divisoes!, garagem: {...formData.divisoes!.garagem, lugares: Number(e.target.value)}}})} />
                          </div>
                       </div>
+                   </div>
+                </div>
+              )}
 
-                      {/* MEDIA LIST */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                         {formData.media?.map((m, idx) => (
-                           <div key={m.id} className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${m.principal ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-100'}`}>
+              {currentStep === 5 && (
+                <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                   <SectionTitle title="5. Financeiro & Legal" subtitle="Preços, impostos e certificações" />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="bg-slate-50 p-8 rounded-[3rem] space-y-6">
+                         <InputGroup label={formData.operacao === 'venda' ? 'Preço de Venda (€)' : 'Preço Arrendamento (€)'} required>
+                            <div className="relative">
+                               <Euro className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18}/>
+                               <input type="number" className="admin-input pl-12" value={(formData.operacao === 'venda' ? formData.financeiro?.preco_venda : formData.financeiro?.preco_arrendamento) || ''} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro!, [formData.operacao === 'venda' ? 'preco_venda' : 'preco_arrendamento']: Number(e.target.value)}})} />
+                            </div>
+                         </InputGroup>
+                         <div className="grid grid-cols-2 gap-4">
+                           <InputGroup label="Condomínio /mês">
+                              <input type="number" className="admin-input" value={formData.financeiro?.condominio_mensal || ''} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro!, condominio_mensal: Number(e.target.value)}})} />
+                           </InputGroup>
+                           <InputGroup label="IMI Anual">
+                              <input type="number" className="admin-input" value={formData.financeiro?.imi_anual || ''} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro!, imi_anual: Number(e.target.value)}})} />
+                           </InputGroup>
+                         </div>
+                      </div>
+                      <div className="space-y-6">
+                         <InputGroup label="Certificado Energético">
+                            <select className="admin-input" value={formData.certificacao?.certificado_energetico} onChange={e => setFormData({...formData, certificacao: {...formData.certificacao!, certificado_energetico: e.target.value}})}>
+                               {['A+', 'A', 'B', 'B-', 'C', 'D', 'E', 'F', 'G', 'Isento', 'Em preparação'].map(v => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                         </InputGroup>
+                         <InputGroup label="Licença Utilização">
+                            <input placeholder="Ex: 123/2020" className="admin-input" value={formData.certificacao?.licenca_utilizacao_numero || ''} onChange={e => setFormData({...formData, certificacao: {...formData.certificacao!, licenca_utilizacao_numero: e.target.value}})} />
+                         </InputGroup>
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {currentStep === 6 && (
+                <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                   <SectionTitle title="6. Marketing & Media" subtitle="A imagem que vende o imóvel" />
+                   <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                         <span className="text-[10px] font-black uppercase text-slate-400">Descrição Completa</span>
+                         <button onClick={handleAIGenerate} disabled={isGeneratingAI} className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase hover:opacity-70 disabled:opacity-30">
+                            {isGeneratingAI ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                            Gerar com IA Gemini
+                         </button>
+                      </div>
+                      <textarea rows={6} className="admin-input py-6" value={formData.descricao?.completa_md || ''} onChange={e => setFormData({...formData, descricao: {...formData.descricao!, completa_md: e.target.value}})}></textarea>
+                   </div>
+                   <div className="space-y-6">
+                      <label className="text-[10px] font-black uppercase text-slate-400">Media & Fotos</label>
+                      <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-dashed border-slate-200 text-center space-y-4">
+                         <Camera className="mx-auto text-slate-300" size={32}/>
+                         <p className="text-xs font-bold text-slate-400 uppercase">Cole URLs de imagens (Mock de Upload)</p>
+                         <div className="flex gap-2 max-w-lg mx-auto">
+                            <input id="mediaUrl" placeholder="https://..." className="admin-input bg-white" onKeyPress={e => e.key === 'Enter' && handleAddMedia((e.target as any).value)} />
+                            <button onClick={() => {
+                               const input = document.getElementById('mediaUrl') as HTMLInputElement;
+                               handleAddMedia(input.value);
+                               input.value = '';
+                            }} className="bg-[#1c2d51] text-white px-6 rounded-xl font-black uppercase text-xs">OK</button>
+                         </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                         {tempMedia.map((m, idx) => (
+                           <div key={m.id} className={`group relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${m.is_cover ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-100'}`}>
                               <img src={m.url} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                 <button onClick={() => moveMedia(idx, 'up')} className="p-1.5 bg-white rounded-lg hover:text-blue-500"><MoveUp size={14}/></button>
-                                 <button onClick={() => moveMedia(idx, 'down')} className="p-1.5 bg-white rounded-lg hover:text-blue-500"><MoveDown size={14}/></button>
-                                 <button onClick={() => removeMedia(m.id)} className="p-1.5 bg-white rounded-lg text-red-500 hover:bg-red-50"><Trash size={14}/></button>
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                                 <button onClick={() => {
+                                   const newMedia = tempMedia.map(item => ({ ...item, is_cover: item.id === m.id }));
+                                   setTempMedia(newMedia);
+                                 }} className="p-2 bg-white rounded-lg hover:text-blue-500"><Star size={14}/></button>
+                                 <button onClick={() => setTempMedia(tempMedia.filter(item => item.id !== m.id))} className="p-2 bg-white rounded-lg text-red-500"><Trash size={14}/></button>
                               </div>
-                              <button 
-                                onClick={() => setPrincipalMedia(m.id)}
-                                className={`absolute top-2 left-2 p-1.5 rounded-lg transition-all ${m.principal ? 'bg-blue-500 text-white' : 'bg-white/90 text-slate-400 hover:text-blue-500'}`}
-                              >
-                                <Star size={12} fill={m.principal ? 'currentColor' : 'none'} />
-                              </button>
                            </div>
                          ))}
                       </div>
@@ -476,33 +417,14 @@ const AdminImoveis: React.FC = () => {
               )}
             </div>
 
-            {/* Footer Navigation */}
-            <div className="px-10 py-8 border-t border-slate-50 flex items-center justify-between shrink-0 bg-slate-50/50">
-               <button 
-                 onClick={handleBack} 
-                 disabled={currentStep === 1}
-                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest text-slate-400 hover:text-slate-900 disabled:opacity-30"
-               >
-                 <ChevronLeft size={16}/> Voltar
-               </button>
-               
-               <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">Passo {currentStep} de {totalSteps}</div>
-               
+            <div className="px-10 py-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/50 shrink-0">
+               <button onClick={handleBack} disabled={currentStep === 1} className="flex items-center gap-2 text-slate-400 font-black uppercase text-[10px] disabled:opacity-30"><ChevronLeft size={16}/> Voltar</button>
+               <span className="text-[10px] font-black uppercase text-slate-300">Passo {currentStep} de {totalSteps}</span>
                {currentStep < totalSteps ? (
-                 <button 
-                   onClick={handleNext} 
-                   className="bg-[#1c2d51] text-white px-10 py-4 rounded-xl font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:translate-x-1 transition-all"
-                 >
-                   Seguinte <ChevronRight size={16}/>
-                 </button>
+                 <button onClick={handleNext} className="bg-[#1c2d51] text-white px-10 py-4 rounded-xl font-black text-xs uppercase flex items-center gap-2 hover:translate-x-1 transition-all">Seguinte <ChevronRight size={16}/></button>
                ) : (
-                 <button 
-                   onClick={handleSave} 
-                   disabled={isSaving}
-                   className="bg-[#1c2d51] text-white px-12 py-4 rounded-xl font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:scale-105 transition-all shadow-xl shadow-[#1c2d51]/20"
-                 >
-                   {isSaving ? <Loader2 className="animate-spin" size={16}/> : <Check size={16}/>}
-                   Confirmar & Publicar
+                 <button onClick={handleSave} disabled={isSaving} className="bg-[#1c2d51] text-white px-12 py-4 rounded-xl font-black text-xs uppercase flex items-center gap-2 shadow-xl shadow-[#1c2d51]/20">
+                   {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16}/>} Publicar Imóvel
                  </button>
                )}
             </div>
@@ -510,92 +432,58 @@ const AdminImoveis: React.FC = () => {
         </div>
       )}
 
-      {/* SEARCH AND TABLE - MAINTAINED FROM ORIGINAL BUT STYLED */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-50">
-          <div className="relative w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-            <input 
-              type="text" 
-              placeholder="Pesquisar por título ou referência..." 
-              className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl outline-none text-sm font-bold"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
+        <div className="p-6 border-b border-slate-50"><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} /><input type="text" placeholder="Filtrar inventário..." className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl outline-none font-bold" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div></div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                <th className="px-8 py-5">Detalhes do Imóvel</th>
-                <th className="px-8 py-5">Tipo & Negócio</th>
-                <th className="px-8 py-5 text-right">Ações</th>
-              </tr>
-            </thead>
+          <table className="w-full text-left">
+            <thead><tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest"><th className="px-8 py-5">Imóvel / Ref</th><th className="px-8 py-5">Negócio</th><th className="px-8 py-5 text-right">Acções</th></tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {isLoading ? (
-                <tr><td colSpan={3} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" /></td></tr>
-              ) : filteredProperties.length === 0 ? (
-                <tr>
-                   <td colSpan={3} className="px-8 py-20 text-center">
-                      <div className="flex flex-col items-center gap-2 text-slate-300">
-                         <AlertCircle size={32} />
-                         <p className="font-bold uppercase text-[10px] tracking-widest">Nenhum imóvel no inventário.</p>
-                      </div>
-                   </td>
-                </tr>
-              ) : filteredProperties.map((imovel) => (
-                <tr key={imovel.id} className="hover:bg-slate-50/50 transition-colors group">
+              {isLoading ? (<tr><td colSpan={3} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" /></td></tr>) : 
+               properties.map(p => (
+                <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-300 font-black border border-slate-200 overflow-hidden">
-                        {imovel.media?.[0]?.url ? <img src={imovel.media[0].url} className="w-full h-full object-cover" /> : imovel.titulo.charAt(0)}
+                      <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden font-black text-slate-300 flex items-center justify-center">
+                        {p.media?.cover_media_id ? 'IMG' : p.titulo.charAt(0)}
                       </div>
-                      <div>
-                        <div className="font-black text-[#1c2d51] text-sm">{imovel.titulo}</div>
-                        <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Ref: {imovel.referencia} • {formatCurrency(imovel.preco || imovel.preco_arrendamento)}</div>
-                      </div>
+                      <div><div className="font-black text-sm text-[#1c2d51]">{p.titulo}</div><div className="text-[10px] text-slate-400 font-bold uppercase">REF: {p.ref}</div></div>
                     </div>
                   </td>
-                  <td className="px-8 py-5">
-                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{imovel.tipo_imovel} &bull; {imovel.tipo_negocio}</div>
-                  </td>
-                  <td className="px-8 py-5 text-right">
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <a href={`#/agencia/${profile?.tenantId}/imovel/${imovel.slug}`} target="_blank" className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-white rounded-xl border border-slate-100 shadow-sm"><Eye size={16}/></a>
-                      <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-[#1c2d51] bg-white rounded-xl border border-slate-100 shadow-sm"><Edit2 size={16}/></button>
-                      <button className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 bg-white rounded-xl border border-slate-100 shadow-sm"><Trash2 size={16}/></button>
-                    </div>
-                  </td>
+                  <td className="px-8 py-5"><span className="text-[10px] font-black uppercase text-slate-400">{p.tipo_imovel} &bull; {p.operacao}</span></td>
+                  <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity"><div className="flex justify-end gap-2"><button className="w-9 h-9 flex items-center justify-center bg-white border rounded-lg text-slate-400"><Edit2 size={14}/></button><button className="w-9 h-9 flex items-center justify-center bg-white border rounded-lg text-red-400"><Trash2 size={14}/></button></div></td>
                 </tr>
-              ))}
+               ))
+              }
             </tbody>
           </table>
         </div>
       </div>
-      
+
       <style>{`
-        .admin-input {
-          width: 100%;
-          padding: 1rem 1.5rem;
-          background-color: #f8fafc;
-          border: 2px solid transparent;
-          border-radius: 1.25rem;
-          outline: none;
-          font-weight: 700;
-          color: #1c2d51;
-          transition: all 0.2s;
-        }
-        .admin-input:focus {
-          background-color: #fff;
-          border-color: #1c2d51;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-        }
+        .admin-input { width: 100%; padding: 1rem 1.5rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; }
+        .admin-input:focus { background: #fff; border-color: #1c2d51; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
       `}</style>
     </div>
   );
 };
+
+const SectionTitle = ({ title, subtitle }: any) => (
+  <div><h4 className="text-2xl font-black text-[#1c2d51] tracking-tighter">{title}</h4><p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{subtitle}</p></div>
+);
+
+const InputGroup = ({ label, children, required }: any) => (
+  <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">{label}{required && '*'}</label>{children}</div>
+);
+
+const Counter = ({ label, value, onChange }: any) => (
+  <div className="bg-slate-50 p-6 rounded-[2rem] flex flex-col items-center justify-center">
+     <span className="text-[9px] font-black uppercase text-slate-400 mb-3">{label}</span>
+     <div className="flex items-center gap-4">
+        <button onClick={() => onChange(Math.max(0, value - 1))} className="w-8 h-8 rounded-full bg-white text-lg font-black">-</button>
+        <span className="text-xl font-black">{value}</span>
+        <button onClick={() => onChange(value + 1)} className="w-8 h-8 rounded-full bg-white text-lg font-black">+</button>
+     </div>
+  </div>
+);
 
 export default AdminImoveis;

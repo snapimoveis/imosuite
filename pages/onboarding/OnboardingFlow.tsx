@@ -62,15 +62,48 @@ const OnboardingFlow: React.FC = () => {
     setIsFinishing(true);
     try {
       if (property.titulo) {
+        // Fix: Update createProperty payload to match Imovel nested structure
         await PropertyService.createProperty(profile.tenantId, {
           titulo: property.titulo,
-          descricao_md: property.descricao,
-          tipo_imovel: property.tipo,
-          concelho: property.concelho,
-          distrito: 'Lisboa',
-          preco: Number(property.preco),
-          tipo_negocio: property.negocio,
-          referencia: `INI-${Math.floor(Math.random() * 999)}`,
+          ref: `INI-${Math.floor(Math.random() * 999)}`,
+          tipo_imovel: 'apartamento',
+          tipologia: 'T2',
+          estado_conservacao: 'novo',
+          operacao: property.negocio as any,
+          localizacao: {
+            pais: 'Portugal',
+            distrito: 'Lisboa',
+            concelho: property.concelho,
+            freguesia: null,
+            codigo_postal: null,
+            morada: null,
+            porta: null,
+            lat: null,
+            lng: null,
+            expor_morada: true
+          },
+          financeiro: {
+            preco_venda: property.negocio === 'venda' ? Number(property.preco) : null,
+            preco_arrendamento: property.negocio === 'arrendamento' ? Number(property.preco) : null,
+            negociavel: false,
+            condominio_mensal: null,
+            imi_anual: null,
+            caucao_meses: null,
+            despesas_incluidas: []
+          },
+          descricao: {
+            curta: '',
+            completa_md: property.descricao,
+            gerada_por_ia: false,
+            ultima_geracao_ia_at: null
+          },
+          publicacao: {
+            estado: 'publicado',
+            publicar_no_site: true,
+            destaque: true,
+            badges: [],
+            data_publicacao: serverTimestamp()
+          },
           slug: property.titulo.toLowerCase().replace(/\s+/g, '-')
         });
       }

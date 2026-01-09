@@ -1,40 +1,36 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Generate a professional property description based on provided details
 export const generatePropertyDescription = async (property: any): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Garantir que a API KEY é lida do ambiente no momento da execução
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API Key não configurada no ambiente.");
+  
+  const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
-    Crie uma descrição atraente, profissional e persuasiva para um imóvel em Portugal:
+    Crie uma descrição atraente e sofisticada para um anúncio imobiliário em Portugal:
     
-    DADOS COMERCIAIS:
+    DADOS DO IMÓVEL:
     Título: ${property.titulo}
-    Operação: ${property.tipo_negocio} ${property.tipo_arrendamento ? '(' + property.tipo_arrendamento + ')' : ''}
-    Preço: ${property.preco || property.preco_arrendamento}€
-    
-    CARACTERÍSTICAS TÉCNICAS:
-    Tipo: ${property.tipo_imovel}
-    Tipologia: ${property.tipologia}
+    Tipo: ${property.tipo_imovel} (${property.tipologia})
     Estado: ${property.estado_conservacao}
-    Áreas: ${property.area_util_m2}m² úteis, ${property.area_bruta_m2}m² brutos
-    Divisões: ${property.quartos} quartos, ${property.casas_banho} WCs
-    Extras: ${property.caracteristicas?.join(', ')}
-    Piscina: ${property.tem_piscina ? 'Sim' : 'Não'} | Jardim: ${property.tem_jardim ? 'Sim' : 'Não'}
+    Operação: ${property.operacao}
+    Preço: ${property.financeiro?.preco_venda || property.financeiro?.preco_arrendamento}€
     
-    LOCALIZAÇÃO:
-    Concelho: ${property.concelho}
-    Distrito: ${property.distrito}
+    DETALHES TÉCNICOS:
+    Área Útil: ${property.areas?.area_util_m2}m²
+    Divisões: ${property.divisoes?.quartos} quartos, ${property.divisoes?.casas_banho} casas de banho
+    Garagem: ${property.divisoes?.garagem?.tem ? 'Sim, ' + property.divisoes?.garagem?.lugares + ' lugares' : 'Não'}
+    Localização: ${property.localizacao?.concelho}, ${property.localizacao?.distrito}
+    Extras: ${property.caracteristicas?.join(', ')}
     
     REQUISITOS DO TEXTO:
     - Português de Portugal (PT-PT)
-    - Formato Markdown
-    - Estrutura:
-      1. Título apelativo em H2.
-      2. Introdução focada no estilo de vida e localização.
-      3. Corpo com detalhes técnicos organizados por pontos.
-      4. Conclusão forte com Call to Action para visita.
-    - Tom: Profissional, sofisticado e confiante.
+    - Formato Markdown profissional
+    - Inclua um título H2 chamativo
+    - Destaque o estilo de vida e conforto
+    - Call to action no final convidando para visita
   `;
 
   try {
@@ -42,31 +38,27 @@ export const generatePropertyDescription = async (property: any): Promise<string
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text || "Não foi possível gerar a descrição automática neste momento.";
+    return response.text || "Erro ao gerar descrição.";
   } catch (error) {
-    console.error("AI Generation Error:", error);
-    return "Não foi possível gerar a descrição automática neste momento.";
+    console.error("Gemini Error:", error);
+    return "Não foi possível gerar a descrição automática. Por favor, escreva manualmente.";
   }
 };
 
-// Generate a short and memorable commercial slogan for the agency
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return "Excelência imobiliária.";
   
-  const prompt = `
-    Crie um slogan comercial curto, memorável e profissional para uma imobiliária chamada "${agencyName}".
-    O slogan deve ser em Português de Portugal (PT-PT), focado em confiança, sonhos e excelência no serviço imobiliário.
-    Retorne apenas a frase do slogan, sem aspas.
-  `;
+  const ai = new GoogleGenAI({ apiKey });
+  const prompt = `Gere um slogan comercial curto para a imobiliária "${agencyName}" em Portugal. Foco em confiança.`;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text?.trim() || "A chave do seu futuro.";
-  } catch (error) {
-    console.error("AI Slogan Generation Error:", error);
-    return "A chave do seu futuro.";
+    return response.text?.trim() || "O seu parceiro de confiança.";
+  } catch {
+    return "A sua imobiliária de referência.";
   }
 };

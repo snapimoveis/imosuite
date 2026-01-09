@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Imovel } from '../types';
 import { formatCurrency } from '../lib/utils';
-import { Bed, Bath, Square, MapPin, MessageSquare, ArrowRight } from 'lucide-react';
+import { Bed, Bath, Square, MapPin, MessageSquare } from 'lucide-react';
 
 interface ImovelCardProps {
   imovel: Imovel;
@@ -12,7 +12,9 @@ interface ImovelCardProps {
 const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
   const navigate = useNavigate();
   const { slug: agencySlug } = useParams<{ slug: string }>();
-  const mainImage = imovel.media.find(m => m.principal)?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800';
+  
+  // Fix: Handle updated media structure. Use items list if present, otherwise fallback.
+  const mainImage = imovel.media.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800';
 
   const handleContactClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -33,9 +35,9 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
         />
         <div className="absolute top-4 left-4 flex gap-2">
           <span className="bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[8px] font-black uppercase text-slate-800 shadow-sm border border-white/20">
-            {imovel.tipo_negocio === 'venda' ? 'Venda' : 'Arrendamento'}
+            {imovel.operacao === 'venda' ? 'Venda' : 'Arrendamento'}
           </span>
-          {imovel.destaque && (
+          {imovel.publicacao.destaque && (
             <span className="bg-[#1c2d51] text-white px-3 py-1 rounded-full text-[8px] font-black uppercase shadow-sm">
               Destaque
             </span>
@@ -46,19 +48,19 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
       <div className="p-8 flex-1 flex flex-col">
         <div className="flex items-center gap-1 text-slate-400 text-[10px] font-black uppercase tracking-widest mb-3">
           <MapPin size={12} className="text-blue-500" />
-          <span>{imovel.concelho}</span>
+          <span>{imovel.localizacao.concelho}</span>
         </div>
         <h3 className="text-lg font-black text-[#1c2d51] mb-6 line-clamp-2 leading-tight flex-1">{imovel.titulo}</h3>
         
         <div className="flex items-center justify-between border-t border-slate-50 py-5 mb-6 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
-          <div className="flex items-center gap-1.5"><Bed size={14} className="text-slate-900" /> <span>{imovel.quartos || 0}</span></div>
-          <div className="flex items-center gap-1.5"><Bath size={14} className="text-slate-900" /> <span>{imovel.casas_banho || 0}</span></div>
-          <div className="flex items-center gap-1.5"><Square size={14} className="text-slate-900" /> <span>{imovel.area_util_m2 || 0}m²</span></div>
+          <div className="flex items-center gap-1.5"><Bed size={14} className="text-slate-900" /> <span>{imovel.divisoes.quartos || 0}</span></div>
+          <div className="flex items-center gap-1.5"><Bath size={14} className="text-slate-900" /> <span>{imovel.divisoes.casas_banho || 0}</span></div>
+          <div className="flex items-center gap-1.5"><Square size={14} className="text-slate-900" /> <span>{imovel.areas.area_util_m2 || 0}m²</span></div>
         </div>
 
         <div className="flex flex-col gap-2">
           <div className="text-2xl font-black text-[#1c2d51] mb-2">
-            {imovel.tipo_negocio === 'venda' ? formatCurrency(imovel.preco) : `${formatCurrency(imovel.preco_arrendamento)}/mês`}
+            {imovel.operacao === 'venda' ? formatCurrency(imovel.financeiro.preco_venda || 0) : `${formatCurrency(imovel.financeiro.preco_arrendamento || 0)}/mês`}
           </div>
           <button 
             onClick={handleContactClick}

@@ -7,7 +7,8 @@ import { MOCK_IMOVEIS } from '../mocks';
 
 const Home: React.FC = () => {
   const { tenant } = useTenant();
-  const featuredProperties = MOCK_IMOVEIS.filter(i => i.destaque).slice(0, 3);
+  // Fix: access destaque via publicacao.destaque
+  const featuredProperties = MOCK_IMOVEIS.filter(i => i.publicacao.destaque).slice(0, 3);
 
   return (
     <div className="flex flex-col">
