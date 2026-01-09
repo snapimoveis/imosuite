@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-// Fixing modular Firestore imports for version 9+
+// Correct modular Firestore imports for version 9+
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { 
@@ -33,7 +32,6 @@ const AdminSettings: React.FC = () => {
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Fixing explicit type for previewingTemplate
   const [previewingTemplate, setPreviewingTemplate] = useState<Tenant['template_id'] | null>(null);
   const [isGeneratingSlogan, setIsGeneratingSlogan] = useState(false);
   
@@ -102,17 +100,17 @@ const AdminSettings: React.FC = () => {
         localTenant.slug = normalizedSlug;
       }
 
-      // Fixing data saving structure
+      // Prepare data for saving
       const { id, ...dataToSave } = localTenant;
       const updates = {
-        ...(dataToSave as any),
+        ...dataToSave,
         updated_at: serverTimestamp()
       };
 
       await setDoc(doc(db, 'tenants', tId), updates, { merge: true });
       setTenant({ ...localTenant, id: tId });
       
-      // Injeção de cores na UI do Admin
+      // Update primary color in CSS variables
       const root = document.documentElement;
       root.style.setProperty('--primary', localTenant.cor_primaria);
       
@@ -359,7 +357,7 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
   if (templateId === 'heritage') return (
     <div className="font-brand text-slate-900">
        <nav className="h-20 border-b border-slate-100 px-10 flex items-center justify-between bg-white">
-          <span className="font-black text-xl text-[#1c2d51] tracking-tighter">Heritage Agency</span>
+          <span className="font-black text-xl text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
           <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400"><span>Início</span><span>Imóveis</span><span>Contacto</span></div>
        </nav>
        <header className="py-32 px-10 text-center bg-slate-50 border-b border-slate-100 relative">

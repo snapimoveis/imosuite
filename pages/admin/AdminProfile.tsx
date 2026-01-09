@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-// Correcting modular Firestore imports for version 9+
+// Modular Firestore imports for user document updates
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
-import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Phone, Camera, Smartphone } from 'lucide-react';
+import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Camera, Smartphone } from 'lucide-react';
 
 const AdminProfile: React.FC = () => {
   const { profile, user } = useAuth();

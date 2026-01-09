@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// Correcting modular Firestore imports for version 9+
+// Modular Firestore imports for tenant and property lookup
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant, Imovel, CMSSection, MenuItem } from '../types';
@@ -168,7 +167,6 @@ const PublicPortal: React.FC = () => {
 
 const SectionRenderer: React.FC<{ section: CMSSection, tenant: Tenant, properties: Imovel[], template: string }> = ({ section, tenant, properties, template }) => {
   const featured = properties.filter(p => p.publicacao?.destaque).slice(0, 6);
-  const recent = [...properties].sort((a,b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0)).slice(0, 4);
 
   switch (section.type) {
     case 'hero': return (

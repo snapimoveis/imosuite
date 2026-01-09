@@ -1,15 +1,14 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-// Correcting modular Firestore imports for version 9+
+// Modular Firestore imports for specific property and agency lookup
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant, Imovel } from '../types';
 import { LeadService } from '../services/leadService';
 import { 
   MapPin, Bed, Bath, Square, Loader2, ChevronLeft, 
-  Send, Share2, Heart, Phone, Mail, Car, Zap, Check, ArrowRight, Building2, Calendar, Info, ShieldCheck,
-  Star
+  Send, Share2, Heart, Phone, Mail, Building2, Star,
+  Zap, Check, ArrowRight, Info, ShieldCheck
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import ImovelCard from '../components/ImovelCard';

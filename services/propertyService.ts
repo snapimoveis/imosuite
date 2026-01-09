@@ -1,4 +1,3 @@
-
 // Standard modular Firestore imports for version 9+
 import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -58,10 +57,10 @@ export const PropertyService = {
     
     const propertiesRef = collection(db, "tenants", tenantId, "properties");
     
-    // Crucial: Incluir as imagens no documento principal para visualização rápida
     const finalData = prepareData({
       ...propertyData,
       tipology: propertyData.tipologia || 'T0',
+      tipologia: propertyData.tipologia || 'T0',
       tenant_id: tenantId,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
@@ -70,13 +69,12 @@ export const PropertyService = {
       media: {
         cover_media_id: mediaItems.find(m => m.is_cover)?.id || mediaItems[0]?.id || null,
         total: mediaItems.length,
-        items: mediaItems // Guardamos no doc principal para os cards funcionarem
+        items: mediaItems 
       }
     }, false);
 
     const docRef = await addDoc(propertiesRef, finalData);
 
-    // Também guardamos na sub-coleção para gestão granular
     if (mediaItems.length > 0) {
       const mediaColRef = collection(db, "tenants", tenantId, "properties", docRef.id, "media");
       const batch = writeBatch(db);
@@ -101,8 +99,8 @@ export const PropertyService = {
     
     const cleanUpdates = prepareData({
       ...updates,
-      tipology: updates.tipologia || 'T0',
-      // Se houver novas fotos, atualizamos o resumo no doc principal
+      tipology: updates.tipologia || updates.tipology || 'T0',
+      tipologia: updates.tipologia || updates.tipology || 'T0',
       ...(mediaItems && {
         media: {
           cover_media_id: mediaItems.find(m => m.is_cover)?.id || mediaItems[0]?.id || null,

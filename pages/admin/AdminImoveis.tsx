@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PropertyService } from '../../services/propertyService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Imovel, TipoImovel, ImovelMedia } from '../../types';
 import { 
   Plus, X, Loader2, AlertCircle, Sparkles, Check, ChevronRight, ChevronLeft, 
-  Trash, UploadCloud, MapPin, Bed, Bath, Square, Info, ShieldCheck, 
-  Building2, Euro, Layout, Camera, Star, Zap, Brush, Search, MoveUp, MoveDown, Eye, FileText, Video, Globe, Calendar
+  Trash, UploadCloud, Building2, Star, Zap, Brush, MoveUp, MoveDown
 } from 'lucide-react';
 import { formatCurrency, generateSlug } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
@@ -42,16 +41,22 @@ const AdminImoveis: React.FC = () => {
   const [tempMedia, setTempMedia] = useState<ImovelMedia[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  const loadProperties = async () => {
+  const loadProperties = useCallback(async () => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
     setIsLoading(true);
     try {
       const data = await PropertyService.getProperties(profile.tenantId);
       setProperties(data);
-    } finally { setIsLoading(false); }
-  };
+    } catch (err) {
+      console.error(err);
+    } finally { 
+      setIsLoading(false); 
+    }
+  }, [profile?.tenantId]);
 
-  useEffect(() => { loadProperties(); }, [profile?.tenantId]);
+  useEffect(() => { 
+    loadProperties(); 
+  }, [loadProperties]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -64,9 +69,11 @@ const AdminImoveis: React.FC = () => {
 
   const handleEdit = async (imovel: Imovel) => {
     setEditingId(imovel.id);
+    // Sync tipologia/tipology on load
     setFormData({ 
       ...initialFormState, 
       ...imovel, 
+      tipology: imovel.tipologia || imovel.tipology,
       caracteristicas: Array.isArray(imovel.caracteristicas) ? imovel.caracteristicas : [] 
     });
     setSaveError(null);
@@ -83,7 +90,7 @@ const AdminImoveis: React.FC = () => {
     if (window.confirm("Tem a certeza que deseja apagar este imóvel permanentemente?")) {
       try {
         await PropertyService.deleteProperty(profile.tenantId, id);
-        loadProperties();
+        await loadProperties();
       } catch (err) {
         alert("Erro ao apagar imóvel. Verifique as permissões.");
       }
@@ -94,19 +101,21 @@ const AdminImoveis: React.FC = () => {
     if (!profile?.tenantId) return;
     const currentDestaque = imovel.publicacao?.destaque || false;
     try {
+      // Optimistic UI update
+      setProperties(prev => prev.map(p => p.id === imovel.id ? { 
+        ...p, 
+        publicacao: { ...p.publicacao, destaque: !currentDestaque } 
+      } : p));
+      
       await PropertyService.updateProperty(profile.tenantId, imovel.id, {
-        ...imovel,
         publicacao: {
           ...imovel.publicacao,
           destaque: !currentDestaque
         }
       });
-      setProperties(prev => prev.map(p => p.id === imovel.id ? { 
-        ...p, 
-        publicacao: { ...p.publicacao, destaque: !currentDestaque } 
-      } : p));
     } catch (err) {
       console.error("Erro ao alternar destaque:", err);
+      loadProperties();
     }
   };
 
@@ -115,14 +124,20 @@ const AdminImoveis: React.FC = () => {
     setIsSaving(true);
     setSaveError(null);
     try {
+      const finalData = {
+        ...formData,
+        tipologia: formData.tipologia || formData.tipology,
+        tipology: formData.tipologia || formData.tipology
+      };
+
       if (editingId) {
-        await PropertyService.updateProperty(profile.tenantId, editingId, formData, tempMedia);
+        await PropertyService.updateProperty(profile.tenantId, editingId, finalData, tempMedia);
       } else {
         const slug = generateSlug(`${formData.titulo || 'imovel'}-${Date.now()}`);
-        await PropertyService.createProperty(profile.tenantId, { ...formData, slug, owner_uid: user.uid }, tempMedia);
+        await PropertyService.createProperty(profile.tenantId, { ...finalData, slug, owner_uid: user.uid }, tempMedia);
       }
       setIsModalOpen(false);
-      loadProperties();
+      await loadProperties();
     } catch (err: any) {
       console.error(err);
       setSaveError("Erro ao gravar. Verifique se preencheu os campos obrigatórios.");
@@ -159,7 +174,6 @@ const AdminImoveis: React.FC = () => {
       reader.onloadend = () => {
         const isVideo = file.type.startsWith('video/');
         const newMedia: ImovelMedia = {
-          // Fix: Uso de crypto.randomUUID() para ID único de media
           id: crypto.randomUUID(),
           type: isVideo ? 'video' : 'image',
           url: reader.result as string,
@@ -367,9 +381,12 @@ const AdminImoveis: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 font-brand">
+    <div className="space-y-6 font-brand animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-black text-[#1c2d51] tracking-tighter">Inventário de Imóveis</h1>
+        <div>
+          <h1 className="text-2xl font-black text-[#1c2d51] tracking-tighter">Inventário de Imóveis</h1>
+          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Gestão de carteira e portfólio</p>
+        </div>
         <button onClick={handleOpenCreate} className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 shadow-xl hover:scale-105 transition-all"><Plus size={20} /> Novo Imóvel</button>
       </div>
 

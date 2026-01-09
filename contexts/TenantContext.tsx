@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-// Standard modular Firestore imports for realtime updates
+// Correct modular Firestore imports for version 9+
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant } from '../types';

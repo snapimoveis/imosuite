@@ -1,5 +1,4 @@
-
-// Correcting modular Firestore imports for version 9+
+// Modular Firestore imports for lead collection management
 import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Lead } from "../types";
@@ -11,7 +10,6 @@ export const LeadService = {
       const leadsRef = collection(db, "tenants", tenantId, "leads");
       const q = query(leadsRef, orderBy("created_at", "desc"));
       const snapshot = await getDocs(q);
-      // Fixing spread type issue by casting doc data to any
       return snapshot.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lead));
     } catch (error) {
       console.error("Erro ao carregar leads:", error);

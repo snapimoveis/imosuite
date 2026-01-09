@@ -316,7 +316,7 @@ const AdminCMS: React.FC = () => {
 
       {isMenuModalOpen && (
         <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
+          <div className="bg-white w-full max-md rounded-[3rem] shadow-2xl p-10 animate-in zoom-in-95 duration-300">
              <div className="flex justify-between items-center mb-8">
                 <h3 className="text-xl font-black text-[#1c2d51]">{editingMenuItem ? 'Editar Link' : 'Novo Link'}</h3>
                 <button onClick={() => setIsMenuModalOpen(false)}><X size={20}/></button>

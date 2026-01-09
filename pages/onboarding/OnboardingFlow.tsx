@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-// Fixing modular Firestore imports for version 9+
+// Modular Firestore imports for version 9+
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { 
@@ -13,8 +12,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '../../components/Logo';
 import { formatCurrency } from '../../lib/utils';
-import { generateAgencySlogan, generatePropertyDescription } from '../../services/geminiService';
-import { PropertyService } from '../../services/propertyService';
+import { generateAgencySlogan } from '../../services/geminiService';
 
 const TEMPLATES = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 />, color: '#1c2d51', description: 'Tradição e confiança com um toque formal.' },
