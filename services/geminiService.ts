@@ -5,13 +5,8 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
  * Gera descrições profissionais para imóveis em Portugal seguindo os critérios do ImoSuite.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
-  // Acesso direto via process.env conforme as diretrizes obrigatórias
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("Configuração da VITE_GEMINI_API_KEY não detetada no ambiente.");
-
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   
-  // Extração de contexto para a IA
   const ctx = {
     titulo: property.titulo,
     tipo: property.tipo_imovel,
@@ -30,9 +25,8 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
     
     Requisitos Obrigatórios:
     - Linguagem: Português de Portugal (PT-PT).
-    - Público-alvo: ${ctx.publico_alvo}.
-    - Tom: Profissional, sofisticado e focado no estilo de vida.
-    - Estrutura: Destaca a localização (${ctx.local}) e os extras (${ctx.caract.join(', ')}).
+    - Tom: Profissional e sofisticado.
+    - Estrutura: Destaca a localização (${ctx.local}) e extras.
   `;
 
   try {
@@ -44,18 +38,9 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            curta: { 
-              type: Type.STRING, 
-              description: "Resumo para SEO e redes sociais, máximo 350 caracteres." 
-            },
-            completa: { 
-              type: Type.STRING, 
-              description: "Descrição completa em formato Markdown, com parágrafos e bullets." 
-            },
-            hashtags: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING } 
-            },
+            curta: { type: Type.STRING },
+            completa: { type: Type.STRING },
+            hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
           required: ["curta", "completa"],
         },
@@ -70,18 +55,12 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
     };
   } catch (error: any) {
     console.error("Gemini AI Error:", error);
-    throw new Error("A IA não conseguiu gerar o texto. Verifique a ligação ou a chave API.");
+    throw new Error("Falha na comunicação com a IA. Verifique a configuração da chave.");
   }
 };
 
-/**
- * Gera slogans para a agência baseados no nome comercial.
- */
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) return "Excelência no mercado imobiliário.";
-  
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',

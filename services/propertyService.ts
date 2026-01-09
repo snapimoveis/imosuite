@@ -3,10 +3,6 @@ import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc
 import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";
 
-/**
- * Limpa dados para o Firestore.
- * Remove IDs e campos que o Firestore Rules costuma bloquear em escritas.
- */
 const prepareData = (obj: any, isUpdate: boolean = false): any => {
   if (obj === null || obj === undefined) return null;
   if (obj instanceof Timestamp || obj instanceof Date) return obj;
@@ -14,12 +10,8 @@ const prepareData = (obj: any, isUpdate: boolean = false): any => {
   if (typeof obj === 'object') {
     const cleaned: any = {};
     Object.keys(obj).forEach(key => {
-      // O campo 'id' nunca deve ir para dentro do documento no Firestore (ele já é a chave do doc)
       if (key === 'id') return;
-      
-      // Em updates, não enviamos campos de rastreio ou IDs de tenant para não violar regras de imutabilidade
       if (isUpdate && (key === 'tenant_id' || key === 'owner_uid' || key === 'created_at' || key === 'tracking')) return;
-      
       const value = obj[key];
       if (value !== undefined) {
         cleaned[key] = prepareData(value, isUpdate);
@@ -61,15 +53,14 @@ export const PropertyService = {
   },
 
   async createProperty(tenantId: string, propertyData: Partial<Imovel>, mediaItems: ImovelMedia[] = []) {
-    if (!tenantId || tenantId === 'pending') throw new Error("Tenant inválido.");
+    if (!tenantId || tenantId === 'pending') throw new Error("Sessão expirada ou agência inválida.");
     
     const propertiesRef = collection(db, "tenants", tenantId, "properties");
     
-    // Removemos qualquer ID residual que possa ter vindo do formData
-    const { id, ...dataWithoutId } = propertyData as any;
-
+    // Sincroniza tipologia se necessário para evitar erros de schema/regras
     const finalData = prepareData({
-      ...dataWithoutId,
+      ...propertyData,
+      tipology: propertyData.tipologia || 'T0',
       tenant_id: tenantId,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
@@ -84,7 +75,7 @@ export const PropertyService = {
       const batch = writeBatch(db);
       mediaItems.forEach((item, index) => {
         const newMediaRef = doc(mediaColRef);
-        const { id: mId, ...itemData } = item as any; // Remove ID temporário da media
+        const { id: mId, ...itemData } = item as any;
         batch.set(newMediaRef, prepareData({
           ...itemData,
           order: index,
@@ -92,10 +83,6 @@ export const PropertyService = {
         }));
       });
       await batch.commit();
-      await updateDoc(docRef, { 
-        "media.total": mediaItems.length, 
-        "media.cover_media_id": mediaItems[0].id || "auto" 
-      });
     }
     return docRef;
   },
@@ -104,7 +91,10 @@ export const PropertyService = {
     if (!tenantId || !propertyId) return;
     
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
-    const cleanUpdates = prepareData(updates, true);
+    const cleanUpdates = prepareData({
+      ...updates,
+      tipology: updates.tipologia || 'T0'
+    }, true);
     
     await updateDoc(propertyRef, { ...cleanUpdates, updated_at: serverTimestamp() });
 
@@ -112,7 +102,6 @@ export const PropertyService = {
       const mediaColRef = collection(db, "tenants", tenantId, "properties", propertyId, "media");
       const existingMedia = await getDocs(mediaColRef);
       const batch = writeBatch(db);
-      
       existingMedia.docs.forEach(d => batch.delete(d.ref));
       mediaItems.forEach((item, index) => {
         const newMediaRef = doc(mediaColRef);
@@ -123,12 +112,7 @@ export const PropertyService = {
           created_at: item.created_at || serverTimestamp()
         }));
       });
-      
       await batch.commit();
-      await updateDoc(propertyRef, { 
-        "media.total": mediaItems.length,
-        "media.cover_media_id": mediaItems.find(m => m.is_cover)?.id || (mediaItems[0]?.id || null)
-      });
     }
   },
 

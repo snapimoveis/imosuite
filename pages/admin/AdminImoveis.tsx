@@ -24,7 +24,7 @@ const AdminImoveis: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
 
   const initialFormState: Partial<Imovel> = {
-    titulo: '', ref: '', tipo_imovel: 'apartamento', tipologia: 'T2', 
+    titulo: '', ref: '', tipo_imovel: 'apartamento', tipologia: 'T2', tipology: 'T2',
     estado_conservacao: 'usado', ano_construcao: null, operacao: 'venda', 
     arrendamento_tipo: null, arrendamento_duracao_min_meses: null, disponivel_imediato: true,
     localizacao: { pais: 'Portugal', distrito: 'Lisboa', concelho: '', freguesia: '', codigo_postal: '', morada: '', porta: '', lat: null, lng: null, expor_morada: false },
@@ -176,7 +176,10 @@ const AdminImoveis: React.FC = () => {
               </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Tipologia</label><select className="admin-input" value={formData.tipologia} onChange={e => setFormData({...formData, tipologia: e.target.value})}><option>T0</option><option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5+</option></select></div>
+              <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Tipologia</label><select className="admin-input" value={formData.tipologia} onChange={e => {
+                const val = e.target.value;
+                setFormData({...formData, tipologia: val, tipology: val});
+              }}><option>T0</option><option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T5+</option></select></div>
               <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Estado do Imóvel</label><select className="admin-input" value={formData.estado_conservacao} onChange={e => setFormData({...formData, estado_conservacao: e.target.value as any})}><option value="novo">Novo</option><option value="usado">Usado</option><option value="renovado">Renovado</option><option value="para_renovar">Para renovar</option></select></div>
             </div>
             <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-2">Ano de Construção</label><input type="number" className="admin-input" value={formData.ano_construcao || ''} onChange={e => setFormData({...formData, ano_construcao: Number(e.target.value)})} /></div>
