@@ -3,10 +3,9 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
 /**
  * Gera descrições profissionais para imóveis usando o Gemini 3 Flash.
- * A chave API é obtida exclusivamente de process.env.API_KEY.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
-  // Inicialização obrigatória conforme as diretrizes
+  // Inicialização obrigatória usando a variável de ambiente injetada
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const propertyContext = {
@@ -22,7 +21,6 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
     divisoes: property.divisoes,
     localizacao: {
       concelho: property.localizacao?.concelho,
-      freguesia: property.localizacao?.freguesia,
       distrito: property.localizacao?.distrito,
       expor_morada: property.localizacao?.expor_morada
     },
@@ -42,7 +40,7 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
     - NÃO inventar dados. Se algo não estiver nos dados, não mencionar.
     - NÃO prometer garantias (“o melhor”, “imperdível”) sem suporte.
     - Se certificado energético estiver ausente ou for "Em preparação", escrever “Certificado energético: a confirmar”.
-    - Se morada não for para expor (expor_morada: false), não mencionar rua/porta; usar apenas zona (freguesia/concelho).
+    - Se morada não for para expor, não mencionar rua/porta; usar apenas zona (freguesia/concelho).
     - Se operação for arrendamento, mencionar tipo de arrendamento (residencial/temporário/férias) e condições fornecidas (caução, despesas).
     - Incluir CTA final (“Agende a sua visita” / “Peça informações”).
     - Otimizar para SEO com palavras naturais (tipologia + concelho + tipo de imóvel), sem keyword stuffing.
@@ -66,16 +64,16 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
           properties: {
             curta: {
               type: Type.STRING,
-              description: 'Descrição curta para listagens.',
+              description: 'Resumo comercial curto.',
             },
             completa: {
               type: Type.STRING,
-              description: 'Descrição detalhada em Markdown.',
+              description: 'Descrição completa detalhada.',
             },
             hashtags_opcionais: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: 'Hashtags para redes sociais.',
+              description: 'Hashtags imobiliárias sugeridas.',
             },
           },
           required: ["curta", "completa"],
@@ -90,8 +88,8 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
       hashtags: result.hashtags_opcionais || []
     };
   } catch (error) {
-    console.error("Gemini Property Description Error:", error);
-    throw new Error("Erro ao comunicar com a IA. Verifique a configuração da API Key.");
+    console.error("Gemini Error:", error);
+    throw new Error("Erro ao ligar à IA. Certifique-se que a API Key está correta no Vercel.");
   }
 };
 
@@ -100,7 +98,7 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
  */
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Gere um slogan comercial curto e impactante para a imobiliária "${agencyName}" em Portugal. Retorne apenas o texto.`;
+  const prompt = `Gere um slogan comercial curto em português de Portugal para a imobiliária "${agencyName}".`;
 
   try {
     const response = await ai.models.generateContent({
