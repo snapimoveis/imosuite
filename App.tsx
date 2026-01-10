@@ -11,7 +11,9 @@ import PricingPage from './pages/Pricing';
 import Register from './pages/onboarding/Register';
 import Login from './pages/Login';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import PrivacyPolicySaaS from './pages/PrivacyPolicySaaS';
 import TermsOfUse from './pages/TermsOfUse';
+import TermsOfUseSaaS from './pages/TermsOfUseSaaS';
 import OnboardingFlow from './pages/onboarding/OnboardingFlow';
 import Dashboard from './pages/admin/Dashboard';
 import AdminImoveis from './pages/admin/AdminImoveis';
@@ -56,7 +58,9 @@ const App: React.FC = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
+              <Route path="/privacidade-saas" element={<PrivacyPolicySaaS />} />
               <Route path="/termos" element={<TermsOfUse />} />
+              <Route path="/termos-saas" element={<TermsOfUseSaaS />} />
             </Route>
 
             {/* Portais das Agências */}

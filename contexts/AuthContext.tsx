@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-/* Fixed named imports from firebase/firestore */
 import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from '../lib/firebase';
 

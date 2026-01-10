@@ -1,16 +1,21 @@
 
 import React from 'react';
 /* Added missing Check icon import */
-import { FileText, Scale, ShieldCheck, ArrowLeft, Mail, Phone, AlertCircle, Check } from 'lucide-react';
+import { FileText, Scale, ShieldCheck, ArrowLeft, Mail, Phone, AlertCircle, Check, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const TermsOfUse: React.FC = () => {
   return (
     <div className="bg-white min-h-screen pt-32 pb-20 font-brand selection:bg-[#1c2d51] selection:text-white">
       <div className="max-w-4xl mx-auto px-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-[#1c2d51] transition-all mb-12">
-          <ArrowLeft size={16} /> Voltar ao Início
-        </Link>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+          <Link to="/" className="inline-flex items-center gap-2 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-[#1c2d51] transition-all">
+            <ArrowLeft size={16} /> Voltar ao Início
+          </Link>
+          <Link to="/termos-saas" className="inline-flex items-center gap-2 bg-slate-50 text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1c2d51] hover:text-white transition-all shadow-sm border border-slate-100">
+            <Globe size={14} /> Termo de Uso - SaaS White-Label
+          </Link>
+        </div>
 
         <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 bg-blue-50 text-[#357fb2] rounded-2xl flex items-center justify-center">

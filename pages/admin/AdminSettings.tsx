@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-/* Fixed named imports from firebase/firestore */
+// Modular Firestore imports
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
@@ -14,7 +13,7 @@ import {
   MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight
 } from 'lucide-react';
 import { Tenant } from '../../types';
-import { generateSlug } from '../../lib/utils';
+import { generateSlug, formatCurrency } from '../../lib/utils';
 import { generateAgencySlogan } from '../../services/geminiService';
 
 const TEMPLATE_OPTIONS = [
@@ -101,7 +100,6 @@ const AdminSettings: React.FC = () => {
         localTenant.slug = normalizedSlug;
       }
 
-      // Prepare data for saving
       const { id, ...dataToSave } = localTenant;
       const updates = {
         ...dataToSave,
@@ -111,7 +109,6 @@ const AdminSettings: React.FC = () => {
       await setDoc(doc(db, 'tenants', tId), updates, { merge: true });
       setTenant({ ...localTenant, id: tId });
       
-      // Update primary color in CSS variables
       const root = document.documentElement;
       root.style.setProperty('--primary', localTenant.cor_primaria);
       
@@ -152,22 +149,28 @@ const AdminSettings: React.FC = () => {
         </div>
 
         <div className="lg:col-span-3">
+          {errorMessage && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-2xl mb-6 flex items-center gap-3 text-sm font-bold border border-red-100">
+              <AlertTriangle size={18} /> {errorMessage}
+            </div>
+          )}
+
           {activeTab === 'general' && (
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 animate-in fade-in">
               <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Dados da Empresa</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nome Comercial</label>
-                    <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
+                    <input className="admin-input-settings" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">NIF / Identificação</label>
-                    <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value})} />
+                    <input className="admin-input-settings" value={localTenant.nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value})} />
                  </div>
                  <div className="space-y-2 md:col-span-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slogan / Frase de Capa</label>
                     <div className="relative">
-                      <input className="w-full p-4 pr-14 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} />
+                      <input className="admin-input-settings pr-14" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} />
                       <button onClick={handleGenerateSlogan} disabled={isGeneratingSlogan} className="absolute right-2 top-2 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm hover:bg-blue-50 transition-colors">
                         {isGeneratingSlogan ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                       </button>
@@ -175,11 +178,11 @@ const AdminSettings: React.FC = () => {
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Público</label>
-                    <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.email} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} />
+                    <input className="admin-input-settings" value={localTenant.email} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} />
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Telefone Público</label>
-                    <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-[#1c2d51]" value={localTenant.telefone || ''} onChange={e => setLocalTenant({...localTenant, telefone: e.target.value})} />
+                    <input className="admin-input-settings" value={localTenant.telefone || ''} onChange={e => setLocalTenant({...localTenant, telefone: e.target.value})} />
                  </div>
               </div>
             </div>
@@ -210,7 +213,7 @@ const AdminSettings: React.FC = () => {
                     <div onClick={handleLogoClick} className="h-52 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6 relative group">
                        {localTenant.logo_url ? (
                          <>
-                           <img src={localTenant.logo_url} className="h-full w-auto object-contain" />
+                           <img src={localTenant.logo_url} className="h-full w-auto object-contain" alt="Agency Logo" />
                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[10px] uppercase">Alterar Logo</div>
                          </>
                        ) : (
@@ -243,7 +246,7 @@ const AdminSettings: React.FC = () => {
                        <div onClick={handleHeroClick} className="h-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center gap-4 px-6 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden relative">
                           {localTenant.hero_image_url ? (
                             <div className="flex items-center gap-3 w-full">
-                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white"><img src={localTenant.hero_image_url} className="w-full h-full object-cover" /></div>
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white"><img src={localTenant.hero_image_url} className="w-full h-full object-cover" alt="Hero" /></div>
                               <span className="text-[10px] font-black text-[#1c2d51] uppercase truncate">Imagem Personalizada</span>
                             </div>
                           ) : (
@@ -287,15 +290,33 @@ const AdminSettings: React.FC = () => {
           templateId={previewingTemplate} 
           onClose={() => setPreviewingTemplate(null)} 
           onSelect={() => { 
-            const templateId = previewingTemplate;
-            if (templateId) {
-              setLocalTenant({ ...localTenant, template_id: templateId }); 
+            const tid = previewingTemplate;
+            if (tid) {
+              setLocalTenant({ ...localTenant, template_id: tid }); 
             }
             setPreviewingTemplate(null); 
           }} 
           tenantData={localTenant}
         />
       )}
+
+      <style>{`
+        .admin-input-settings {
+          width: 100%;
+          padding: 1rem 1.25rem;
+          background: #f8fafc;
+          border: 2px solid transparent;
+          border-radius: 1.25rem;
+          outline: none;
+          font-weight: 700;
+          color: #1c2d51;
+          transition: all 0.2s;
+        }
+        .admin-input-settings:focus {
+          background: #fff;
+          border-color: #1c2d51;
+        }
+      `}</style>
     </div>
   );
 };
@@ -379,11 +400,11 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
             {dummyProps.map(p => (
               <div key={p.id} className="group cursor-pointer">
                  <div className="aspect-[4/5] bg-slate-200 rounded-[2.5rem] overflow-hidden mb-6 shadow-sm group-hover:shadow-2xl transition-all duration-700">
-                    <img src={p.img} className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" />
+                    <img src={p.img} className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" alt={p.title} />
                  </div>
                  <h4 className="font-black text-xl text-[#1c2d51] mb-1 italic tracking-tight">{p.title}</h4>
                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{p.loc}</p>
-                 <p className="text-[#1c2d51] font-black text-lg mt-3">385.000 €</p>
+                 <p className="text-[#1c2d51] font-black text-lg mt-3">{formatCurrency(p.price)}</p>
               </div>
             ))}
           </div>

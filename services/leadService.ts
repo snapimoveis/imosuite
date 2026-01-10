@@ -1,5 +1,4 @@
 
-/* Fixed modular Firestore imports */
 import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Lead } from "../types";

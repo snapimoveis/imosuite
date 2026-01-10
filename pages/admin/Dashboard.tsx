@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-/* Fixed named imports from firebase/firestore */
-import { collection, getDocs, query, where, limit } from "firebase/firestore";
+// Use standard modular firestore functions
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
@@ -101,7 +101,7 @@ const Dashboard: React.FC = () => {
               <AreaChart data={[{name: 'Mês Ant.', val: 0}, {name: 'Hoje', val: parseInt(stats[0].value) || 0}]}>
                 <defs><linearGradient id="color" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1c2d51" stopOpacity={0.1}/><stop offset="95%" stopColor="#1c2d51" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeights: 700, fill: '#94a3b8'}} />
                 <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} />
                 <Area type="monotone" dataKey="val" stroke="#1c2d51" strokeWidth={3} fillOpacity={1} fill="url(#color)" />
               </AreaChart>
@@ -115,24 +115,21 @@ const Dashboard: React.FC = () => {
             <h3 className="text-xl font-black mb-2 tracking-tighter">O seu Site está Online</h3>
             <p className="text-slate-300 text-sm font-medium mb-8 max-w-xs">Partilhe o link da sua agência com clientes e nas redes sociais.</p>
             
-            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
               <a 
-                href={`#/agencia/${tenant.slug || tenant.id}`} 
+                href={`#/agencia/${tenant.slug}`} 
                 target="_blank" 
-                className="flex-1 bg-white text-[#1c2d51] px-6 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-all flex items-center justify-center gap-2"
+                rel="noopener noreferrer"
+                className="flex-1 bg-white text-[#1c2d51] px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-all"
               >
-                Visitar Website <TrendingUp size={14}/>
+                <Eye size={14} /> Ver Site
               </a>
               <Link 
-                to="/admin/settings?tab=website" 
-                className="flex-1 bg-[#357fb2] text-white px-6 py-4 rounded-2xl font-black text-xs hover:scale-105 transition-all flex items-center justify-center gap-2"
+                to="/admin/cms" 
+                className="flex-1 bg-white/10 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/20 transition-all border border-white/10"
               >
-                Personalizar Site <Edit3 size={14}/>
+                <Edit3 size={14} /> Editar CMS
               </Link>
-            </div>
-
-            <div className="mt-6 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">
-              imosuite.pt/agencia/{tenant.slug || tenant.id}
             </div>
         </div>
       </div>

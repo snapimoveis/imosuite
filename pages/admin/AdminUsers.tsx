@@ -1,6 +1,4 @@
-
 import React, { useEffect, useState } from 'react';
-/* Fixed modular Firestore imports */
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';

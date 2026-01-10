@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-/* Fixed named imports from firebase/firestore */
+// Import firestore functions from modular SDK
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';

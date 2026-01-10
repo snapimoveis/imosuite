@@ -1,9 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-/* Fixed named imports from firebase/firestore */
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 

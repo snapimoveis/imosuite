@@ -5,7 +5,7 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
  * Gera descrições profissionais para imóveis em Portugal seguindo os critérios do ImoSuite.
  */
 export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags: string[] }> => {
-  // Use API key directly from process.env as per guidelines
+  // Always use {apiKey: process.env.API_KEY} for initialization
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const ctx = {
@@ -27,7 +27,7 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
   const prompt = `Gera uma descrição para o seguinte imóvel: ${JSON.stringify(ctx)}`;
 
   try {
-    // Using gemini-3-pro-preview for complex reasoning and high-quality copywriting
+    // Using gemini-3-pro-preview for complex text tasks
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
@@ -51,13 +51,12 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
               description: "Hashtags relevantes para redes sociais."
             },
           },
-          required: ["curta", "completa", "hashtags"],
           propertyOrdering: ["curta", "completa", "hashtags"],
         },
       },
     });
     
-    // response.text is a getter that returns the string output directly
+    // Use the .text property directly (getter)
     const text = response.text;
     return JSON.parse(text || "{}");
   } catch (error: any) {
@@ -67,7 +66,7 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
 };
 
 export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
-  // Use API key directly from process.env as per guidelines
+  // Always use {apiKey: process.env.API_KEY} for initialization
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({

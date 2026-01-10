@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { LeadService } from '../../services/leadService';
 import { useAuth } from '../../contexts/AuthContext';
