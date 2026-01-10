@@ -11,6 +11,7 @@ import {
   Zap, ArrowUpRight, Instagram, Facebook, Linkedin, Home, Menu, X, MessageCircle
 } from 'lucide-react';
 import ImovelCard from '../components/ImovelCard';
+import ContactSection from '../components/ContactSection';
 import SEO from '../components/SEO';
 import { DEFAULT_TENANT_CMS, DEFAULT_TENANT } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
@@ -163,7 +164,6 @@ const SectionRenderer: React.FC<{ section: CMSSection, tenant: Tenant, propertie
     case 'hero': return (
       <header className={`relative py-40 px-10 flex items-center justify-center overflow-hidden ${template === 'prestige' ? 'h-screen' : ''}`}>
         <div className="absolute inset-0 z-0">
-           {/* Fixed: Priority and visibility for hero image */}
            <img 
               src={tenant.hero_image_url || section.content.image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600'} 
               className={`w-full h-full object-cover ${template === 'prestige' ? 'opacity-40 grayscale' : 'opacity-60'}`} 
@@ -223,6 +223,15 @@ const SectionRenderer: React.FC<{ section: CMSSection, tenant: Tenant, propertie
             </div>
          </div>
       </section>
+    );
+
+    case 'services': return (
+      <ContactSection 
+        tenantId={tenant.id} 
+        title={section.content.title || "Entre em Contacto"} 
+        subtitle={section.content.text}
+        isWhiteLabel={true}
+      />
     );
 
     default: return null;

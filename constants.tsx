@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Home, Building2, Landmark, LayoutGrid, Users, MessageSquare, Settings, BarChart3, Search, Globe } from 'lucide-react';
 import { Tenant, TenantCMS } from './types';
@@ -40,6 +41,16 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
         title: 'Sobre a ImoSuite Demo', 
         text: 'Líderes no mercado local com mais de uma década de experiência a transformar sonhos em moradas reais. A nossa equipa combina tecnologia de ponta com um atendimento profundamente humano.',
         image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'
+      } 
+    },
+    { 
+      id: 'h4', 
+      type: 'services', 
+      enabled: true, 
+      order: 3, 
+      content: { 
+        title: 'Fale Connosco', 
+        text: 'Estamos disponíveis para o ajudar a encontrar o investimento ideal ou vender o seu imóvel pelo melhor valor.'
       } 
     },
     { 

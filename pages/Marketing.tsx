@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Shield, Zap, TrendingUp, Globe, Smartphone, ArrowRight, Star, Building2, Users, MessageSquare, ShieldCheck } from 'lucide-react';
 import { DashboardMockup } from '../components/DashboardMockup';
+import ContactSection from '../components/ContactSection';
 import SEO from '../components/SEO';
 
 const Marketing: React.FC = () => {
@@ -117,23 +118,24 @@ const Marketing: React.FC = () => {
             </div>
           </div>
         </div>
-
-        <div className="mt-24 text-center">
-           <p className="text-slate-400 font-black uppercase text-xs tracking-[0.3em] mb-8">
-             Tudo o que precisa para gerir e vender imóveis, num único sistema.
-           </p>
-           <Link to="/funcionalidades" className="text-[#357fb2] font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:gap-4 transition-all">
-             Conheça todas as funcionalidades <ArrowRight size={16} />
-           </Link>
-        </div>
       </section>
 
+      {/* Contact Section */}
+      <div className="bg-slate-50 border-y border-slate-100">
+        <ContactSection 
+          tenantId="imosuite-hq" 
+          title="Esclareça as suas dúvidas" 
+          subtitle="A nossa equipa de especialistas em tecnologia imobiliária está pronta para o ajudar a escalar a sua agência."
+        />
+      </div>
+
       {/* Pricing Teaser */}
-      <section id="planos" className="py-24 max-w-7xl mx-auto px-6">
-        <div className="bg-slate-50 rounded-[4rem] p-12 md:p-24 text-center border border-slate-100">
-          <h2 className="text-4xl md:text-5xl font-black text-[#1c2d51] mb-6 tracking-tight">Pronto para transformar a sua agência?</h2>
-          <p className="text-slate-500 max-w-xl mx-auto mb-12 text-lg font-medium">Junte-se a centenas de profissionais que já modernizaram a sua forma de trabalhar.</p>
-          <Link to="/planos" className="inline-flex bg-[#1c2d51] text-white px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-transform items-center gap-3 shadow-xl">
+      <section id="planos" className="py-32 max-w-7xl mx-auto px-6">
+        <div className="bg-[#1c2d51] rounded-[4rem] p-12 md:p-24 text-center text-white shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#357fb2] rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/2"></div>
+          <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight relative z-10">Pronto para transformar a sua agência?</h2>
+          <p className="text-slate-300 max-w-xl mx-auto mb-12 text-lg font-medium relative z-10">Junte-se a centenas de profissionais que já modernizaram a sua forma de trabalhar.</p>
+          <Link to="/planos" className="inline-flex bg-white text-[#1c2d51] px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-transform items-center gap-3 shadow-xl relative z-10">
             Ver Planos e Preços <ArrowRight />
           </Link>
         </div>
