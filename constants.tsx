@@ -38,7 +38,7 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       enabled: true, 
       order: 2, 
       content: { 
-        title: 'Sobre a ImoSuite Demo', 
+        title: 'Sobre a nossa Agência', 
         text: 'Líderes no mercado local com mais de uma década de experiência a transformar sonhos em moradas reais. A nossa equipa combina tecnologia de ponta com um atendimento profundamente humano.',
         image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'
       } 
@@ -50,7 +50,7 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       order: 3, 
       content: { 
         title: 'Fale Connosco', 
-        text: 'Estamos disponíveis para o ajudar a encontrar o investimento ideal ou vender o seu imóvel pelo melhor valor.'
+        text: 'Estamos aqui para ajudar a esclarecer as suas dúvidas e encontrar o imóvel ideal para si.'
       } 
     },
     { 
@@ -79,7 +79,7 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
   },
   pages: [
     { id: 'p1', title: 'A Nossa Agência', slug: 'quem-somos', content_md: 'Fundada com o propósito de simplificar o mercado imobiliário em Portugal, a nossa agência destaca-se pela transparência e eficácia.', enabled: true },
-    { id: 'p2', title: 'Fale Connosco', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber para um café e uma conversa sobre o seu próximo investimento.', enabled: true }
+    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber para um café e uma conversa sobre o seu próximo investimento.', enabled: true }
   ],
   social: {
     facebook: 'https://facebook.com',

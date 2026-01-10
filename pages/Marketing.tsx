@@ -120,15 +120,6 @@ const Marketing: React.FC = () => {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <div className="bg-slate-50 border-y border-slate-100">
-        <ContactSection 
-          tenantId="imosuite-hq" 
-          title="Esclareça as suas dúvidas" 
-          subtitle="A nossa equipa de especialistas em tecnologia imobiliária está pronta para o ajudar a escalar a sua agência."
-        />
-      </div>
-
       {/* Pricing Teaser */}
       <section id="planos" className="py-32 max-w-7xl mx-auto px-6">
         <div className="bg-[#1c2d51] rounded-[4rem] p-12 md:p-24 text-center text-white shadow-2xl relative overflow-hidden">
@@ -140,6 +131,15 @@ const Marketing: React.FC = () => {
           </Link>
         </div>
       </section>
+
+      {/* Contact Section - Agora no final da página para melhor fluxo de conversão */}
+      <div className="bg-slate-50 border-t border-slate-100">
+        <ContactSection 
+          tenantId="imosuite-hq" 
+          title="Fale com os nossos especialistas" 
+          subtitle="Estamos prontos para ajudar a escalar a sua operação imobiliária com a melhor tecnologia do mercado."
+        />
+      </div>
     </div>
   );
 };
