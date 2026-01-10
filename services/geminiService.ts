@@ -8,28 +8,26 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
   // Always use {apiKey: process.env.API_KEY} for initialization
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const systemInstruction = `És um especialista em marketing imobiliário em Portugal. Escreves descrições persuasivas, realistas e conformes, sem inventar características.`;
+  const systemInstruction = `És um especialista em marketing imobiliário em Portugal. Escreves descrições persuasivas, realistas e profissionais em Português de Portugal (PT-PT). Nunca uses termos do Brasil (como banheiro, geladeira, aluguel, gramado). Usa obrigatoriamente: casa de banho, frigorífico, arrendamento, relvado.`;
 
-  const prompt = `Tarefa: Gerar 2 versões de texto para um anúncio imobiliário:
+  const prompt = `Tarefa: Gerar 2 versões de texto para um anúncio imobiliário em Portugal:
   1) Descrição curta (até 350 caracteres)
-  2) Descrição completa (600–1200 caracteres) em português de Portugal, com tom comercial profissional.
+  2) Descrição completa (600–1200 caracteres) em português de Portugal, com tom comercial profissional e formal.
 
   Regras:
   - NÃO inventar dados. Se algo não estiver nos dados, não mencionar.
   - NÃO prometer garantias (“o melhor”, “imperdível”) sem suporte.
-  - Se certificado energético estiver ausente, escrever “Certificado energético: a confirmar”.
+  - Se certificado energético estiver ausente, escrever “Certificado energético: em processamento”.
   - Se morada não for para expor, não mencionar rua/porta; usar apenas zona (freguesia/concelho).
-  - Se operação for arrendamento, mencionar tipo de arrendamento (residencial/temporário/férias) e condições fornecidas (caução, despesas).
-  - Incluir CTA final (“Agende a sua visita” / “Peça informações”).
-  - Otimizar para SEO com palavras naturais (tipologia + concelho + tipo de imóvel), sem keyword stuffing.
-  - Estrutura da descrição completa: Abertura com benefício principal, 3–6 bullets de destaques, Parágrafo final com localização (zona) + CTA.
+  - Se operação for arrendamento, usar obrigatoriamente o termo "Arrendamento".
+  - Incluir CTA final (“Agende a sua visita” / “Peça mais informações”).
+  - Estrutura da descrição completa: Abertura com benefício principal, 3–6 bullets de destaques, Parágrafo final com localização + CTA.
 
   Dados do imóvel (JSON): ${JSON.stringify(property)}
 
-  Output em JSON: { "curta": "...", "completa": "...", "hashtags_opcionais": ["#imoveis", "..."] }`;
+  Output em JSON: { "curta": "...", "completa": "...", "hashtags_opcionais": ["#imoveisportugal", "..."] }`;
 
   try {
-    // Using gemini-3-pro-preview for complex text tasks and strict adherence to constraints
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
@@ -45,7 +43,7 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
             },
             completa: { 
               type: Type.STRING, 
-              description: "Descrição detalhada entre 600 e 1200 caracteres." 
+              description: "Descrição detalhada entre 600 e 1200 caracteres em PT-PT." 
             },
             hashtags_opcionais: { 
               type: Type.ARRAY, 
@@ -72,7 +70,7 @@ export const generateAgencySlogan = async (agencyName: string): Promise<string> 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Gere um slogan comercial curto e impactante (PT-PT) para a imobiliária "${agencyName}". Apenas o texto.`,
+      contents: `Gera um slogan comercial curto e impactante em Português de Portugal (PT-PT) para a imobiliária "${agencyName}". Apenas o texto.`,
       config: {
         systemInstruction: "És um especialista em branding imobiliário em Portugal."
       }

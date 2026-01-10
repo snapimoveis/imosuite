@@ -25,7 +25,7 @@ const Navbar: React.FC = () => {
 
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-4">
-            <Link to="/login" className="text-sm font-bold text-slate-700 px-4 hover:text-[#1c2d51]">Login</Link>
+            <Link to="/login" className="text-sm font-bold text-slate-700 px-4 hover:text-[#1c2d51]">Iniciar Sessão</Link>
             <Link to="/register" className="bg-[#1c2d51] text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-slate-900/20 hover:-translate-y-0.5 transition-all">
               Criar Conta
             </Link>
@@ -46,7 +46,7 @@ const Navbar: React.FC = () => {
           <Link to="/demo" onClick={() => setIsOpen(false)} className="text-lg font-bold text-[#1c2d51]">Demo</Link>
           <hr className="border-slate-100" />
           <div className="flex flex-col gap-4">
-            <Link to="/login" onClick={() => setIsOpen(false)} className="text-center py-3 font-bold text-slate-600">Login</Link>
+            <Link to="/login" onClick={() => setIsOpen(false)} className="text-center py-3 font-bold text-slate-600">Iniciar Sessão</Link>
             <Link to="/register" onClick={() => setIsOpen(false)} className="bg-[#1c2d51] text-white py-4 rounded-2xl text-center font-bold">Criar Conta</Link>
           </div>
         </div>

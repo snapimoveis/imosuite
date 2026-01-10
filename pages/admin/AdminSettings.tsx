@@ -7,7 +7,6 @@ import { useAuth } from '../../contexts/AuthContext';
 // Fix: Using @firebase/firestore to resolve missing exported members
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
-// Add ShieldCheck to the list of icons imported from lucide-react
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 
   Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
@@ -101,7 +100,7 @@ const AdminSettings: React.FC = () => {
         const q = query(collection(db, "tenants"), where("slug", "==", normalizedSlug), limit(1));
         const snap = await getDocs(q);
         if (!snap.empty && snap.docs[0].id !== tId) {
-          throw new Error("Este slug já está em uso por outra agência.");
+          throw new Error("Este endereço já está a ser utilizado por outra agência.");
         }
         localTenant.slug = normalizedSlug;
       }
@@ -122,7 +121,7 @@ const AdminSettings: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.message || "Erro ao guardar definições.");
+      setErrorMessage(err.message || "Erro ao guardar as definições.");
     } finally {
       setIsSaving(false);
     }
@@ -142,7 +141,7 @@ const AdminSettings: React.FC = () => {
         <div className="flex items-center gap-4">
           {success && <div className="text-emerald-600 text-xs font-black uppercase flex items-center gap-2 animate-bounce"><Check size={16}/> Guardado!</div>}
           <button onClick={handleSave} disabled={isSaving} className="bg-[#1c2d51] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl hover:-translate-y-1 transition-all">
-            {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} Gravar Tudo
+            {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} Guardar Tudo
           </button>
         </div>
       </div>
@@ -157,7 +156,7 @@ const AdminSettings: React.FC = () => {
         <div className="lg:col-span-3">
           {errorMessage && (
             <div className="bg-red-50 text-red-600 p-4 rounded-2xl mb-6 flex items-center gap-3 text-sm font-bold border border-red-100">
-              <AlertTriangle size={18} /> {errorMessage}
+              <ShieldCheck size={18} /> {errorMessage}
             </div>
           )}
 
@@ -170,7 +169,7 @@ const AdminSettings: React.FC = () => {
                     <input id="agency_name" name="agency_name" className="admin-input-settings" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
                  </div>
                  <div className="space-y-2">
-                    <label htmlFor="agency_nif" className="text-[10px] font-black uppercase text-slate-400 ml-2">NIF / Identificação</label>
+                    <label htmlFor="agency_nif" className="text-[10px] font-black uppercase text-slate-400 ml-2">NIF / Identificação Fiscal</label>
                     <input id="agency_nif" name="agency_nif" className="admin-input-settings" value={localTenant.nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value})} />
                  </div>
                  <div className="space-y-2 md:col-span-2">
@@ -219,8 +218,8 @@ const AdminSettings: React.FC = () => {
                     <div onClick={handleLogoClick} className="h-52 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6 relative group">
                        {localTenant.logo_url ? (
                          <>
-                           <img src={localTenant.logo_url} className="h-full w-auto object-contain" alt="Agency Logo" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[10px] uppercase">Alterar Logo</div>
+                           <img src={localTenant.logo_url} className="h-full w-auto object-contain" alt="Logótipo da Agência" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[10px] uppercase">Alterar Logótipo</div>
                          </>
                        ) : (
                          <>
@@ -238,10 +237,10 @@ const AdminSettings: React.FC = () => {
           {activeTab === 'website' && (
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-12 animate-in fade-in">
               <div className="space-y-6">
-                 <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Endereço & Hero</h3>
+                 <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Endereço & Imagem de Capa</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
-                       <label htmlFor="agency_slug" className="text-[10px] font-black uppercase text-slate-400 ml-2">Slug do Website</label>
+                       <label htmlFor="agency_slug" className="text-[10px] font-black uppercase text-slate-400 ml-2">Endereço do Website (Link)</label>
                        <div className="flex items-center bg-slate-50 rounded-2xl px-6 py-4">
                          <span className="text-slate-300 font-bold text-sm">/agencia/</span>
                          <input id="agency_slug" name="agency_slug" className="flex-1 bg-transparent outline-none font-black text-[#1c2d51] text-sm lowercase" value={localTenant.slug} onChange={e => setLocalTenant({...localTenant, slug: e.target.value})} />
@@ -252,13 +251,13 @@ const AdminSettings: React.FC = () => {
                        <div onClick={handleHeroClick} className="h-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center gap-4 px-6 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden relative">
                           {localTenant.hero_image_url ? (
                             <div className="flex items-center gap-3 w-full">
-                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white"><img src={localTenant.hero_image_url} className="w-full h-full object-cover" alt="Hero" /></div>
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white"><img src={localTenant.hero_image_url} className="w-full h-full object-cover" alt="Capa" /></div>
                               <span className="text-[10px] font-black text-[#1c2d51] uppercase truncate">Imagem Personalizada</span>
                             </div>
                           ) : (
                             <>
                               <ImageIcon size={20} className="text-slate-300" />
-                              <span className="text-[10px] font-black text-slate-400 uppercase">Usar padrão ou Upload</span>
+                              <span className="text-[10px] font-black text-slate-400 uppercase">Usar padrão ou Carregar</span>
                             </>
                           )}
                           <input type="file" id="hero_input" name="hero_input" ref={heroInputRef} onChange={(e) => handleFileChange(e, 'hero')} className="hidden" accept="image/*" />
@@ -484,7 +483,7 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
                    <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
                       <ShieldCheck className="mb-3 text-blue-500" />
                       <p className="text-[10px] font-black uppercase">Segurança</p>
-                      <p className="text-[8px] opacity-40 uppercase">Conformidade RGPD total.</p>
+                      <p className="text-[8px] opacity-40 uppercase">Conformidade total com o RGPD.</p>
                    </div>
                    <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
                       <Send className="mb-3 text-blue-500" />
@@ -506,7 +505,7 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
        </section>
 
        <footer className="py-20 px-10 border-t border-slate-100 text-center opacity-40 text-[9px] font-black uppercase tracking-widest">
-          © {new Date().getFullYear()} {tenant.nome} • Powered by ImoSuite
+          © {new Date().getFullYear()} {tenant.nome} • Tecnologia ImoSuite
        </footer>
     </div>
   );
