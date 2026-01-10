@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   Globe, Layout, Type, List, Save, Loader2, 
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { CMSSection, TenantCMS, MenuItem, CMSPage } from '../../types';
+import { compressImage } from '../../lib/utils';
 
 const AdminCMS: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
@@ -23,12 +24,9 @@ const AdminCMS: React.FC = () => {
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
   
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
-  const [isPageModalOpen, setIsPageModalOpen] = useState(false);
-  
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
   const [newMenuItem, setNewMenuItem] = useState<Partial<MenuItem>>({ label: '', path: '', is_external: false, order: 0 });
   const [menuTarget, setMenuTarget] = useState<'main' | 'footer'>('main');
-  const [editingPage, setEditingPage] = useState<Partial<CMSPage>>({ title: '', slug: '', content_md: '', enabled: true });
 
   useEffect(() => {
     if (tenant.cms) {
@@ -58,9 +56,13 @@ const AdminCMS: React.FC = () => {
       setTenant({ ...tenant, cms });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Erro ao guardar CMS.");
+      if (err.message?.includes('exceeds the maximum allowed size')) {
+        alert("Erro: O documento da sua agência ficou demasiado grande. Tente usar imagens mais pequenas ou menos blocos.");
+      } else {
+        alert("Erro ao guardar CMS. Tente novamente ou verifique a sua ligação.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -88,7 +90,12 @@ const AdminCMS: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onloadend = () => updateSectionContent(id, { image_url: reader.result as string });
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      // Corrigimos o erro de tamanho comprimindo a imagem antes de guardar
+      const compressed = await compressImage(base64, 1200, 800, 0.7);
+      updateSectionContent(id, { image_url: compressed });
+    };
     reader.readAsDataURL(file);
   };
 
@@ -110,27 +117,6 @@ const AdminCMS: React.FC = () => {
       setNewMenuItem({ label: '', path: '', is_external: false, order: cms.menus[target].length });
     }
     setIsMenuModalOpen(true);
-  };
-
-  const handleSaveMenuItem = () => {
-    if (!newMenuItem.label || !newMenuItem.path) return;
-    setCms(prev => {
-      const currentMenu = [...prev.menus[menuTarget]];
-      if (editingMenuItem) {
-        const idx = currentMenu.findIndex(m => m.id === editingMenuItem.id);
-        if (idx > -1) currentMenu[idx] = { ...editingMenuItem, ...newMenuItem } as MenuItem;
-      } else {
-        currentMenu.push({
-          id: crypto.randomUUID(),
-          label: newMenuItem.label!,
-          path: newMenuItem.path!,
-          is_external: !!newMenuItem.is_external,
-          order: currentMenu.length
-        });
-      }
-      return { ...prev, menus: { ...prev.menus, [menuTarget]: currentMenu } };
-    });
-    setIsMenuModalOpen(false);
   };
 
   if (tenantLoading) return <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-slate-200" size={40} /></div>;
@@ -183,20 +169,35 @@ const AdminCMS: React.FC = () => {
                   {expandedSectionId === section.id && (
                     <div className="p-10 border-t border-slate-50 bg-slate-50/20 grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-top-2">
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Título do Bloco</label>
-                        <input className="admin-input-cms" value={section.content.title || ''} onChange={e => updateSectionContent(section.id, { title: e.target.value })} />
+                        <label htmlFor={`title-${section.id}`} className="text-[10px] font-black uppercase text-slate-400 ml-2">Título do Bloco</label>
+                        <input id={`title-${section.id}`} name={`title-${section.id}`} className="admin-input-cms" value={section.content.title || ''} onChange={e => updateSectionContent(section.id, { title: e.target.value })} />
                         {(section.type === 'hero' || section.type === 'cta') && (
                           <>
-                            <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Subtítulo</label>
-                            <input className="admin-input-cms" value={section.content.subtitle || ''} onChange={e => updateSectionContent(section.id, { subtitle: e.target.value })} />
+                            <label htmlFor={`subtitle-${section.id}`} className="text-[10px] font-black uppercase text-slate-400 ml-2">Subtítulo</label>
+                            <input id={`subtitle-${section.id}`} name={`subtitle-${section.id}`} className="admin-input-cms" value={section.content.subtitle || ''} onChange={e => updateSectionContent(section.id, { subtitle: e.target.value })} />
+                          </>
+                        )}
+                        {section.type === 'about_mini' && (
+                          <>
+                            <label htmlFor={`text-${section.id}`} className="text-[10px] font-black uppercase text-slate-400 ml-2">Texto</label>
+                            <textarea id={`text-${section.id}`} name={`text-${section.id}`} rows={4} className="admin-input-cms" value={section.content.text || ''} onChange={e => updateSectionContent(section.id, { text: e.target.value })} />
                           </>
                         )}
                       </div>
                       <div className="space-y-4">
                         {(section.type === 'hero' || section.type === 'about_mini') && (
-                          <div onClick={() => document.getElementById(`img-${section.id}`)?.click()} className="aspect-video bg-white rounded-[2rem] border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100 relative overflow-hidden group">
-                            {section.content.image_url ? <img src={section.content.image_url} className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-slate-300"/>}
-                            <input type="file" id={`img-${section.id}`} className="hidden" onChange={e => handleSectionImageUpload(section.id, e)} />
+                          <div onClick={() => document.getElementById(`img-input-${section.id}`)?.click()} className="aspect-video bg-white rounded-[2rem] border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100 relative overflow-hidden group">
+                            {section.content.image_url ? (
+                              <>
+                                <img src={section.content.image_url} className="w-full h-full object-cover" alt="Section content" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Camera size={24} className="text-white" />
+                                </div>
+                              </>
+                            ) : (
+                              <ImageIcon size={24} className="text-slate-300"/>
+                            )}
+                            <input type="file" id={`img-input-${section.id}`} name={`img-input-${section.id}`} className="hidden" onChange={e => handleSectionImageUpload(section.id, e)} accept="image/*" />
                           </div>
                         )}
                       </div>
@@ -211,10 +212,10 @@ const AdminCMS: React.FC = () => {
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 animate-in fade-in">
               <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Canais de Contacto</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SocialInput icon={<Facebook size={18}/>} label="Facebook" value={cms.social.facebook} onChange={val => setCms({...cms, social: {...cms.social, facebook: val}})} />
-                <SocialInput icon={<Instagram size={18}/>} label="Instagram" value={cms.social.instagram} onChange={val => setCms({...cms, social: {...cms.social, instagram: val}})} />
-                <SocialInput icon={<Linkedin size={18}/>} label="LinkedIn" value={cms.social.linkedin} onChange={val => setCms({...cms, social: {...cms.social, linkedin: val}})} />
-                <SocialInput icon={<MessageCircle size={18}/>} label="WhatsApp" value={cms.social.whatsapp} onChange={val => setCms({...cms, social: {...cms.social, whatsapp: val}})} />
+                <SocialInput id="fb" name="facebook" icon={<Facebook size={18}/>} label="Facebook" value={cms.social.facebook} onChange={val => setCms({...cms, social: {...cms.social, facebook: val}})} />
+                <SocialInput id="ig" name="instagram" icon={<Instagram size={18}/>} label="Instagram" value={cms.social.instagram} onChange={val => setCms({...cms, social: {...cms.social, instagram: val}})} />
+                <SocialInput id="li" name="linkedin" icon={<Linkedin size={18}/>} label="LinkedIn" value={cms.social.linkedin} onChange={val => setCms({...cms, social: {...cms.social, linkedin: val}})} />
+                <SocialInput id="wa" name="whatsapp" icon={<MessageCircle size={18}/>} label="WhatsApp" value={cms.social.whatsapp} onChange={val => setCms({...cms, social: {...cms.social, whatsapp: val}})} />
               </div>
             </div>
           )}
@@ -259,10 +260,10 @@ const TabButton = ({ active, onClick, label, icon }: any) => (
   </button>
 );
 
-const SocialInput = ({ icon, label, value, onChange }: any) => (
+const SocialInput = ({ id, name, icon, label, value, onChange }: any) => (
   <div className="space-y-2">
-    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 flex items-center gap-2">{icon} {label}</label>
-    <input className="admin-input-cms" placeholder="https://..." value={value || ''} onChange={e => onChange(e.target.value)} />
+    <label htmlFor={id} className="text-[10px] font-black uppercase text-slate-400 ml-2 flex items-center gap-2">{icon} {label}</label>
+    <input id={id} name={name} className="admin-input-cms" placeholder="https://..." value={value || ''} onChange={e => onChange(e.target.value)} />
   </div>
 );
 

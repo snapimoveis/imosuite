@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PropertyService } from '../../services/propertyService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,6 +27,7 @@ const AdminImoveis: React.FC = () => {
     arrendamento_tipo: null, arrendamento_duracao_min_meses: null, disponivel_imediato: true,
     localizacao: { pais: 'Portugal', distrito: 'Lisboa', concelho: '', freguesia: '', codigo_postal: '', morada: '', porta: '', lat: null, lng: null, expor_morada: false },
     areas: { area_util_m2: null, area_bruta_m2: null, area_terreno_m2: null, pisos: 1, andar: '', elevador: false },
+    // Fix: Changed 'boolean' type keyword to value 'false'
     divisoes: { quartos: 0, casas_banho: 0, garagem: { tem: false, lugares: 0 } },
     financeiro: { preco_venda: null, preco_arrendamento: null, negociavel: false, condominio_mensal: null, imi_anual: null, caucao_meses: null, despesas_incluidas: [] },
     descricao: { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null },
@@ -69,7 +69,6 @@ const AdminImoveis: React.FC = () => {
 
   const handleEdit = async (imovel: Imovel) => {
     setEditingId(imovel.id);
-    // Sync tipologia/tipology on load
     setFormData({ 
       ...initialFormState, 
       ...imovel, 
@@ -101,7 +100,6 @@ const AdminImoveis: React.FC = () => {
     if (!profile?.tenantId) return;
     const currentDestaque = imovel.publicacao?.destaque || false;
     try {
-      // Optimistic UI update
       setProperties(prev => prev.map(p => p.id === imovel.id ? { 
         ...p, 
         publicacao: { ...p.publicacao, destaque: !currentDestaque } 
@@ -153,11 +151,16 @@ const AdminImoveis: React.FC = () => {
     setSaveError(null);
     try {
       const result = await generatePropertyDescription(formData);
+      // Incluímos as hashtags no final da descrição completa se existirem
+      const fullText = result.hashtags_opcionais && result.hashtags_opcionais.length > 0 
+        ? `${result.completa}\n\n${result.hashtags_opcionais.join(' ')}`
+        : result.completa;
+
       setFormData(prev => ({
         ...prev,
         descricao: {
           curta: result.curta,
-          completa_md: result.completa,
+          completa_md: fullText,
           gerada_por_ia: true,
           ultima_geracao_ia_at: new Date()
         } as any

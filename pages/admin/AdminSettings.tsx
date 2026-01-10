@@ -3,7 +3,8 @@ import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 // Modular Firestore imports
-import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing exported members
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 
@@ -13,7 +14,7 @@ import {
   MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight
 } from 'lucide-react';
 import { Tenant } from '../../types';
-import { generateSlug, formatCurrency } from '../../lib/utils';
+import { generateSlug, formatCurrency, compressImage } from '../../lib/utils';
 import { generateAgencySlogan } from '../../services/geminiService';
 
 const TEMPLATE_OPTIONS = [
@@ -60,10 +61,13 @@ const AdminSettings: React.FC = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64 = reader.result as string;
+      // Comprimimos imagens para não exceder limite do Firestore
+      const compressed = await compressImage(base64, 1200, 1200, 0.75);
+      
       if (type === 'logo') {
-        setLocalTenant(prev => ({ ...prev, logo_url: base64 }));
+        setLocalTenant(prev => ({ ...prev, logo_url: compressed }));
       } else {
-        setLocalTenant(prev => ({ ...prev, hero_image_url: base64 }));
+        setLocalTenant(prev => ({ ...prev, hero_image_url: compressed }));
       }
     };
     reader.readAsDataURL(file);
@@ -116,7 +120,11 @@ const AdminSettings: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.message || "Erro ao guardar definições.");
+      if (err.message?.includes('exceeds the maximum allowed size')) {
+        setErrorMessage("Erro: Os dados da agência excedem o limite de 1MB. Tente reduzir o tamanho do Logótipo ou da imagem de capa.");
+      } else {
+        setErrorMessage(err.message || "Erro ao guardar definições.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -160,29 +168,29 @@ const AdminSettings: React.FC = () => {
               <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Dados da Empresa</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nome Comercial</label>
-                    <input className="admin-input-settings" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
+                    <label htmlFor="agency_name" className="text-[10px] font-black uppercase text-slate-400 ml-2">Nome Comercial</label>
+                    <input id="agency_name" name="agency_name" className="admin-input-settings" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">NIF / Identificação</label>
-                    <input className="admin-input-settings" value={localTenant.nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value})} />
+                    <label htmlFor="agency_nif" className="text-[10px] font-black uppercase text-slate-400 ml-2">NIF / Identificação</label>
+                    <input id="agency_nif" name="agency_nif" className="admin-input-settings" value={localTenant.nif || ''} onChange={e => setLocalTenant({...localTenant, nif: e.target.value})} />
                  </div>
                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slogan / Frase de Capa</label>
+                    <label htmlFor="agency_slogan" className="text-[10px] font-black uppercase text-slate-400 ml-2">Slogan / Frase de Capa</label>
                     <div className="relative">
-                      <input className="admin-input-settings pr-14" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} />
+                      <input id="agency_slogan" name="agency_slogan" className="admin-input-settings pr-14" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} />
                       <button onClick={handleGenerateSlogan} disabled={isGeneratingSlogan} className="absolute right-2 top-2 w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm hover:bg-blue-50 transition-colors">
                         {isGeneratingSlogan ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                       </button>
                     </div>
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Público</label>
-                    <input className="admin-input-settings" value={localTenant.email} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} />
+                    <label htmlFor="agency_email" className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Público</label>
+                    <input id="agency_email" name="agency_email" type="email" className="admin-input-settings" value={localTenant.email} onChange={e => setLocalTenant({...localTenant, email: e.target.value})} />
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Telefone Público</label>
-                    <input className="admin-input-settings" value={localTenant.telefone || ''} onChange={e => setLocalTenant({...localTenant, telefone: e.target.value})} />
+                    <label htmlFor="agency_phone" className="text-[10px] font-black uppercase text-slate-400 ml-2">Telefone Público</label>
+                    <input id="agency_phone" name="agency_phone" className="admin-input-settings" value={localTenant.telefone || ''} onChange={e => setLocalTenant({...localTenant, telefone: e.target.value})} />
                  </div>
               </div>
             </div>
@@ -194,16 +202,16 @@ const AdminSettings: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                  <div className="space-y-8">
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Primária</label>
+                       <label htmlFor="color_primary" className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Primária</label>
                        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
-                          <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_primaria} onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value})} />
+                          <input id="color_primary" name="color_primary" type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_primaria} onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value})} />
                           <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_primaria}</span>
                        </div>
                     </div>
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Secundária</label>
+                       <label htmlFor="color_secondary" className="text-[10px] font-black uppercase text-slate-400 ml-2">Cor Secundária</label>
                        <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
-                          <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_secundaria} onChange={e => setLocalTenant({...localTenant, cor_secundaria: e.target.value})} />
+                          <input id="color_secondary" name="color_secondary" type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_secundaria} onChange={e => setLocalTenant({...localTenant, cor_secundaria: e.target.value})} />
                           <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_secundaria}</span>
                        </div>
                     </div>
@@ -222,7 +230,7 @@ const AdminSettings: React.FC = () => {
                            <span className="text-[10px] font-black uppercase">Upload PNG/JPG</span>
                          </>
                        )}
-                       <input type="file" ref={logoInputRef} onChange={(e) => handleFileChange(e, 'logo')} className="hidden" accept="image/*" />
+                       <input type="file" id="logo_input" name="logo_input" ref={logoInputRef} onChange={(e) => handleFileChange(e, 'logo')} className="hidden" accept="image/*" />
                     </div>
                  </div>
               </div>
@@ -235,10 +243,10 @@ const AdminSettings: React.FC = () => {
                  <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Endereço & Hero</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slug do Website</label>
+                       <label htmlFor="agency_slug" className="text-[10px] font-black uppercase text-slate-400 ml-2">Slug do Website</label>
                        <div className="flex items-center bg-slate-50 rounded-2xl px-6 py-4">
                          <span className="text-slate-300 font-bold text-sm">/agencia/</span>
-                         <input className="flex-1 bg-transparent outline-none font-black text-[#1c2d51] text-sm lowercase" value={localTenant.slug} onChange={e => setLocalTenant({...localTenant, slug: e.target.value})} />
+                         <input id="agency_slug" name="agency_slug" className="flex-1 bg-transparent outline-none font-black text-[#1c2d51] text-sm lowercase" value={localTenant.slug} onChange={e => setLocalTenant({...localTenant, slug: e.target.value})} />
                        </div>
                     </div>
                     <div className="space-y-4">
@@ -255,7 +263,7 @@ const AdminSettings: React.FC = () => {
                               <span className="text-[10px] font-black text-slate-400 uppercase">Usar padrão ou Upload</span>
                             </>
                           )}
-                          <input type="file" ref={heroInputRef} onChange={(e) => handleFileChange(e, 'hero')} className="hidden" accept="image/*" />
+                          <input type="file" id="hero_input" name="hero_input" ref={heroInputRef} onChange={(e) => handleFileChange(e, 'hero')} className="hidden" accept="image/*" />
                        </div>
                     </div>
                  </div>

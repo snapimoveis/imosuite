@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 // Use standard modular firestore functions
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+// Fix: Using @firebase/firestore to resolve missing exported members
+import { collection, getDocs, query, where, limit } from '@firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';

@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { collection, query, where, getDocs, limit } from "firebase/firestore";
+// Fix: Use @firebase/firestore to ensure modular exports are correctly resolved for Firebase v9+
+import { collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../lib/firebase';
 import { Tenant, CMSPage, MenuItem } from '../types';
 import { Loader2, Building2, ChevronLeft, Menu, X, Facebook, Instagram, Linkedin } from 'lucide-react';

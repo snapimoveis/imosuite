@@ -1,6 +1,6 @@
-
 // Modular Firestore imports for Firebase v9+
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+// Fix: Importing from @firebase/firestore to ensure modular exports are correctly resolved
+import { collection, query, where, getDocs, limit } from '@firebase/firestore';
 import { db } from './firebase';
 
 export function formatCurrency(value: number | null | undefined): string {
@@ -29,6 +29,42 @@ export function formatDate(dateString: any): string {
 export function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
+
+/**
+ * Redimensiona e comprime uma imagem Base64 para reduzir o tamanho em disco.
+ * Essencial para não ultrapassar o limite de 1MB por documento do Firestore.
+ */
+export const compressImage = (base64Str: string, maxWidth = 1200, maxHeight = 1200, quality = 0.7): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      // Exportamos como JPEG para garantir compressão real
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(base64Str); // Fallback em caso de erro
+  });
+};
 
 /**
  * Gera um slug normalizado: lowercase, sem acentos, sem caracteres especiais.

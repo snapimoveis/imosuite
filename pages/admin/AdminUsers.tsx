@@ -1,5 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing modular exports
+import { collection, getDocs, query, where } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';

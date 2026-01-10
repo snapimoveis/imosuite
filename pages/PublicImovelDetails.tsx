@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { collection, query, where, getDocs, limit } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing modular exports
+import { collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../lib/firebase';
 import { Tenant, Imovel } from '../types';
 import { LeadService } from '../services/leadService';

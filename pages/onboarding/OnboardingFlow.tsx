@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing exported members
+import { doc, updateDoc, serverTimestamp } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   ArrowRight, Layout, Building2, Eye, Star, ChevronLeft,

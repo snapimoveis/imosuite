@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing modular exports
+import { doc, setDoc, serverTimestamp } from "@firebase/firestore";
 import { updateProfile } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
 import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Camera, Smartphone } from 'lucide-react';
+import { compressImage } from '../../lib/utils';
 
 const AdminProfile: React.FC = () => {
   const { profile, user } = useAuth();
@@ -40,13 +42,14 @@ const AdminProfile: React.FC = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result as string;
-      setFormData(prev => ({ ...prev, avatar_url: base64String }));
+      // Otimizamos o avatar para ser pequeno (400x400 é suficiente) e leve
+      const compressed = await compressImage(base64String, 400, 400, 0.8);
+      setFormData(prev => ({ ...prev, avatar_url: compressed }));
       
       try {
         const userRef = doc(db, 'users', user.uid);
-        // Usamos setDoc com merge para criar o documento se ele não existir
         await setDoc(userRef, { 
-          avatar_url: base64String,
+          avatar_url: compressed,
           updated_at: serverTimestamp() 
         }, { merge: true });
       } catch (err) {
@@ -64,10 +67,8 @@ const AdminProfile: React.FC = () => {
     setSuccess(false);
 
     try {
-      // 1. Atualizar Profile no Firebase Auth
       await updateProfile(user, { displayName: formData.displayName });
 
-      // 2. Atualizar ou Criar documento do utilizador no Firestore
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, {
         id: user.uid,
@@ -81,9 +82,13 @@ const AdminProfile: React.FC = () => {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao atualizar perfil:", error);
-      alert("Erro ao guardar alterações. Verifique a sua ligação.");
+      if (error.message?.includes('exceeds the maximum allowed size')) {
+        alert("Erro: O seu perfil excedeu o limite de tamanho. Tente usar uma foto de perfil mais pequena.");
+      } else {
+        alert("Erro ao guardar alterações. Verifique os dados e tente novamente.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -115,6 +120,8 @@ const AdminProfile: React.FC = () => {
                 )}
               </div>
               <input 
+                id="avatar_file_input"
+                name="avatar_file_input"
                 type="file" 
                 ref={fileInputRef} 
                 onChange={handleFileChange} 
@@ -122,6 +129,7 @@ const AdminProfile: React.FC = () => {
                 accept="image/*" 
               />
               <button 
+                type="button"
                 onClick={handleAvatarClick}
                 className="absolute -bottom-2 -right-2 bg-white w-10 h-10 rounded-xl shadow-lg border border-slate-50 flex items-center justify-center text-slate-400 hover:text-[#1c2d51] transition-all"
               >
@@ -168,8 +176,10 @@ const AdminProfile: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="md:col-span-2">
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2">Nome Completo</label>
+                <label htmlFor="user_display_name" className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2">Nome Completo</label>
                 <input 
+                  id="user_display_name"
+                  name="user_display_name"
                   type="text" 
                   value={formData.displayName} 
                   onChange={e => setFormData({...formData, displayName: e.target.value})} 
@@ -177,8 +187,10 @@ const AdminProfile: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Mail size={12}/> Email (Login)</label>
+                <label htmlFor="user_email_static" className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Mail size={12}/> Email (Login)</label>
                 <input 
+                  id="user_email_static"
+                  name="user_email_static"
                   type="email" 
                   readOnly 
                   value={formData.email} 
@@ -186,8 +198,10 @@ const AdminProfile: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Smartphone size={12}/> Telemóvel</label>
+                <label htmlFor="user_phone" className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Smartphone size={12}/> Telemóvel</label>
                 <input 
+                  id="user_phone"
+                  name="user_phone"
                   type="text" 
                   value={formData.phone} 
                   onChange={e => setFormData({...formData, phone: e.target.value})} 
@@ -224,10 +238,10 @@ const AdminProfile: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-[11px] font-black text-[#1c2d51] uppercase tracking-tighter">Alterar Palavra-passe</p>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase">Última alteração há 3 meses</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">Última alteração recomendada</p>
                   </div>
                </div>
-               <button className="px-6 py-3 bg-white border border-slate-200 text-[#1c2d51] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+               <button type="button" className="px-6 py-3 bg-white border border-slate-200 text-[#1c2d51] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
                   Redefinir Agora
                </button>
             </div>

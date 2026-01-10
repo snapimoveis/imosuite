@@ -1,5 +1,6 @@
 
-import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing modular exports
+import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from "@firebase/firestore";
 import { db } from "../lib/firebase";
 import { Lead } from "../types";
 

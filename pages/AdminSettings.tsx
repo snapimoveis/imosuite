@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "firebase/firestore";
+// Fix: Use @firebase/firestore to ensure modular exports are correctly resolved for Firebase v9+
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../lib/firebase';
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 

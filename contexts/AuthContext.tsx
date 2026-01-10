@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing modular exports
+import { doc, onSnapshot } from "@firebase/firestore";
 import { auth, db } from '../lib/firebase';
 
 interface UserProfile {

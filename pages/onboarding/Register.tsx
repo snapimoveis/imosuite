@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 // Import firestore functions from modular SDK
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+// Fix: Using @firebase/firestore to resolve missing exported members
+import { doc, setDoc, serverTimestamp } from "@firebase/firestore";
 import { auth, db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { Building2, ArrowRight, Loader2, AlertCircle, Sparkles, CheckCircle2, Globe } from 'lucide-react';
