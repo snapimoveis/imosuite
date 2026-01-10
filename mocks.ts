@@ -39,26 +39,35 @@ export const MOCK_IMOVEIS: Imovel[] = [
       andar: 3,
       elevador: true
     },
+    // Fix: Added missing properties to divisoes
     divisoes: {
       quartos: 2,
       casas_banho: 2,
       garagem: {
         tem: true,
         lugares: 1
-      }
+      },
+      varanda: true,
+      arrecadacao: true,
+      piscina: false,
+      jardim: false
     },
     caracteristicas: ['Ar Condicionado', 'Varanda', 'Cozinha Equipada', 'Elevador'],
+    // Fix: Added missing estado_licenca
     certificacao: {
       certificado_energetico: 'A',
       licenca_utilizacao: '123/2020',
       licenca_utilizacao_numero: '123',
       licenca_utilizacao_data: '2020-01-01',
-      isento_licenca_utilizacao: false
+      isento_licenca_utilizacao: false,
+      estado_licenca: 'sim'
     },
+    // Fix: Added missing comissao_incluida
     financeiro: {
       preco_venda: 450000,
       preco_arrendamento: null,
       negociavel: true,
+      comissao_incluida: true,
       condominio_mensal: 50,
       imi_anual: 300,
       caucao_meses: null,
@@ -129,26 +138,35 @@ export const MOCK_IMOVEIS: Imovel[] = [
       andar: null,
       elevador: false
     },
+    // Fix: Added missing properties to divisoes
     divisoes: {
       quartos: 4,
       casas_banho: 4,
       garagem: {
         tem: true,
         lugares: 2
-      }
+      },
+      varanda: true,
+      arrecadacao: false,
+      piscina: true,
+      jardim: true
     },
     caracteristicas: ['Piscina', 'Jardim', 'Lareira', 'Domótica'],
+    // Fix: Added missing estado_licenca
     certificacao: {
       certificado_energetico: 'A+',
       licenca_utilizacao: '456/2023',
       licenca_utilizacao_numero: '456',
       licenca_utilizacao_data: '2023-05-01',
-      isento_licenca_utilizacao: false
+      isento_licenca_utilizacao: false,
+      estado_licenca: 'sim'
     },
+    // Fix: Added missing comissao_incluida
     financeiro: {
       preco_venda: 1250000,
       preco_arrendamento: null,
       negociavel: false,
+      comissao_incluida: true,
       condominio_mensal: null,
       imi_anual: 800,
       caucao_meses: null,
@@ -198,7 +216,7 @@ export const MOCK_IMOVEIS: Imovel[] = [
     operacao: 'arrendamento',
     arrendamento_tipo: 'residencial',
     arrendamento_duracao_min_meses: 12,
-    disponivel_imediato: true,
+    disponivel_imediate: true,
     localizacao: {
       pais: 'Portugal',
       distrito: 'Porto',
@@ -219,26 +237,35 @@ export const MOCK_IMOVEIS: Imovel[] = [
       andar: 2,
       elevador: true
     },
+    // Fix: Added missing properties to divisoes
     divisoes: {
       quartos: 0,
       casas_banho: 1,
       garagem: {
         tem: false,
         lugares: 0
-      }
+      },
+      varanda: false,
+      arrecadacao: false,
+      piscina: false,
+      jardim: false
     },
     caracteristicas: ['Mobilado', 'Janelas Duplas', 'Metro à porta'],
+    // Fix: Added missing estado_licenca
     certificacao: {
       certificado_energetico: 'C',
       licenca_utilizacao: '789/1950',
       licenca_utilizacao_numero: '789',
       licenca_utilizacao_data: '1950-10-10',
-      isento_licenca_utilizacao: false
+      isento_licenca_utilizacao: false,
+      estado_licenca: 'sim'
     },
+    // Fix: Added missing comissao_incluida
     financeiro: {
       preco_venda: null,
       preco_arrendamento: 950,
       negociavel: false,
+      comissao_incluida: true,
       condominio_mensal: 30,
       imi_anual: null,
       caucao_meses: 2,

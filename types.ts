@@ -112,6 +112,10 @@ export interface Imovel {
     quartos: number;
     casas_banho: number;
     garagem: { tem: boolean; lugares: number; };
+    varanda: boolean;
+    arrecadacao: boolean;
+    piscina: boolean;
+    jardim: boolean;
   };
   caracteristicas: string[];
   certificacao: {
@@ -120,11 +124,13 @@ export interface Imovel {
     licenca_utilizacao_numero: string | null;
     licenca_utilizacao_data: string | null;
     isento_licenca_utilizacao: boolean;
+    estado_licenca: 'sim' | 'processo' | 'isento';
   };
   financeiro: {
     preco_venda: number | null;
     preco_arrendamento: number | null;
     negociavel: boolean;
+    comissao_incluida: boolean;
     condominio_mensal: number | null;
     imi_anual: number | null;
     caucao_meses: number | null;
