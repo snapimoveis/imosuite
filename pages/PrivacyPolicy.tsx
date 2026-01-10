@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { 
   Shield, Lock, Eye, ArrowLeft, Mail, Phone, Users, 
   Database, Globe, Scale, AlertCircle, Cookie, RefreshCw,
-  Building2, CheckCircle2, Target, Share2, Clock
+  Building2, CheckCircle2, Target, Share2, Clock, FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -10,13 +11,18 @@ const PrivacyPolicy: React.FC = () => {
   return (
     <div className="bg-white min-h-screen pt-32 pb-20 font-brand selection:bg-[#1c2d51] selection:text-white">
       <div className="max-w-4xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div className="flex flex-col gap-4 mb-12">
           <Link to="/" className="inline-flex items-center gap-2 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-[#1c2d51] transition-all">
             <ArrowLeft size={16} /> Voltar ao Início
           </Link>
-          <Link to="/privacidade-saas" className="inline-flex items-center gap-2 bg-slate-50 text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1c2d51] hover:text-white transition-all shadow-sm border border-slate-100">
-            <Globe size={14} /> POLÍTICA DE PRIVACIDADE Imosuite – Plataforma SaaS White-Label
-          </Link>
+          <div className="flex flex-wrap gap-3 mt-4">
+            <Link to="/privacidade-saas" className="inline-flex items-center gap-2 bg-slate-50 text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1c2d51] hover:text-white transition-all shadow-sm border border-slate-100">
+              <Globe size={14} /> POLÍTICA DE PRIVACIDADE SaaS
+            </Link>
+            <Link to="/dpa" className="inline-flex items-center gap-2 bg-slate-50 text-[#1c2d51] px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1c2d51] hover:text-white transition-all shadow-sm border border-slate-100">
+              <FileText size={14} /> Acordo de Tratamento de Dados (“DPA”)
+            </Link>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 mb-8">

@@ -27,6 +27,8 @@ const PublicImovelDetails: React.FC = () => {
   const [sent, setSent] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [formData, setFormData] = useState({ nome: '', email: '', telefone: '', mensagem: '' });
+  const [gdprConsent, setGdprConsent] = useState(false);
+  const [honeypot, setHoneypot] = useState(''); // Anti-spam
   
   useEffect(() => {
     const fetchData = async () => {
@@ -104,6 +106,12 @@ const PublicImovelDetails: React.FC = () => {
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant || !imovel) return;
+    if (honeypot) return; // Silent discard if honeypot is filled
+    if (!gdprConsent) {
+      alert("Por favor, aceite a política de privacidade para continuar.");
+      return;
+    }
+    
     setIsSending(true);
     
     // Simulação para Demo
@@ -120,9 +128,13 @@ const PublicImovelDetails: React.FC = () => {
         ...formData,
         property_id: imovel.id,
         property_ref: imovel.ref,
-        tipo: 'contacto'
+        tipo: 'contacto',
+        gdpr_consent: gdprConsent
       });
       setSent(true);
+    } catch (err) {
+      console.error("Erro ao enviar lead:", err);
+      alert("Ocorreu um erro ao enviar o seu pedido. Por favor, tente contactar-nos diretamente por telefone.");
     } finally {
       setIsSending(false);
     }
@@ -226,17 +238,40 @@ const PublicImovelDetails: React.FC = () => {
                    <div className="py-12 text-center space-y-4 animate-in zoom-in-95 duration-500">
                       <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto"><Check size={32} /></div>
                       <h3 className="text-xl font-black text-[#1c2d51]">Pedido Enviado!</h3>
-                      <button onClick={() => setSent(false)} className="text-[10px] font-black uppercase text-blue-500">Enviar outro</button>
+                      <p className="text-xs text-slate-400 font-medium">A nossa equipa entrará em contacto brevemente.</p>
+                      <button onClick={() => setSent(false)} className="text-[10px] font-black uppercase text-blue-500 pt-4">Enviar outro pedido</button>
                    </div>
                  ) : (
                    <form onSubmit={handleContact} className="space-y-4">
                       <h3 className="font-black text-[#1c2d51] text-lg mb-4">Solicitar Informação</h3>
-                      <input required placeholder="Nome" className="detail-input" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
+                      
+                      {/* Honeypot field (Anti-spam) */}
+                      <input type="text" className="hidden" tabIndex={-1} autoComplete="off" value={honeypot} onChange={e => setHoneypot(e.target.value)} />
+
+                      <input required placeholder="Nome Completo" className="detail-input" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
                       <input required type="email" placeholder="Email" className="detail-input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                      <textarea rows={4} placeholder="Mensagem" className="detail-input resize-none" value={formData.mensagem} onChange={e => setFormData({...formData, mensagem: e.target.value})} />
-                      <button type="submit" disabled={isSending} className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                      <input placeholder="Telefone (Opcional)" className="detail-input" value={formData.telefone} onChange={e => setFormData({...formData, telefone: e.target.value})} />
+                      <textarea required rows={4} placeholder="Mensagem" className="detail-input resize-none" value={formData.mensagem} onChange={e => setFormData({...formData, mensagem: e.target.value})} />
+                      
+                      <div className="space-y-3 pt-2">
+                        <label className="flex items-start gap-3 cursor-pointer group">
+                           <input 
+                              type="checkbox" 
+                              required 
+                              checked={gdprConsent} 
+                              onChange={e => setGdprConsent(e.target.checked)}
+                              className="mt-1 w-4 h-4 rounded border-slate-200 text-[#1c2d51] focus:ring-[#1c2d51]" 
+                           />
+                           <span className="text-[10px] font-medium text-slate-500 leading-normal group-hover:text-slate-700 transition-colors">
+                              Declaro que li e aceito a <Link to="/privacidade" className="text-[#357fb2] underline">Política de Privacidade</Link> e autorizo o tratamento dos meus dados para fins de contacto comercial.
+                           </span>
+                        </label>
+                      </div>
+
+                      <button type="submit" disabled={isSending} className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:-translate-y-1 transition-all disabled:opacity-50">
                          {isSending ? <Loader2 className="animate-spin" size={18}/> : <Send size={18}/>} Enviar Pedido
                       </button>
+                      <p className="text-[8px] text-center text-slate-300 font-bold uppercase tracking-widest">Protegido por ImoSuite Antispam</p>
                    </form>
                  )}
               </div>

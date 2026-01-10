@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 
@@ -12,6 +13,7 @@ import Register from './pages/onboarding/Register';
 import Login from './pages/Login';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PrivacyPolicySaaS from './pages/PrivacyPolicySaaS';
+import DPA from './pages/DPA';
 import TermsOfUse from './pages/TermsOfUse';
 import TermsOfUseSaaS from './pages/TermsOfUseSaaS';
 import OnboardingFlow from './pages/onboarding/OnboardingFlow';
@@ -59,6 +61,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/privacidade-saas" element={<PrivacyPolicySaaS />} />
+              <Route path="/dpa" element={<DPA />} />
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/termos-saas" element={<TermsOfUseSaaS />} />
             </Route>

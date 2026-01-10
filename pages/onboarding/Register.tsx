@@ -7,7 +7,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from "@firebase/firestore";
 import { auth, db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
-import { Building2, ArrowRight, Loader2, AlertCircle, Sparkles, CheckCircle2, Globe } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, AlertCircle, Sparkles, CheckCircle2, Globe, ShieldCheck } from 'lucide-react';
 import { generateUniqueSlug } from '../../lib/utils';
 import SEO from '../../components/SEO';
 
@@ -24,13 +24,24 @@ const Register: React.FC = () => {
     password: '',
   });
 
+  // GDPR States
+  const [legalConsent, setLegalConsent] = useState(false);
+  const [processorConsent, setProcessorConsent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!legalConsent || !processorConsent) {
+      setError("Deverá aceitar as condições obrigatórias para criar a sua conta.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      // 1. Gerar Slug Único em Background (Shopify-like flow)
+      // 1. Gerar Slug Único em Background
       const uniqueSlug = await generateUniqueSlug(formData.agencyName);
 
       // 2. Criar Utilizador no Firebase Auth
@@ -41,7 +52,6 @@ const Register: React.FC = () => {
       await updateProfile(user, { displayName: formData.agencyName });
 
       // 4. Criar o Tenant no Firestore
-      // Usamos um ID baseado no UID para segurança e consistência
       const tenantId = `tnt_${user.uid.slice(0, 12)}`;
       
       const tenantDoc = {
@@ -49,11 +59,18 @@ const Register: React.FC = () => {
         nome: formData.agencyName,
         slug: uniqueSlug,
         owner_uid: user.uid,
-        template_id: "heritage", // Template padrão inicial
+        template_id: "heritage", 
         estado: "ativo",
         cor_primaria: "#1c2d51",
         cor_secundaria: "#357fb2",
         email: formData.email,
+        gdpr_log: {
+          legal_accepted: legalConsent,
+          processor_accepted: processorConsent,
+          marketing_accepted: marketingConsent,
+          timestamp: new Date().toISOString(),
+          ip: 'client-side-logged'
+        },
         created_at: serverTimestamp()
       };
 
@@ -73,7 +90,6 @@ const Register: React.FC = () => {
       setTenant(tenantDoc as any);
       setSuccessData({ slug: uniqueSlug });
 
-      // Redirecionar após 2.5 segundos para dar feedback visual
       setTimeout(() => {
         navigate(`/agencia/${uniqueSlug}`);
       }, 2500);
@@ -123,7 +139,7 @@ const Register: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-32 pb-20 px-6 font-brand">
       <SEO title="Crie a sua Agência Digital" description="Inicie o seu portal imobiliário white-label em segundos. Registe-se agora no ImoSuite." />
       <div className="max-w-xl w-full bg-white p-12 md:p-16 rounded-[3.5rem] shadow-2xl shadow-slate-200 border border-slate-100 relative overflow-hidden">
-        {/* Decorative Elements */}
+        
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-60"></div>
         
@@ -146,7 +162,7 @@ const Register: React.FC = () => {
           <form className="space-y-6" onSubmit={handleRegister}>
             <div className="space-y-5">
               <div className="group">
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-4 tracking-widest group-focus-within:text-[#357fb2] transition-colors">Nome da Imobiliária</label>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-4 tracking-widest">Nome da Imobiliária</label>
                 <input 
                   required 
                   type="text" 
@@ -155,9 +171,6 @@ const Register: React.FC = () => {
                   value={formData.agencyName} 
                   onChange={(e) => setFormData({...formData, agencyName: e.target.value})} 
                 />
-                <p className="text-[9px] text-slate-400 mt-2 ml-4 italic flex items-center gap-1.5">
-                  <Sparkles size={10} className="text-[#357fb2]" /> O seu link público (slug) será gerado automaticamente.
-                </p>
               </div>
 
               <div>
@@ -185,10 +198,32 @@ const Register: React.FC = () => {
               </div>
             </div>
 
+            {/* GDPR Legal Section */}
+            <div className="space-y-4 py-6 border-y border-slate-50">
+               <label className="flex items-start gap-3 cursor-pointer group">
+                  <input type="checkbox" required checked={legalConsent} onChange={e => setLegalConsent(e.target.checked)} className="mt-1 w-4 h-4 rounded border-slate-200 text-[#1c2d51]" />
+                  <span className="text-[10px] font-medium text-slate-500 leading-normal">
+                    Declaro que li e aceito os <Link to="/termos" className="text-blue-500 underline">Termos de Uso</Link>, a <Link to="/privacidade" className="text-blue-500 underline">Política de Privacidade</Link> e o <Link to="/dpa" className="text-blue-500 underline">Acordo de Tratamento de Dados (DPA)</Link> da plataforma Imosuite, em conformidade com o RGPD.
+                  </span>
+               </label>
+               <label className="flex items-start gap-3 cursor-pointer group">
+                  <input type="checkbox" required checked={processorConsent} onChange={e => setProcessorConsent(e.target.checked)} className="mt-1 w-4 h-4 rounded border-slate-200 text-[#1c2d51]" />
+                  <span className="text-[10px] font-medium text-slate-500 leading-normal">
+                    Confirmo que atuo como Responsável pelo Tratamento de Dados relativamente aos dados inseridos na plataforma e que possuo base legal para o seu tratamento, nos termos do RGPD.
+                  </span>
+               </label>
+               <label className="flex items-start gap-3 cursor-pointer group">
+                  <input type="checkbox" checked={marketingConsent} onChange={e => setMarketingConsent(e.target.checked)} className="mt-1 w-4 h-4 rounded border-slate-200 text-[#1c2d51]" />
+                  <span className="text-[10px] font-medium text-slate-400 leading-normal italic">
+                    (Opcional) Autorizo o contacto por email para comunicações relacionadas com o serviço, podendo retirar o consentimento a qualquer momento.
+                  </span>
+               </label>
+            </div>
+
             <button 
               type="submit" 
               disabled={isLoading} 
-              className="w-full bg-[#1c2d51] text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 shadow-2xl shadow-[#1c2d51]/20 hover:-translate-y-1 active:scale-[0.98] transition-all disabled:opacity-50 disabled:translate-y-0"
+              className="w-full bg-[#1c2d51] text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 shadow-2xl shadow-[#1c2d51]/20 hover:-translate-y-1 transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="flex items-center gap-3">
@@ -201,15 +236,14 @@ const Register: React.FC = () => {
             </button>
           </form>
 
-          <div className="text-center mt-10 space-y-4">
+          <div className="text-center mt-10">
+            <div className="flex items-center justify-center gap-2 text-emerald-600 mb-6">
+               <ShieldCheck size={16} />
+               <span className="text-[9px] font-black uppercase tracking-widest">Ligação Segura e em conformidade RGPD</span>
+            </div>
             <p className="text-sm font-bold text-slate-400">
               Já tem uma agência no ImoSuite? <Link to="/login" className="text-[#357fb2] hover:underline">Iniciar sessão</Link>
             </p>
-            <div className="pt-6 border-t border-slate-50">
-               <p className="text-[9px] text-slate-300 uppercase tracking-widest font-black leading-relaxed">
-                 Ao clicar em criar site, aceita os Termos de Serviço e a Política de Privacidade do ImoSuite.
-               </p>
-            </div>
           </div>
         </div>
       </div>

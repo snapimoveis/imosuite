@@ -176,5 +176,12 @@ export interface Lead {
   property_ref: string;
   estado: 'novo' | 'em_analise' | 'respondido' | 'arquivado';
   lido: boolean;
+  tenant_id: string;
+  source_url: string;
+  gdpr_consent: boolean;
+  gdpr_consent_text: string;
+  gdpr_timestamp: any;
+  gdpr_ip: string;
+  user_agent?: string;
   created_at: any;
 }
