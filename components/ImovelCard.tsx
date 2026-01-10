@@ -12,10 +12,9 @@ interface ImovelCardProps {
 const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
   const { slug: agencySlug } = useParams<{ slug: string }>();
   
-  // Se não houver slug na URL (ex: na home do SaaS), usamos o tenant_id como fallback
-  // mas o ideal é que os cards em portais públicos sempre usem o slug da agência
   const targetSlug = agencySlug || imovel.tenant_id;
-  const mainImage = imovel.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800';
+  // Otimização: Tentar usar cover_url direto do doc principal primeiro (mais leve e rápido)
+  const mainImage = (imovel.media as any)?.cover_url || imovel.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800';
 
   return (
     <Link 

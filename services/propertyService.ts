@@ -11,7 +11,7 @@ const prepareData = (obj: any, isUpdate: boolean = false): any => {
   if (typeof obj === 'object') {
     const cleaned: any = {};
     Object.keys(obj).forEach(key => {
-      if (key === 'id') return;
+      if (key === 'id' || key === 'items') return; // IMPORTANTE: Não incluímos 'items' (fotos pesadas) no doc principal
       if (isUpdate && (key === 'tenant_id' || key === 'owner_uid' || key === 'created_at' || key === 'tracking')) return;
       const value = obj[key];
       if (value !== undefined) {
@@ -58,6 +58,8 @@ export const PropertyService = {
     
     const propertiesRef = collection(db, "tenants", tenantId, "properties");
     
+    const coverImage = mediaItems.find(m => m.is_cover) || mediaItems[0];
+
     const finalData = prepareData({
       ...propertyData,
       tipology: propertyData.tipologia || 'T0',
@@ -68,9 +70,10 @@ export const PropertyService = {
       tracking: { views: 0, favorites: 0 },
       caracteristicas: propertyData.caracteristicas || [],
       media: {
-        cover_media_id: mediaItems.find(m => m.is_cover)?.id || mediaItems[0]?.id || null,
-        total: mediaItems.length,
-        items: mediaItems 
+        cover_media_id: coverImage?.id || null,
+        cover_url: coverImage?.url || null, // Guardamos apenas o URL da capa para economia de espaço
+        total: mediaItems.length
+        // Not including 'items' here to stay under 1MB limit
       }
     }, false);
 
@@ -97,6 +100,7 @@ export const PropertyService = {
     if (!tenantId || !propertyId) return;
     
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
+    const coverImage = mediaItems?.find(m => m.is_cover) || mediaItems?.[0];
     
     const cleanUpdates = prepareData({
       ...updates,
@@ -104,9 +108,9 @@ export const PropertyService = {
       tipologia: updates.tipologia || updates.tipology || 'T0',
       ...(mediaItems && {
         media: {
-          cover_media_id: mediaItems.find(m => m.is_cover)?.id || mediaItems[0]?.id || null,
-          total: mediaItems.length,
-          items: mediaItems
+          cover_media_id: coverImage?.id || null,
+          cover_url: coverImage?.url || null,
+          total: mediaItems.length
         }
       })
     }, true);

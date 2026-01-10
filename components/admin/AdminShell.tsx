@@ -9,7 +9,7 @@ import {
   Settings, Building2, Brush, Globe, Shield, CreditCard, 
   Languages, BellRing, ChevronDown, CheckCircle2, Layout, MessageSquare, X
 } from 'lucide-react';
-import { collection, query, where, onSnapshot, orderBy } from '@firebase/firestore';
+import { collection, query, where, onSnapshot } from '@firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Lead } from '../../types';
 
@@ -31,20 +31,23 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
 
+    // REMOVIDO orderBy para evitar erro de índice necessário no Firebase
     const leadsRef = collection(db, "tenants", profile.tenantId, "leads");
-    const q = query(leadsRef, where("lido", "==", false), orderBy("created_at", "desc"));
+    const q = query(leadsRef, where("lido", "==", false));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadCount(snapshot.size);
       
-      // Detetar novas leads vindas do servidor para exibir o Toast
+      // Ordenação manual no cliente para pegar a mais recente para o Toast
+      const leads = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Lead));
+      leads.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
+
       const source = snapshot.metadata.hasPendingWrites ? 'local' : 'server';
       if (snapshot.docChanges().some(change => change.type === 'added') && source === 'server') {
-        const newestDoc = snapshot.docs[0];
-        if (newestDoc) {
-          setLastLead({ id: newestDoc.id, ...newestDoc.data() } as Lead);
+        const newestLead = leads[0];
+        if (newestLead) {
+          setLastLead(newestLead);
           setShowToast(true);
-          // Ocultar automaticamente após 8 segundos
           setTimeout(() => setShowToast(false), 8000);
         }
       }
@@ -231,5 +234,4 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   );
 };
 
-// Fix: Add default export to resolve error in App.tsx line 27
 export default AdminShell;
