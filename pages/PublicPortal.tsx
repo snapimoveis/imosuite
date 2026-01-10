@@ -114,12 +114,22 @@ const PublicPortal: React.FC = () => {
 
       <main className="flex-1">
         {cms.homepage_sections
-          .filter(s => s.enabled)
+          .filter(s => s.enabled && s.type !== 'services') // Ignorar secção services se existir no CMS para evitar duplicados
           .sort((a,b) => a.order - b.order)
           .map((section: CMSSection) => (
             <SectionRenderer key={section.id} section={section} tenant={tenant} properties={properties} template={template} />
           ))
         }
+
+        {/* Formulário Padrão Institucional - Sempre visível no final de todas as templates */}
+        <div className="bg-slate-50 border-t border-slate-100">
+          <ContactSection 
+            tenantId={tenant.id} 
+            title="Fale Connosco" 
+            subtitle="Estamos disponíveis para o ajudar a encontrar o investimento ideal ou vender o seu imóvel pelo melhor valor."
+            isWhiteLabel={true}
+          />
+        </div>
       </main>
 
       <footer className={`py-24 px-10 border-t ${template === 'prestige' ? 'bg-black border-white/5' : 'bg-slate-50 border-slate-100'}`}>
@@ -223,15 +233,6 @@ const SectionRenderer: React.FC<{ section: CMSSection, tenant: Tenant, propertie
             </div>
          </div>
       </section>
-    );
-
-    case 'services': return (
-      <ContactSection 
-        tenantId={tenant.id} 
-        title={section.content.title || "Entre em Contacto"} 
-        subtitle={section.content.text}
-        isWhiteLabel={true}
-      />
     );
 
     default: return null;
