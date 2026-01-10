@@ -216,7 +216,8 @@ export const MOCK_IMOVEIS: Imovel[] = [
     operacao: 'arrendamento',
     arrendamento_tipo: 'residencial',
     arrendamento_duracao_min_meses: 12,
-    disponivel_imediate: true,
+    // Corrected typo 'disponivel_imediate' to 'disponivel_imediato'
+    disponivel_imediato: true,
     localizacao: {
       pais: 'Portugal',
       distrito: 'Porto',
