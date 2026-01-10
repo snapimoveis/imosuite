@@ -10,7 +10,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'apartamento-t2-vista-rio-lisboa',
     tipo_imovel: 'apartamento',
     subtipo_imovel: null,
-    // tipology property
     tipology: 'T2',
     tipologia: 'T2',
     estado_conservacao: 'usado',
@@ -39,7 +38,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       andar: 3,
       elevador: true
     },
-    // Fix: Added missing properties to divisoes
     divisoes: {
       quartos: 2,
       casas_banho: 2,
@@ -53,7 +51,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       jardim: false
     },
     caracteristicas: ['Ar Condicionado', 'Varanda', 'Cozinha Equipada', 'Elevador'],
-    // Fix: Added missing estado_licenca
     certificacao: {
       certificado_energetico: 'A',
       licenca_utilizacao: '123/2020',
@@ -62,7 +59,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       isento_licenca_utilizacao: false,
       estado_licenca: 'sim'
     },
-    // Fix: Added missing comissao_incluida
     financeiro: {
       preco_venda: 450000,
       preco_arrendamento: null,
@@ -75,15 +71,17 @@ export const MOCK_IMOVEIS: Imovel[] = [
     },
     descricao: {
       curta: 'Moderno Apartamento T2 com Vista Rio em Lisboa',
-      completa_md: 'Descrição completa aqui...',
+      completa_md: 'Excelente apartamento renovado com acabamentos de luxo. Localizado numa das zonas mais prestigiadas da cidade, oferece uma vista deslumbrante sobre o Rio Tejo. \n\nComposto por sala ampla, cozinha totalmente equipada e dois quartos com roupeiros embutidos.',
       gerada_por_ia: false,
       ultima_geracao_ia_at: null
     },
     media: {
       cover_media_id: 'm1',
-      total: 1,
+      total: 3,
       items: [
-        { id: 'm1', type: 'image', url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80', storage_path: '', order: 0, is_cover: true, alt: 'Vista Rio', created_at: new Date().toISOString() }
+        { id: 'm1', type: 'image', url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80', storage_path: '', order: 0, is_cover: true, alt: 'Sala de Estar', created_at: new Date().toISOString() },
+        { id: 'm1-2', type: 'image', url: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&q=80', storage_path: '', order: 1, is_cover: false, alt: 'Cozinha Moderna', created_at: new Date().toISOString() },
+        { id: 'm1-3', type: 'image', url: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1200&q=80', storage_path: '', order: 2, is_cover: false, alt: 'Quarto principal', created_at: new Date().toISOString() }
       ]
     },
     publicacao: {
@@ -109,7 +107,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'moradia-luxo-v4-cascais',
     tipo_imovel: 'moradia',
     subtipo_imovel: null,
-    // tipology property
     tipology: 'V4',
     tipologia: 'V4',
     estado_conservacao: 'novo',
@@ -138,7 +135,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       andar: null,
       elevador: false
     },
-    // Fix: Added missing properties to divisoes
     divisoes: {
       quartos: 4,
       casas_banho: 4,
@@ -152,7 +148,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       jardim: true
     },
     caracteristicas: ['Piscina', 'Jardim', 'Lareira', 'Domótica'],
-    // Fix: Added missing estado_licenca
     certificacao: {
       certificado_energetico: 'A+',
       licenca_utilizacao: '456/2023',
@@ -161,7 +156,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       isento_licenca_utilizacao: false,
       estado_licenca: 'sim'
     },
-    // Fix: Added missing comissao_incluida
     financeiro: {
       preco_venda: 1250000,
       preco_arrendamento: null,
@@ -174,15 +168,17 @@ export const MOCK_IMOVEIS: Imovel[] = [
     },
     descricao: {
       curta: 'Moradia de Luxo V4 com Piscina Privada em Cascais',
-      completa_md: 'Descrição completa aqui...',
+      completa_md: 'Fantástica moradia isolada inserida num lote de 600m². Design contemporâneo com grandes superfícies vidradas que permitem uma excelente entrada de luz natural. \n\nJardim com rega automática e piscina de sal aquecida.',
       gerada_por_ia: false,
       ultima_geracao_ia_at: null
     },
     media: {
       cover_media_id: 'm2',
-      total: 1,
+      total: 3,
       items: [
-        { id: 'm2', type: 'image', url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80', storage_path: '', order: 0, is_cover: true, alt: 'Moradia Cascais', created_at: new Date().toISOString() }
+        { id: 'm2', type: 'image', url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&q=80', storage_path: '', order: 0, is_cover: true, alt: 'Exterior Moradia', created_at: new Date().toISOString() },
+        { id: 'm2-2', type: 'image', url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80', storage_path: '', order: 1, is_cover: false, alt: 'Piscina', created_at: new Date().toISOString() },
+        { id: 'm2-3', type: 'image', url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=80', storage_path: '', order: 2, is_cover: false, alt: 'Fachada Noturna', created_at: new Date().toISOString() }
       ]
     },
     publicacao: {
@@ -208,7 +204,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
     slug: 'estudio-moderno-porto-centro',
     tipo_imovel: 'apartamento',
     subtipo_imovel: null,
-    // tipology property
     tipology: 'T0',
     tipologia: 'T0',
     estado_conservacao: 'renovado',
@@ -216,7 +211,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
     operacao: 'arrendamento',
     arrendamento_tipo: 'residencial',
     arrendamento_duracao_min_meses: 12,
-    // Corrected typo 'disponivel_imediate' to 'disponivel_imediato'
     disponivel_imediato: true,
     localizacao: {
       pais: 'Portugal',
@@ -238,7 +232,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       andar: 2,
       elevador: true
     },
-    // Fix: Added missing properties to divisoes
     divisoes: {
       quartos: 0,
       casas_banho: 1,
@@ -252,7 +245,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       jardim: false
     },
     caracteristicas: ['Mobilado', 'Janelas Duplas', 'Metro à porta'],
-    // Fix: Added missing estado_licenca
     certificacao: {
       certificado_energetico: 'C',
       licenca_utilizacao: '789/1950',
@@ -261,7 +253,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
       isento_licenca_utilizacao: false,
       estado_licenca: 'sim'
     },
-    // Fix: Added missing comissao_incluida
     financeiro: {
       preco_venda: null,
       preco_arrendamento: 950,
@@ -274,15 +265,16 @@ export const MOCK_IMOVEIS: Imovel[] = [
     },
     descricao: {
       curta: 'Estúdio Moderno em Pleno Centro Histórico do Porto',
-      completa_md: 'Descrição completa aqui...',
+      completa_md: 'Estúdio totalmente recuperado e mobilado no coração do Porto. Ideal para estudantes ou nómadas digitais que pretendem viver a experiência urbana da cidade invicta.',
       gerada_por_ia: false,
       ultima_geracao_ia_at: null
     },
     media: {
       cover_media_id: 'm3',
-      total: 1,
+      total: 2,
       items: [
-        { id: 'm3', type: 'image', url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80', storage_path: '', order: 0, is_cover: true, alt: 'Estúdio Porto', created_at: new Date().toISOString() }
+        { id: 'm3', type: 'image', url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80', storage_path: '', order: 0, is_cover: true, alt: 'Sala e Quarto', created_at: new Date().toISOString() },
+        { id: 'm3-2', type: 'image', url: 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=1200&q=80', storage_path: '', order: 1, is_cover: false, alt: 'Kitchenette', created_at: new Date().toISOString() }
       ]
     },
     publicacao: {

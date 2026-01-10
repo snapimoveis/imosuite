@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { collection, query, where, getDocs, limit, doc, getDoc } from "@firebase/firestore";
+import { collection, query, where, getDocs, limit, doc, getDoc } from "firebase/firestore";
 import { db } from '../lib/firebase';
 import { Tenant, Imovel, ImovelMedia } from '../types';
 import { LeadService } from '../services/leadService';
@@ -73,7 +73,7 @@ const PublicImovelDetails: React.FC = () => {
             const data = { id: iSnap.docs[0].id, ...(iSnap.docs[0].data() as any) } as Imovel;
             setImovel(data);
             
-            // BUSCAR MEDIA DA SUBCOLEÇÃO (CORREÇÃO)
+            // BUSCAR MEDIA DA SUBCOLEÇÃO
             const propertyMedia = await PropertyService.getPropertyMedia(tData.id, data.id);
             setMedia(propertyMedia);
 
@@ -115,14 +115,19 @@ const PublicImovelDetails: React.FC = () => {
   if (!imovel || !tenant) return <div className="h-screen flex items-center justify-center font-black uppercase text-slate-300">Não encontrado</div>;
 
   const cms = tenant.cms || DEFAULT_TENANT_CMS;
-  // Fallback para cover_url se items estiver vazio
-  const displayImages = media.length > 0 ? media : [{ id: 'cover', url: (imovel.media as any)?.cover_url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200', type: 'image' } as any];
+  
+  // Prioridade de exibição: 1. Subcoleção carregada, 2. Items no doc principal, 3. URL de capa
+  const displayImages = media.length > 0 
+    ? media 
+    : (imovel.media?.items && imovel.media.items.length > 0 
+        ? imovel.media.items 
+        : [{ id: 'cover', url: (imovel.media as any)?.cover_url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200', type: 'image' } as any]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white font-brand selection:bg-[var(--primary)] selection:text-white">
       <SEO title={`${imovel.titulo} - ${tenant.nome}`} overrideFullTitle={true} />
       
-      {/* NAVBAR PADRONIZADA */}
+      {/* NAVBAR */}
       <nav className="h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-50">
          <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-3">
             {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" /> : <span className="font-black text-xl uppercase tracking-tighter text-[var(--primary)]">{tenant.nome}</span>}
@@ -144,7 +149,7 @@ const PublicImovelDetails: React.FC = () => {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* GALERIA REAL */}
+          {/* GALERIA */}
           <div className="lg:col-span-8 space-y-10">
             <div className="space-y-4">
                <div className="aspect-[16/9] rounded-[3rem] overflow-hidden bg-slate-100 shadow-2xl relative">
@@ -182,7 +187,9 @@ const PublicImovelDetails: React.FC = () => {
                <div className="bg-slate-50/50 p-10 rounded-[3.5rem] border border-slate-100 space-y-8">
                   <div>
                     <h3 className="text-xl font-black text-[#1c2d51] uppercase tracking-widest flex items-center gap-3 mb-6"><Info size={24} className="text-blue-500" /> Detalhes do Imóvel</h3>
-                    <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-line text-lg">{imovel.descricao.completa_md || imovel.descricao.curta}</p>
+                    <div className="prose prose-slate max-w-none text-slate-600 font-medium leading-relaxed whitespace-pre-line text-lg">
+                      {imovel.descricao.completa_md || imovel.descricao.curta}
+                    </div>
                   </div>
                   
                   {imovel.caracteristicas?.length > 0 && (
@@ -198,7 +205,7 @@ const PublicImovelDetails: React.FC = () => {
             </div>
           </div>
 
-          {/* SIDEBAR DE CONTACTO PADRONIZADA */}
+          {/* SIDEBAR */}
           <div className="lg:col-span-4">
             <div className="sticky top-28 space-y-6">
               <div className="bg-[#1c2d51] p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
@@ -236,7 +243,7 @@ const PublicImovelDetails: React.FC = () => {
         </div>
       </main>
 
-      {/* FOOTER PADRONIZADO */}
+      {/* FOOTER */}
       <footer className="py-24 px-10 border-t border-slate-100 bg-slate-50">
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
             <div className="space-y-6">
