@@ -3,10 +3,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Shield, Zap, TrendingUp, Globe, Smartphone, ArrowRight, Star, Building2, Users, MessageSquare, ShieldCheck } from 'lucide-react';
 import { DashboardMockup } from '../components/DashboardMockup';
+import SEO from '../components/SEO';
 
 const Marketing: React.FC = () => {
   return (
     <div className="bg-white selection:bg-[#1c2d51] selection:text-white pt-20">
+      <SEO 
+        title="Software de Gestão Imobiliária & CRM" 
+        description="A solução completa para a sua imobiliária em Portugal. Gestão de imóveis, portais white-label e descrições com IA Generativa." 
+      />
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 overflow-hidden bg-slate-50">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">

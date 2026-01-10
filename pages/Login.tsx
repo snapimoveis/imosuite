@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { Building2, ArrowRight, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center py-20 px-6 font-brand">
+      <SEO title="Login" description="Aceda à sua conta ImoSuite e faça a gestão do seu inventário imobiliário." />
       <div className="max-w-md w-full space-y-10 bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-[#1c2d51] rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-[#1c2d51]/20">

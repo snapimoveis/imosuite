@@ -11,6 +11,7 @@ import {
   Zap, ArrowUpRight, Instagram, Facebook, Linkedin, Home, Menu, X, MessageCircle
 } from 'lucide-react';
 import ImovelCard from '../components/ImovelCard';
+import SEO from '../components/SEO';
 import { DEFAULT_TENANT_CMS, DEFAULT_TENANT } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
 
@@ -89,6 +90,11 @@ const PublicPortal: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col ${template === 'prestige' ? 'bg-[#050505] text-white' : 'bg-white text-slate-900'} font-brand selection:bg-[var(--primary)] selection:text-white`}>
+      <SEO 
+        title={tenant.nome} 
+        description={tenant.slogan || `Consulte os melhores imóveis da ${tenant.nome}. Especialistas em imobiliário em Portugal.`}
+        overrideFullTitle={true}
+      />
       
       <nav className={`h-20 px-8 flex items-center justify-between sticky top-0 z-50 backdrop-blur-xl border-b ${template === 'prestige' ? 'bg-black/80 border-white/5' : 'bg-white/95 border-slate-50'}`}>
          <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-3">
@@ -157,8 +163,12 @@ const SectionRenderer: React.FC<{ section: CMSSection, tenant: Tenant, propertie
     case 'hero': return (
       <header className={`relative py-40 px-10 flex items-center justify-center overflow-hidden ${template === 'prestige' ? 'h-screen' : ''}`}>
         <div className="absolute inset-0 z-0">
-           <img src={section.content.image_url || tenant.hero_image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600'} className={`w-full h-full object-cover ${template === 'prestige' ? 'opacity-30 grayscale' : 'opacity-10 blur-sm'}`} />
-           <div className={`absolute inset-0 ${template === 'prestige' ? 'bg-gradient-to-b from-black via-transparent to-black' : 'bg-gradient-to-b from-white/80 to-white'}`} />
+           {/* Fixed: Priority and visibility for hero image */}
+           <img 
+              src={tenant.hero_image_url || section.content.image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600'} 
+              className={`w-full h-full object-cover ${template === 'prestige' ? 'opacity-40 grayscale' : 'opacity-60'}`} 
+           />
+           <div className={`absolute inset-0 ${template === 'prestige' ? 'bg-gradient-to-b from-black via-transparent to-black' : 'bg-gradient-to-b from-white/20 via-white/50 to-white'}`} />
         </div>
         <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
            <h1 className={`font-black tracking-tighter mb-8 ${template === 'prestige' ? 'text-7xl md:text-9xl uppercase italic' : 'text-5xl md:text-8xl text-[#1c2d51]'}`}>{section.content.title || tenant.nome}</h1>

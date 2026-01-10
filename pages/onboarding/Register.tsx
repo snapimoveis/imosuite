@@ -9,6 +9,7 @@ import { auth, db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { Building2, ArrowRight, Loader2, AlertCircle, Sparkles, CheckCircle2, Globe } from 'lucide-react';
 import { generateUniqueSlug } from '../../lib/utils';
+import SEO from '../../components/SEO';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -91,6 +92,7 @@ const Register: React.FC = () => {
   if (successData) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-brand">
+        <SEO title="Registo Concluído" />
         <div className="max-w-md w-full bg-white p-12 rounded-[3.5rem] shadow-2xl text-center space-y-8 animate-in zoom-in-95 duration-500 border border-slate-100">
           <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner animate-bounce">
             <CheckCircle2 size={48} strokeWidth={2.5} />
@@ -119,6 +121,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-32 pb-20 px-6 font-brand">
+      <SEO title="Crie a sua Agência Digital" description="Inicie o seu portal imobiliário white-label em segundos. Registe-se agora no ImoSuite." />
       <div className="max-w-xl w-full bg-white p-12 md:p-16 rounded-[3.5rem] shadow-2xl shadow-slate-200 border border-slate-100 relative overflow-hidden">
         {/* Decorative Elements */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-60"></div>

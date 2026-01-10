@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import ImovelCard from '../components/ImovelCard';
+import SEO from '../components/SEO';
 import { DEFAULT_TENANT } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
 
@@ -146,6 +147,12 @@ const PublicImovelDetails: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen font-brand text-slate-900 pb-20 selection:bg-[var(--primary)] selection:text-white">
+      <SEO 
+        title={`${imovel.titulo} - ${tenant.nome}`} 
+        description={imovel.descricao?.curta || `${imovel.tipo_imovel} para ${imovel.operacao} em ${imovel.localizacao?.concelho}. Ref: ${imovel.ref}`}
+        overrideFullTitle={true}
+      />
+      
       <nav className="h-20 px-8 flex items-center justify-between border-b border-slate-50 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-3">

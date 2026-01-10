@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight, HelpCircle, Star, ShieldCheck, Zap, Globe } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const PricingPage: React.FC = () => {
   const [isAnnual, setIsAnnual] = useState(true);
@@ -45,6 +46,10 @@ const PricingPage: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32">
+      <SEO 
+        title="Planos e Preços" 
+        description="Soluções escaláveis para o seu negócio imobiliário. Escolha entre os planos Starter e Business e comece a vender mais hoje." 
+      />
       <main className="pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-black text-[#1c2d51] mb-6 tracking-tighter">Planos que acompanham o <span className="text-[#357fb2]">seu sucesso.</span></h1>

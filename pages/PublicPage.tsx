@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../lib/firebase';
 import { Tenant, CMSPage, MenuItem } from '../types';
 import { Loader2, Building2, ChevronLeft, Menu, X, Facebook, Instagram, Linkedin } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const PublicPage: React.FC = () => {
   const { slug, pageSlug } = useParams<{ slug: string; pageSlug: string }>();
@@ -78,6 +79,11 @@ const PublicPage: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col ${getTemplateFont(template)} ${template === 'prestige' ? 'bg-[#080808] text-white' : 'bg-white text-slate-900'} selection:bg-[var(--primary)] selection:text-white`}>
+      <SEO 
+        title={`${page.title} - ${tenant.nome}`} 
+        description={page.seo?.description || page.content_md?.substring(0, 160)}
+        overrideFullTitle={true}
+      />
       
       {/* NAVBAR TEMPLATE-AWARE */}
       <nav className={`h-20 px-8 flex items-center justify-between border-b sticky top-0 z-50 transition-all ${template === 'prestige' ? 'bg-black/90 border-white/5' : 'bg-white/95 border-slate-50'} backdrop-blur-xl`}>

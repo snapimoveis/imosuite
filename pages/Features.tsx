@@ -5,10 +5,15 @@ import {
   Globe, Zap, MessageSquare, Building2, TrendingUp, Users, 
   ShieldCheck, Check, Smartphone, ArrowRight, Star 
 } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const FeaturesPage: React.FC = () => {
   return (
     <div className="bg-white pt-32 pb-20 font-brand">
+      <SEO 
+        title="Funcionalidades" 
+        description="Explore as ferramentas que tornam o ImoSuite o sistema imobiliário mais avançado: CRM de leads, portais automáticos e Inteligência Artificial." 
+      />
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-24">
