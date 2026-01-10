@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,11 +9,11 @@ import {
   ChevronUp, ChevronDown, ToggleLeft, ToggleRight, 
   Plus, Trash2, Edit3, X, Navigation, Camera,
   Image as ImageIcon, LayoutGrid, Clock, Star, Sparkles,
-  Facebook, Instagram, Linkedin, MessageCircle
+  Facebook, Instagram, Linkedin, MessageCircle, FileText, Check
 } from 'lucide-react';
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { CMSSection, TenantCMS, MenuItem, CMSPage } from '../../types';
-import { compressImage } from '../../lib/utils';
+import { compressImage, generateSlug } from '../../lib/utils';
 
 const AdminCMS: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
@@ -23,9 +24,12 @@ const AdminCMS: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'homepage' | 'menus' | 'pages' | 'social'>('homepage');
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
   
+  // Modais e Estados de Edição
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
+  // Fix: Added missing editingMenuItem state
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
-  const [newMenuItem, setNewMenuItem] = useState<Partial<MenuItem>>({ label: '', path: '', is_external: false, order: 0 });
+  const [isPageModalOpen, setIsPageModalOpen] = useState(false);
+  const [editingPage, setEditingPage] = useState<CMSPage | null>(null);
   const [menuTarget, setMenuTarget] = useState<'main' | 'footer'>('main');
 
   useEffect(() => {
@@ -92,7 +96,6 @@ const AdminCMS: React.FC = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64 = reader.result as string;
-      // Corrigimos o erro de tamanho comprimindo a imagem antes de guardar
       const compressed = await compressImage(base64, 1200, 800, 0.7);
       updateSectionContent(id, { image_url: compressed });
     };
@@ -107,16 +110,77 @@ const AdminCMS: React.FC = () => {
     setCms({ ...cms, homepage_sections: newSections.map((s, i) => ({ ...s, order: i })) });
   };
 
-  const openMenuModal = (target: 'main' | 'footer', item: MenuItem | null = null) => {
+  // Fix: Added missing openMenuModal function
+  const openMenuModal = (target: 'main' | 'footer') => {
     setMenuTarget(target);
-    if (item) {
-      setEditingMenuItem(item);
-      setNewMenuItem({ ...item });
-    } else {
-      setEditingMenuItem(null);
-      setNewMenuItem({ label: '', path: '', is_external: false, order: cms.menus[target].length });
-    }
+    setEditingMenuItem({
+      id: crypto.randomUUID(),
+      label: '',
+      path: '',
+      order: cms.menus[target].length,
+      is_external: false
+    });
     setIsMenuModalOpen(true);
+  };
+
+  // Fix: Added missing handleSaveMenuItem function
+  const handleSaveMenuItem = () => {
+    if (!editingMenuItem || !editingMenuItem.label) return;
+    
+    setCms(prev => ({
+      ...prev,
+      menus: {
+        ...prev.menus,
+        [menuTarget]: [...prev.menus[menuTarget], editingMenuItem]
+      }
+    }));
+    setIsMenuModalOpen(false);
+  };
+
+  // Lógica de Páginas
+  const openPageModal = (page: CMSPage | null = null) => {
+    if (page) {
+      setEditingPage({ ...page });
+    } else {
+      setEditingPage({
+        id: crypto.randomUUID(),
+        title: '',
+        slug: '',
+        content_md: '',
+        enabled: true,
+        seo: { title: '', description: '' }
+      });
+    }
+    setIsPageModalOpen(true);
+  };
+
+  const handleSavePage = () => {
+    if (!editingPage || !editingPage.title) return;
+    
+    const pageToSave = {
+      ...editingPage,
+      slug: editingPage.slug || generateSlug(editingPage.title)
+    };
+
+    setCms(prev => {
+      const exists = prev.pages.find(p => p.id === pageToSave.id);
+      return {
+        ...prev,
+        pages: exists 
+          ? prev.pages.map(p => p.id === pageToSave.id ? pageToSave : p)
+          : [...prev.pages, pageToSave]
+      };
+    });
+    setIsPageModalOpen(false);
+  };
+
+  const handleDeletePage = (id: string) => {
+    if (window.confirm("Deseja apagar esta página permanentemente?")) {
+      setCms(prev => ({
+        ...prev,
+        pages: prev.pages.filter(p => p.id !== id)
+      }));
+    }
   };
 
   if (tenantLoading) return <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-slate-200" size={40} /></div>;
@@ -142,7 +206,7 @@ const AdminCMS: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-6">
           {activeTab === 'homepage' && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-in fade-in duration-300">
               {cms.homepage_sections.sort((a,b) => a.order - b.order).map((section, idx) => (
                 <div key={section.id} className={`bg-white rounded-[2rem] border transition-all overflow-hidden ${section.enabled ? 'border-slate-100 shadow-sm' : 'opacity-60 border-dashed border-slate-200'}`}>
                   <div className="p-6 flex items-center justify-between">
@@ -208,6 +272,46 @@ const AdminCMS: React.FC = () => {
             </div>
           )}
 
+          {activeTab === 'pages' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="flex justify-between items-center bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div>
+                  <h3 className="font-black text-[#1c2d51] text-lg">Páginas Institucionais</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Crie conteúdo para Quem Somos, Contactos e mais.</p>
+                </div>
+                <button onClick={() => openPageModal()} className="bg-[#1c2d51] text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-900/10 hover:scale-105 transition-all">
+                  <Plus size={18}/> Adicionar Página
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {cms.pages.map(page => (
+                  <div key={page.id} className={`bg-white p-6 rounded-[2rem] border transition-all flex flex-col justify-between group ${page.enabled ? 'border-slate-100 shadow-sm' : 'border-dashed border-slate-200 opacity-60'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-[#1c2d51]">
+                        <FileText size={20}/>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => setCms({...cms, pages: cms.pages.map(p => p.id === page.id ? {...p, enabled: !p.enabled} : p)})}
+                          className="p-2"
+                        >
+                          {page.enabled ? <ToggleRight className="text-emerald-500" size={24}/> : <ToggleLeft className="text-slate-300" size={24}/>}
+                        </button>
+                        <button onClick={() => openPageModal(page)} className="p-2 text-slate-300 hover:text-[#1c2d51] transition-colors"><Edit3 size={18}/></button>
+                        <button onClick={() => handleDeletePage(page.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-black text-[#1c2d51] text-base mb-1">{page.title}</h4>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">URL: /p/{page.slug}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'social' && (
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 animate-in fade-in">
               <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Canais de Contacto</h3>
@@ -221,7 +325,7 @@ const AdminCMS: React.FC = () => {
           )}
 
           {activeTab === 'menus' && (
-             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-6 animate-in fade-in">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Navegação do Site</h3>
                   <button onClick={() => openMenuModal('main')} className="bg-blue-50 text-blue-600 px-6 py-2.5 rounded-xl font-black text-xs uppercase flex items-center gap-2"><Plus size={16}/> Link</button>
@@ -245,6 +349,81 @@ const AdminCMS: React.FC = () => {
              </div>
           )}
       </div>
+
+      {/* Modal de Edição de Página */}
+      {isPageModalOpen && editingPage && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#1c2d51] text-white rounded-xl flex items-center justify-center"><FileText size={20}/></div>
+                <h3 className="text-xl font-black text-[#1c2d51] tracking-tight">Editar Página Institucional</h3>
+              </div>
+              <button onClick={() => setIsPageModalOpen(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-colors"><X size={24}/></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-10 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Título da Página</label>
+                  <input className="admin-input-cms" value={editingPage.title} onChange={e => setEditingPage({...editingPage, title: e.target.value})} placeholder="Ex: Quem Somos" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Slug (URL Personalizada)</label>
+                  <div className="flex items-center bg-slate-50 rounded-2xl px-4">
+                    <span className="text-slate-300 text-xs font-bold">/p/</span>
+                    <input className="flex-1 bg-transparent border-none outline-none p-3 font-bold text-[#1c2d51] text-xs lowercase" value={editingPage.slug} onChange={e => setEditingPage({...editingPage, slug: generateSlug(e.target.value)})} placeholder="quem-somos" />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Conteúdo da Página (Texto)</label>
+                <textarea rows={12} className="admin-input-cms font-medium leading-relaxed" value={editingPage.content_md} onChange={e => setEditingPage({...editingPage, content_md: e.target.value})} placeholder="Escreva aqui o conteúdo da sua página..."></textarea>
+              </div>
+            </div>
+
+            <div className="p-8 border-t bg-slate-50/50 flex justify-end gap-4">
+              <button onClick={() => setIsPageModalOpen(false)} className="px-8 py-3 text-[#1c2d51] font-black text-xs uppercase tracking-widest">Cancelar</button>
+              <button onClick={handleSavePage} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl hover:-translate-y-1 transition-all">
+                <Check size={18}/> Aplicar Alterações
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fix: Added missing Modal de Edição de Menu */}
+      {isMenuModalOpen && editingMenuItem && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#1c2d51] text-white rounded-xl flex items-center justify-center"><Navigation size={20}/></div>
+                <h3 className="text-xl font-black text-[#1c2d51] tracking-tight">Adicionar Link</h3>
+              </div>
+              <button onClick={() => setIsMenuModalOpen(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-colors"><X size={24}/></button>
+            </div>
+            
+            <div className="p-10 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Rótulo (Texto do Link)</label>
+                <input className="admin-input-cms" value={editingMenuItem.label} onChange={e => setEditingMenuItem({...editingMenuItem, label: e.target.value})} placeholder="Ex: Galeria" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Caminho (URL ou Slug)</label>
+                <input className="admin-input-cms" value={editingMenuItem.path} onChange={e => setEditingMenuItem({...editingMenuItem, path: e.target.value})} placeholder="Ex: /galeria ou https://..." />
+              </div>
+            </div>
+
+            <div className="p-8 border-t bg-slate-50/50 flex justify-end gap-4">
+              <button onClick={() => setIsMenuModalOpen(false)} className="px-8 py-3 text-[#1c2d51] font-black text-xs uppercase tracking-widest">Cancelar</button>
+              <button onClick={handleSaveMenuItem} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl hover:-translate-y-1 transition-all">
+                <Check size={18}/> Adicionar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .admin-input-cms { width: 100%; padding: 1.15rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
