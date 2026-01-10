@@ -7,8 +7,11 @@ import { ADMIN_NAV_ITEMS } from '../../constants.tsx';
 import { 
   LogOut, Bell, ChevronLeft, ChevronRight, User as UserIcon, 
   Settings, Building2, Brush, Globe, Shield, CreditCard, 
-  Languages, BellRing, ChevronDown, CheckCircle2, Layout
+  Languages, BellRing, ChevronDown, CheckCircle2, Layout, MessageSquare, X
 } from 'lucide-react';
+import { collection, query, where, onSnapshot, orderBy } from '@firebase/firestore';
+import { db } from '../../lib/firebase';
+import { Lead } from '../../types';
 
 const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { tenant } = useTenant();
@@ -17,9 +20,40 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [lastLead, setLastLead] = useState<Lead | null>(null);
+  const [showToast, setShowToast] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+
+  // Listener em tempo real para novas leads (Notificações)
+  useEffect(() => {
+    if (!profile?.tenantId || profile.tenantId === 'pending') return;
+
+    const leadsRef = collection(db, "tenants", profile.tenantId, "leads");
+    const q = query(leadsRef, where("lido", "==", false), orderBy("created_at", "desc"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUnreadCount(snapshot.size);
+      
+      // Detetar novas leads vindas do servidor para exibir o Toast
+      const source = snapshot.metadata.hasPendingWrites ? 'local' : 'server';
+      if (snapshot.docChanges().some(change => change.type === 'added') && source === 'server') {
+        const newestDoc = snapshot.docs[0];
+        if (newestDoc) {
+          setLastLead({ id: newestDoc.id, ...newestDoc.data() } as Lead);
+          setShowToast(true);
+          // Ocultar automaticamente após 8 segundos
+          setTimeout(() => setShowToast(false), 8000);
+        }
+      }
+    }, (error) => {
+      console.error("Erro no listener de notificações:", error);
+    });
+
+    return () => unsubscribe();
+  }, [profile?.tenantId]);
 
   // Fechar menu ao clicar fora
   useEffect(() => {
@@ -60,11 +94,12 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         <nav className="flex-1 p-4 space-y-1">
           {ADMIN_NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path;
+            const isLeads = item.path === '/admin/leads';
             return (
               <Link 
                 key={item.path} 
                 to={item.path} 
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-xl transition-all relative ${
                   isActive 
                   ? 'bg-[#1c2d51] text-white shadow-xl shadow-slate-900/10' 
                   : 'text-slate-400 hover:text-[#1c2d51] hover:bg-slate-50'
@@ -72,6 +107,13 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               >
                 <span className={isActive ? 'text-white' : 'text-slate-300'}>{item.icon}</span>
                 {!isCollapsed && <span className="font-bold text-sm">{item.name}</span>}
+                
+                {/* Notificação dinâmica no item "Leads" da barra lateral */}
+                {isLeads && unreadCount > 0 && (
+                  <span className={`absolute ${isCollapsed ? 'top-1 right-1' : 'right-3'} flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-[10px] font-black text-white shadow-lg border-2 border-white animate-in zoom-in duration-300`}>
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -94,10 +136,15 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="relative p-2 text-slate-300 hover:text-[#1c2d51] transition-colors">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+            {/* Sino de Notificações com Badge Dinâmico */}
+            <Link to="/admin/leads" className="relative p-2 text-slate-300 hover:text-[#1c2d51] transition-colors group">
+              <Bell size={20} className={unreadCount > 0 ? 'animate-wiggle text-blue-500' : ''} />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white font-black shadow-lg animate-in zoom-in duration-300">
+                  {unreadCount}
+                </span>
+              )}
+            </Link>
 
             {/* Account Trigger */}
             <div className="relative" ref={menuRef}>
@@ -132,49 +179,25 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                           user?.email?.charAt(0).toUpperCase()
                         )}
                       </div>
-                      <div>
-                        <div className="font-black text-sm text-[#1c2d51]">{profile?.displayName || 'Utilizador'}</div>
-                        <div className="text-[9px] text-slate-400 font-bold truncate w-40">{user?.email}</div>
+                      <div className="truncate">
+                        <p className="font-black text-sm text-[#1c2d51] truncate">{profile?.displayName || 'Utilizador'}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase truncate">{user?.email}</p>
                       </div>
                     </div>
                   </div>
-
                   <div className="space-y-1">
-                    <p className="px-6 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Pessoal</p>
-                    <MenuLink to="/admin/profile" icon={<UserIcon size={16}/>} label="Perfil pessoal" sub="Gerir conta e segurança" />
-                    
-                    {isAdmin && (
-                      <>
-                        <div className="pt-3">
-                          <p className="px-6 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Imobiliária</p>
-                          <MenuLink to="/admin/settings" icon={<Building2 size={16}/>} label="Dados da empresa" sub="Fiscais e morada" />
-                          <MenuLink to="/admin/settings?tab=branding" icon={<Brush size={16}/>} label="Identidade visual" sub="Logo, cores e branding" />
-                        </div>
-                        
-                        <div className="pt-3">
-                          <p className="px-6 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Plataforma</p>
-                          <MenuLink to="/admin/settings?tab=website" icon={<Globe size={16}/>} label="Website & Domínio" sub="Templates e SEO" />
-                          <MenuLink to="/admin/settings?tab=system" icon={<Settings size={16}/>} label="Preferências" sub="Idioma e moeda" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-slate-50 px-2">
-                    <button 
-                      onClick={handleLogout}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <LogOut size={16} />
-                        <span className="font-black text-[11px] uppercase tracking-widest">Sair da Sessão</span>
-                      </div>
-                      <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    <Link to="/admin/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-[#1c2d51] transition-all">
+                      <UserIcon size={18} />
+                      <span className="text-sm font-bold">O meu Perfil</span>
+                    </Link>
+                    <Link to="/admin/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-[#1c2d51] transition-all">
+                      <Settings size={18} />
+                      <span className="text-sm font-bold">Configurações</span>
+                    </Link>
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-500 transition-all">
+                      <LogOut size={18} />
+                      <span className="text-sm font-bold">Terminar Sessão</span>
                     </button>
-                  </div>
-                  
-                  <div className="mt-4 text-center">
-                    <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-200">ImoSuite SaaS v1.0.4</span>
                   </div>
                 </div>
               )}
@@ -182,25 +205,31 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           </div>
         </header>
 
+        {/* Main Content */}
         <main className="flex-1 p-8 overflow-y-auto">
           {children}
         </main>
+
+        {/* Real-time Toast notification */}
+        {showToast && lastLead && (
+          <div className="fixed bottom-8 right-8 z-[60] bg-white border border-slate-100 shadow-2xl rounded-[2.5rem] p-6 flex items-center gap-6 animate-in slide-in-from-right-10 duration-500">
+             <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center">
+                <MessageSquare size={24} />
+             </div>
+             <div>
+                <p className="text-[10px] font-black uppercase text-blue-500 tracking-widest mb-1">Nova Lead Recebida</p>
+                <p className="font-black text-[#1c2d51] text-sm">{lastLead.nome}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase truncate max-w-[150px]">{lastLead.email}</p>
+             </div>
+             <button onClick={() => setShowToast(false)} className="p-2 text-slate-200 hover:text-slate-900 transition-colors">
+                <X size={18} />
+             </button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const MenuLink = ({ to, icon, label, sub }: { to: string, icon: any, label: string, sub: string }) => (
-  <Link 
-    to={to} 
-    className="flex items-center gap-4 px-6 py-3 rounded-2xl hover:bg-slate-50 transition-all group"
-  >
-    <div className="text-slate-300 group-hover:text-[#1c2d51] transition-colors">{icon}</div>
-    <div className="flex-1">
-      <div className="font-black text-[11px] text-[#1c2d51] uppercase tracking-tighter leading-none mb-0.5">{label}</div>
-      <div className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">{sub}</div>
-    </div>
-  </Link>
-);
-
+// Fix: Add default export to resolve error in App.tsx line 27
 export default AdminShell;

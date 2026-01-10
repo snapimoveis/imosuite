@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
@@ -6,12 +7,14 @@ import { useAuth } from '../../contexts/AuthContext';
 // Fix: Using @firebase/firestore to resolve missing exported members
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
+// Add ShieldCheck to the list of icons imported from lucide-react
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 
   Loader2, Star, Building2, Zap, Brush, MapPin, Hash, 
   Settings, AlertTriangle, Eye, ChevronLeft, ChevronRight, Info,
   Quote, Heart, Search, LayoutGrid, List, ArrowUpRight, Bed, Bath, Square,
-  MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight
+  MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight, Send,
+  ShieldCheck
 } from 'lucide-react';
 import { Tenant } from '../../types';
 import { generateSlug, formatCurrency, compressImage } from '../../lib/utils';
@@ -61,7 +64,6 @@ const AdminSettings: React.FC = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64 = reader.result as string;
-      // Comprimimos imagens para não exceder limite do Firestore
       const compressed = await compressImage(base64, 1200, 1200, 0.75);
       
       if (type === 'logo') {
@@ -120,11 +122,7 @@ const AdminSettings: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error(err);
-      if (err.message?.includes('exceeds the maximum allowed size')) {
-        setErrorMessage("Erro: Os dados da agência excedem o limite de 1MB. Tente reduzir o tamanho do Logótipo ou da imagem de capa.");
-      } else {
-        setErrorMessage(err.message || "Erro ao guardar definições.");
-      }
+      setErrorMessage(err.message || "Erro ao guardar definições.");
     } finally {
       setIsSaving(false);
     }
@@ -330,7 +328,7 @@ const AdminSettings: React.FC = () => {
 };
 
 const TabLink = ({ active, icon, label, tab }: { active: boolean, icon: any, label: string, tab: string }) => (
-  <Link to={`/admin/settings?tab=${tab}`} className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all border ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-xl shadow-slate-900/10' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
+  <Link to={`/admin/settings?tab=${tab}`} className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all border ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-xl' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
     <div className={active ? 'text-white' : 'text-slate-300'}>{icon}</div>
     <div className={`font-black text-[11px] uppercase tracking-tighter leading-none ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
   </Link>
@@ -383,44 +381,135 @@ const PageTab = ({ active, onClick, label }: any) => (
 
 const PreviewEngine = ({ templateId, tenant }: any) => {
   const dummyProps = [
-    { id: 1, title: 'Apartamento T3 com Vista Mar', price: 385000, loc: 'Cascais e Estoril, Cascais', ref: 'REF001', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },
-    { id: 2, title: 'Moradia V4 com Jardim e Piscina', price: 750000, loc: 'Madalena, Vila Nova de Gaia', ref: 'REF002', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800' },
-    { id: 3, title: 'Moradia T5 com Vista Panorâmica', price: 1250000, loc: 'São Pedro de Penaferrim, Sintra', ref: 'REF004', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800' },
+    { id: 1, title: 'Apartamento T3 com Vista Mar', price: 385000, loc: 'Cascais e Estoril, Cascais', ref: 'REF001', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800', bed: 3, bath: 2, sq: 120 },
+    { id: 2, title: 'Moradia V4 com Jardim e Piscina', price: 750000, loc: 'Madalena, Vila Nova de Gaia', ref: 'REF002', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800', bed: 4, bath: 3, sq: 240 },
+    { id: 3, title: 'Moradia T5 com Vista Panorâmica', price: 1250000, loc: 'São Pedro de Penaferrim, Sintra', ref: 'REF004', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', bed: 5, bath: 4, sq: 350 },
   ];
 
-  if (templateId === 'heritage') return (
-    <div className="font-brand text-slate-900">
-       <nav className="h-20 border-b border-slate-100 px-10 flex items-center justify-between bg-white">
-          <span className="font-black text-xl text-[#1c2d51] tracking-tighter">{tenant.nome}</span>
-          <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400"><span>Início</span><span>Imóveis</span><span>Contacto</span></div>
-       </nav>
-       <header className="py-32 px-10 text-center bg-slate-50 border-b border-slate-100 relative">
-          <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-          <h1 className="text-7xl font-black text-[#1c2d51] tracking-tighter leading-[0.9] mb-8 max-w-4xl mx-auto italic">Tradição & Confiança.</h1>
-          <p className="text-slate-400 text-sm mb-12 max-w-lg mx-auto font-medium uppercase tracking-widest">O seu próximo capítulo começa aqui.</p>
-       </header>
-       <main className="py-32 px-10 max-w-7xl mx-auto">
-          <div className="flex justify-between items-end mb-20 border-b pb-8">
-             <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter italic">Destaques</h2>
-             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-300">Curadoria exclusiva</span>
+  // Identidades Visuais
+  const styles: Record<string, any> = {
+    heritage: {
+      nav: "h-20 border-b border-slate-100 px-10 flex items-center justify-between bg-white font-brand",
+      hero: "py-32 px-10 text-center bg-slate-50 border-b border-slate-100 relative font-brand",
+      title: "text-7xl font-black text-[#1c2d51] tracking-tighter leading-[0.9] mb-8 max-w-4xl mx-auto italic",
+      card: "group cursor-pointer aspect-[4/5] bg-slate-200 rounded-[2.5rem] overflow-hidden mb-6 shadow-sm group-hover:shadow-2xl transition-all duration-700",
+      contact: "bg-slate-50 py-32 px-10 border-t border-slate-100"
+    },
+    canvas: {
+      nav: "h-24 px-12 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 font-brand",
+      hero: "py-40 px-12 flex flex-col items-center justify-center text-center bg-gradient-to-br from-blue-50 to-white",
+      title: "text-6xl md:text-8xl font-black text-[#1c2d51] tracking-tight mb-8",
+      card: "group cursor-pointer aspect-video bg-slate-100 rounded-3xl overflow-hidden mb-6 shadow-md hover:shadow-2xl transition-all",
+      contact: "bg-white py-32 px-12 border-t border-slate-100"
+    },
+    prestige: {
+      nav: "h-20 px-10 flex items-center justify-between bg-black text-white font-brand uppercase tracking-widest",
+      hero: "h-[80vh] flex flex-col items-center justify-center text-center bg-black text-white relative overflow-hidden",
+      title: "text-8xl md:text-[10rem] font-black tracking-tighter italic mb-10 leading-none",
+      card: "group cursor-pointer aspect-[3/4] bg-neutral-900 rounded-none overflow-hidden mb-6 shadow-none transition-all grayscale hover:grayscale-0",
+      contact: "bg-neutral-900 py-32 px-10 text-white"
+    },
+    skyline: {
+      nav: "h-20 px-12 flex items-center justify-between bg-blue-600 text-white font-brand",
+      hero: "py-32 px-12 bg-blue-600 text-white relative",
+      title: "text-6xl font-black tracking-tighter leading-none mb-6",
+      card: "group cursor-pointer aspect-square bg-slate-50 rounded-[2rem] overflow-hidden mb-4 border border-slate-100 shadow-xl",
+      contact: "bg-slate-900 py-32 px-12 text-white"
+    },
+    luxe: {
+      nav: "h-24 px-10 flex items-center justify-between bg-[#FDFBF7] font-brand",
+      hero: "py-40 px-10 bg-[#FDFBF7] text-[#2D2926] font-brand",
+      title: "text-7xl font-black tracking-tighter mb-8 max-w-3xl",
+      card: "group cursor-pointer aspect-[4/5] bg-[#EAE3D9] rounded-[4rem] overflow-hidden mb-8 shadow-sm hover:shadow-2xl transition-all duration-1000",
+      contact: "bg-[#FDFBF7] py-32 px-10"
+    }
+  };
+
+  const s = styles[templateId] || styles.heritage;
+
+  return (
+    <div className={`font-brand min-h-screen ${templateId === 'prestige' ? 'bg-black text-white' : 'bg-white text-slate-900'}`}>
+       {/* NAV */}
+       <nav className={s.nav}>
+          <span className="font-black text-2xl tracking-tighter">{tenant.nome}</span>
+          <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest opacity-60">
+             <span>Início</span><span>Propriedades</span><span>Agência</span>
           </div>
-          <div className="grid grid-cols-3 gap-12">
+          <button className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest ${templateId === 'prestige' ? 'bg-white text-black' : 'bg-[#1c2d51] text-white'}`}>Contactar</button>
+       </nav>
+
+       {/* HERO */}
+       <header className={s.hero}>
+          <div className="max-w-4xl mx-auto px-6 relative z-10">
+             <h1 className={s.title}>{tenant.nome}</h1>
+             <p className="text-xl font-medium opacity-60 max-w-xl mx-auto mb-12">{tenant.slogan || "Consultoria imobiliária de elite."}</p>
+             <div className="bg-white p-2 rounded-2xl shadow-2xl flex max-w-2xl mx-auto border border-slate-100">
+                <input className="flex-1 px-6 font-bold text-slate-400 text-sm outline-none" placeholder="Localidade ou Ref..." />
+                <button className={`px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest ${templateId === 'prestige' ? 'bg-black text-white' : 'bg-[#1c2d51] text-white'}`}>Pesquisar</button>
+             </div>
+          </div>
+       </header>
+
+       {/* PROPERTIES */}
+       <main className="py-32 px-10 max-w-7xl mx-auto">
+          <div className="flex justify-between items-end mb-20 border-b pb-10 border-slate-100">
+             <h2 className={`text-4xl font-black tracking-tighter ${templateId === 'prestige' ? 'italic uppercase' : ''}`}>Destaques</h2>
+             <span className="text-[10px] font-black uppercase tracking-widest opacity-30">Consultoria Imobiliária Premium</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {dummyProps.map(p => (
               <div key={p.id} className="group cursor-pointer">
-                 <div className="aspect-[4/5] bg-slate-200 rounded-[2.5rem] overflow-hidden mb-6 shadow-sm group-hover:shadow-2xl transition-all duration-700">
-                    <img src={p.img} className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" alt={p.title} />
+                 <div className={s.card}>
+                    <img src={p.img} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={p.title} />
                  </div>
-                 <h4 className="font-black text-xl text-[#1c2d51] mb-1 italic tracking-tight">{p.title}</h4>
-                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{p.loc}</p>
-                 <p className="text-[#1c2d51] font-black text-lg mt-3">{formatCurrency(p.price)}</p>
+                 <h4 className="font-black text-xl mb-1 tracking-tight">{p.title}</h4>
+                 <div className="flex items-center gap-4 text-slate-400 font-bold text-[9px] uppercase mb-4">
+                    <span className="flex items-center gap-1"><Bed size={14}/> {p.bed}</span>
+                    <span className="flex items-center gap-1"><Bath size={14}/> {p.bath}</span>
+                    <span className="flex items-center gap-1"><Square size={14}/> {p.sq}m²</span>
+                 </div>
+                 <p className="font-black text-xl">{formatCurrency(p.price)}</p>
               </div>
             ))}
           </div>
        </main>
+
+       {/* CONTACT FORM (Standard as requested) */}
+       <section className={s.contact}>
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
+             <div className="space-y-8">
+                <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[0.9]">Fale Connosco</h2>
+                <p className="text-xl font-medium opacity-60 leading-relaxed max-w-md">Estamos aqui para ajudar a esclarecer as suas dúvidas e encontrar o imóvel ideal para si.</p>
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                      <ShieldCheck className="mb-3 text-blue-500" />
+                      <p className="text-[10px] font-black uppercase">Segurança</p>
+                      <p className="text-[8px] opacity-40 uppercase">Conformidade RGPD total.</p>
+                   </div>
+                   <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                      <Send className="mb-3 text-blue-500" />
+                      <p className="text-[10px] font-black uppercase">Resposta</p>
+                      <p className="text-[8px] opacity-40 uppercase">Inferior a 24 horas.</p>
+                   </div>
+                </div>
+             </div>
+             <div className="bg-white p-10 rounded-[3rem] shadow-2xl text-slate-900 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                   <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" placeholder="Nome" />
+                   <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" placeholder="Email" />
+                </div>
+                <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" placeholder="Telemóvel" />
+                <textarea className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" rows={4} placeholder="Mensagem"></textarea>
+                <button className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Enviar Pedido</button>
+             </div>
+          </div>
+       </section>
+
+       <footer className="py-20 px-10 border-t border-slate-100 text-center opacity-40 text-[9px] font-black uppercase tracking-widest">
+          © {new Date().getFullYear()} {tenant.nome} • Powered by ImoSuite
+       </footer>
     </div>
   );
-
-  return <div className="p-20 text-center font-black uppercase text-slate-200">Layout Preview em Construção</div>;
 };
 
 export default AdminSettings;
