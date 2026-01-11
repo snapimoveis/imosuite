@@ -1,12 +1,10 @@
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PropertyService } from '../../services/propertyService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Imovel, TipoImovel, ImovelMedia } from '../../types';
 import { 
-  Plus, X, Loader2, AlertCircle, Sparkles, Check, ChevronRight, ChevronLeft, 
-  Trash, UploadCloud, Building2, Star, Zap, Brush, MoveUp, MoveDown,
-  Info, MapPin, Eye, FileText, Camera, Video, Layers, Map, Globe, Edit3
+  Plus, X, Loader2, Sparkles, Check, ChevronRight, ChevronLeft, 
+  Trash, UploadCloud, Building2, Star, Edit3
 } from 'lucide-react';
 import { formatCurrency, generateSlug, compressImage } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
@@ -42,8 +40,6 @@ const DISTRICTS_DATA: Record<string, string[]> = {
   "Ilha das Flores": ["Lajes das Flores", "Santa Cruz das Flores"],
   "Ilha do Corvo": ["Corvo"]
 };
-
-const TABS = ['Vivos', 'Destaques', 'Rascunhos', 'Arquivo'];
 
 const AdminImoveis: React.FC = () => {
   const { profile } = useAuth();
@@ -263,11 +259,9 @@ const AdminImoveis: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL MULTI-STEP */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] bg-[#1c2d51]/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
             <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between shrink-0">
                <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-[#1c2d51]">
@@ -287,15 +281,13 @@ const AdminImoveis: React.FC = () => {
                </button>
             </div>
 
-            {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-10 space-y-10">
-               {/* STEP 1: DADOS BÁSICOS */}
                {currentStep === 1 && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Título do Anúncio</label>
-                          <input required className="admin-input" value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} placeholder="Ex: Apartamento T2 com varanda e vista" />
+                          <input required className="admin-input" value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} placeholder="Ex: Apartamento T2 com varanda" />
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Referência Interna</label>
@@ -323,7 +315,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* STEP 2: CARACTERÍSTICAS E ÁREAS */}
                {currentStep === 2 && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -355,7 +346,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* STEP 3: LOCALIZAÇÃO - CAMPOS ATUALIZADOS */}
                {currentStep === 3 && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -370,7 +360,7 @@ const AdminImoveis: React.FC = () => {
                                setFormData({
                                  ...formData, 
                                  district: dist,
-                                 municipality: '', // Limpa concelho ao mudar distrito
+                                 municipality: '', 
                                  localizacao: {
                                    ...formData.localizacao!,
                                    distrito: dist,
@@ -410,26 +400,21 @@ const AdminImoveis: React.FC = () => {
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Freguesia</label>
-                          <input className="admin-input" value={formData.localizacao?.freguesia || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, freguesia: e.target.value}})} placeholder="Introduza a freguesia manualmente" />
+                          <input className="admin-input" value={formData.localizacao?.freguesia || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, freguesia: e.target.value}})} placeholder="Introduza a freguesia" />
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Código Postal</label>
                           <input className="admin-input" value={formData.localizacao?.codigo_postal || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, codigo_postal: e.target.value}})} placeholder="0000-000" />
                        </div>
-                       <div className="md:col-span-2 space-y-2">
-                          <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Morada Completa</label>
-                          <input className="admin-input" value={formData.localizacao?.morada || ''} onChange={e => setFormData({...formData, localizacao: {...formData.localizacao!, morada: e.target.value}})} />
-                       </div>
                     </div>
                  </div>
                )}
 
-               {/* STEP 4: FOTOS E MEDIA */}
                {currentStep === 4 && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                     <div onClick={() => document.getElementById('media-upload')?.click()} className="h-64 bg-slate-50 border-4 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-100 transition-all">
                        <UploadCloud size={48} strokeWidth={1} className="mb-4" />
-                       <p className="font-black text-xs uppercase tracking-widest">Arraste fotos ou clique para carregar</p>
+                       <p className="font-black text-xs uppercase tracking-widest">Clique para carregar fotos</p>
                        <input type="file" id="media-upload" multiple className="hidden" accept="image/*" onChange={handleMediaUpload} />
                     </div>
                     {tempMedia.length > 0 && (
@@ -441,7 +426,6 @@ const AdminImoveis: React.FC = () => {
                                  <button onClick={() => setTempMedia(prev => prev.filter(item => item.id !== m.id))} className="w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center"><Trash size={14}/></button>
                                  <button onClick={() => setTempMedia(prev => prev.map((item, i) => ({...item, is_cover: i === idx})))} className={`w-8 h-8 ${m.is_cover ? 'bg-amber-500' : 'bg-white/20'} text-white rounded-lg flex items-center justify-center`}><Star size={14} fill={m.is_cover ? 'currentColor' : 'none'}/></button>
                               </div>
-                              {m.is_cover && <div className="absolute top-2 left-2 bg-amber-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase">Capa</div>}
                            </div>
                          ))}
                       </div>
@@ -449,7 +433,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* STEP 5: DESCRIÇÃO E VALORES */}
                {currentStep === 5 && (
                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -484,30 +467,17 @@ const AdminImoveis: React.FC = () => {
                )}
             </div>
 
-            {/* Modal Footer */}
             <div className="px-10 py-8 border-t border-slate-50 bg-slate-50/30 flex justify-between items-center shrink-0">
-               <button 
-                 onClick={() => setCurrentStep(prev => prev - 1)} 
-                 disabled={currentStep === 1}
-                 className="px-8 py-3 text-slate-400 font-black text-xs uppercase tracking-widest hover:text-[#1c2d51] transition-all disabled:opacity-0"
-               >
+               <button onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 1} className="px-8 py-3 text-slate-400 font-black text-xs uppercase tracking-widest hover:text-[#1c2d51] transition-all disabled:opacity-0">
                   <div className="flex items-center gap-2"><ChevronLeft size={18}/> Anterior</div>
                </button>
-
                <div className="flex gap-4">
                   {currentStep < 5 ? (
-                    <button 
-                      onClick={() => setCurrentStep(prev => prev + 1)}
-                      className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl hover:-translate-y-0.5 transition-all"
-                    >
+                    <button onClick={() => setCurrentStep(prev => prev + 1)} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl transition-all">
                       Próximo <ChevronRight size={18}/>
                     </button>
                   ) : (
-                    <button 
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="bg-emerald-500 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-emerald-500/20 hover:-translate-y-0.5 transition-all disabled:opacity-50"
-                    >
+                    <button onClick={handleSave} disabled={isSaving} className="bg-emerald-500 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl transition-all disabled:opacity-50">
                       {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Check size={18}/>} Guardar Imóvel
                     </button>
                   )}
@@ -520,8 +490,6 @@ const AdminImoveis: React.FC = () => {
       <style>{`
         .admin-input { width: 100%; padding: 1.1rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
         .admin-input:focus { background: #fff; border-color: #357fb2; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   );
