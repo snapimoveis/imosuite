@@ -18,9 +18,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
     arrendamento_tipo: null,
     arrendamento_duracao_min_meses: null,
     disponivel_imediato: true,
-    // Fix: Added missing required top-level location properties
-    district: 'Lisboa',
-    municipality: 'Lisboa',
     localizacao: {
       pais: 'Portugal',
       distrito: 'Lisboa',
@@ -118,9 +115,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
     arrendamento_tipo: null,
     arrendamento_duracao_min_meses: null,
     disponivel_imediato: true,
-    // Fix: Added missing required top-level location properties
-    district: 'Lisboa',
-    municipality: 'Cascais',
     localizacao: {
       pais: 'Portugal',
       distrito: 'Lisboa',
@@ -218,9 +212,6 @@ export const MOCK_IMOVEIS: Imovel[] = [
     arrendamento_tipo: 'residencial',
     arrendamento_duracao_min_meses: 12,
     disponivel_imediato: true,
-    // Fix: Added missing required top-level location properties
-    district: 'Porto',
-    municipality: 'Porto',
     localizacao: {
       pais: 'Portugal',
       distrito: 'Porto',
