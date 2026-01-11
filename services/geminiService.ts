@@ -4,24 +4,34 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 /**
  * Gera descrições profissionais para imóveis em Portugal seguindo os critérios do ImoSuite.
  */
-export const generatePropertyDescription = async (property: any): Promise<{ curta: string; completa: string; hashtags_opcionais: string[] }> => {
-  // Always use {apiKey: process.env.API_KEY} for initialization
+export const generatePropertyDescription = async (property: any, tone: string = 'formal'): Promise<{ curta: string; completa: string; hashtags_opcionais: string[] }> => {
+  // Inicialização obrigatória dentro da função para garantir captura da API Key do ambiente
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const systemInstruction = `És um especialista em marketing imobiliário em Portugal. Escreves descrições persuasivas, realistas e profissionais em Português de Portugal (PT-PT). Nunca uses termos do Brasil (como banheiro, geladeira, aluguel, gramado). Usa obrigatoriamente: casa de banho, frigorífico, arrendamento, relvado.`;
+  const toneInstructions = {
+    formal: "Usa um tom sério, profissional e focado em factos, ideal para investidores e clientes corporativos.",
+    casual: "Usa um tom leve, acolhedor e emocional, destacando o conforto e o potencial para criar memórias em família.",
+    luxo: "Usa um tom sofisticado, exclusivo e aspiracional, enfatizando a nobreza dos materiais, o prestígio da localização e o estilo de vida premium."
+  }[tone] || "Usa um tom profissional.";
 
-  const prompt = `Tarefa: Gerar 2 versões de texto para um anúncio imobiliário em Portugal:
+  const systemInstruction = `És um especialista em marketing imobiliário em Portugal. Escreves descrições persuasivas, realistas e profissionais em Português de Portugal (PT-PT). 
+  Instrução de Estilo: ${toneInstructions}
+  Nunca uses termos do Brasil (como banheiro, geladeira, aluguel, gramado). Usa obrigatoriamente: casa de banho, frigorífico, arrendamento, relvado.`;
+
+  const prompt = `Tarefa: Gerar 2 versões de texto para um anúncio imobiliário em Portugal baseando-se nos dados reais fornecidos:
   1) Descrição curta (até 350 caracteres)
-  2) Descrição completa (600–1200 caracteres) em português de Portugal, com tom comercial profissional e formal.
+  2) Descrição completa (600–1200 caracteres) com estrutura comercial profissional.
+
+  Dados Relevantes para incluir:
+  - Localização: Referir a zona (${property.localizacao?.concelho || 'Portugal'}) de forma atrativa.
+  - Características: Valorizar os pontos fortes como ${property.caracteristicas?.join(', ') || 'as divisões do imóvel'}.
+  - Comodidades: Mencionar ${property.divisoes?.quartos} quartos, ${property.divisoes?.casas_banho} casas de banho e área de ${property.areas?.area_util_m2}m².
 
   Regras:
   - NÃO inventar dados. Se algo não estiver nos dados, não mencionar.
-  - NÃO prometer garantias (“o melhor”, “imperdível”) sem suporte.
   - Se certificado energético estiver ausente, escrever “Certificado energético: em processamento”.
-  - Se morada não for para expor, não mencionar rua/porta; usar apenas zona (freguesia/concelho).
   - Se operação for arrendamento, usar obrigatoriamente o termo "Arrendamento".
-  - Incluir CTA final (“Agende a sua visita” / “Peça mais informações”).
-  - Estrutura da descrição completa: Abertura com benefício principal, 3–6 bullets de destaques, Parágrafo final com localização + CTA.
+  - Output em JSON estrito.
 
   Dados do imóvel (JSON): ${JSON.stringify(property)}
 
@@ -29,7 +39,7 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
         systemInstruction,
@@ -37,31 +47,20 @@ export const generatePropertyDescription = async (property: any): Promise<{ curt
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            curta: { 
-              type: Type.STRING, 
-              description: "Descrição curta de até 350 caracteres." 
-            },
-            completa: { 
-              type: Type.STRING, 
-              description: "Descrição detalhada entre 600 e 1200 caracteres em PT-PT." 
-            },
-            hashtags_opcionais: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING },
-              description: "Hashtags relevantes para o mercado português."
-            },
+            curta: { type: Type.STRING },
+            completa: { type: Type.STRING },
+            hashtags_opcionais: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
           required: ["curta", "completa", "hashtags_opcionais"],
-          propertyOrdering: ["curta", "completa", "hashtags_opcionais"],
         },
       },
     });
     
-    const text = response.text;
-    return JSON.parse(text || "{}");
+    if (!response.text) throw new Error("A IA não retornou texto.");
+    return JSON.parse(response.text.trim());
   } catch (error: any) {
     console.error("Gemini AI Error:", error);
-    throw new Error("Falha ao gerar texto com IA. Verifique os dados do imóvel.");
+    throw new Error("Erro na IA: Certifique-se que a variável 'API_KEY' está configurada no Vercel.");
   }
 };
 
