@@ -88,6 +88,8 @@ export interface Imovel {
   arrendamento_tipo: 'residencial' | 'temporario' | 'ferias' | null;
   arrendamento_duracao_min_meses: number | null;
   disponivel_imediato: boolean;
+  district: string;
+  municipality: string;
   localizacao: {
     pais: string;
     distrito: string;
