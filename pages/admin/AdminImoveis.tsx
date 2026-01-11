@@ -50,7 +50,15 @@ const AdminImoveis: React.FC = () => {
   const openModal = async (imovel: Imovel | null) => {
     setCurrentStep(1);
     if (imovel) {
-      setEditingImovel({ ...imovel });
+      // Garante que o objeto tem a estrutura mínima para evitar erros de undefined na IA
+      setEditingImovel({ 
+        ...imovel,
+        descricao: imovel.descricao || { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null },
+        localizacao: imovel.localizacao || { pais: 'Portugal', distrito: 'Lisboa', concelho: 'Lisboa', freguesia: '', codigo_postal: '', morada: '', porta: '', lat: null, lng: null, expor_morada: false },
+        financeiro: imovel.financeiro || { preco_venda: 0, preco_arrendamento: null, negociavel: true, comissao_incluida: true, condominio_mensal: null, imi_anual: null, caucao_meses: null, despesas_incluidas: [] },
+        areas: imovel.areas || { area_util_m2: 0, area_bruta_m2: null, area_terreno_m2: null, pisos: 1, andar: null, elevador: false },
+        divisoes: imovel.divisoes || { quartos: 2, casas_banho: 1, garagem: { tem: false, lugares: 0 }, varanda: false, arrecadacao: false, piscina: false, jardim: false }
+      });
       const media = await PropertyService.getPropertyMedia(profile!.tenantId, imovel.id);
       setMediaItems(media);
     } else {
@@ -67,8 +75,7 @@ const AdminImoveis: React.FC = () => {
         divisoes: { quartos: 2, casas_banho: 1, garagem: { tem: false, lugares: 0 }, varanda: false, arrecadacao: false, piscina: false, jardim: false },
         areas: { area_util_m2: 0, area_bruta_m2: null, area_terreno_m2: null, pisos: 1, andar: null, elevador: false },
         descricao: { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null },
-        caracteristicas: [],
-        certificacao: { certificado_energetico: 'A', licenca_utilizacao: '', licenca_utilizacao_numero: '', licenca_utilizacao_data: '', isento_licenca_utilizacao: false, estado_licenca: 'sim' }
+        caracteristicas: []
       });
       setMediaItems([]);
     }
@@ -100,19 +107,19 @@ const AdminImoveis: React.FC = () => {
     setIsGenerating(true);
     try {
       const desc = await generatePropertyDescription(editingImovel);
-      setEditingImovel({
-        ...editingImovel,
+      setEditingImovel(prev => ({
+        ...prev!,
         descricao: {
-          ...editingImovel.descricao!,
+          ...(prev?.descricao || { gerada_por_ia: false, ultima_geracao_ia_at: null }),
           curta: desc.curta,
           completa_md: desc.completa,
           gerada_por_ia: true,
           ultima_geracao_ia_at: new Date()
         }
-      });
+      }));
     } catch (err) {
       console.error(err);
-      alert("Erro ao gerar descrição com IA. Verifique se a sua API Key está configurada corretamente.");
+      alert("Erro ao gerar descrição com IA.");
     } finally {
       setIsGenerating(false);
     }
@@ -215,7 +222,7 @@ const AdminImoveis: React.FC = () => {
         )}
       </div>
 
-      {/* MODAL 10 PASSOS - PADRÃO PARA NOVO E EDIÇÃO */}
+      {/* MODAL 10 PASSOS */}
       {isModalOpen && editingImovel && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
@@ -237,6 +244,7 @@ const AdminImoveis: React.FC = () => {
 
             {/* Body Modal */}
             <div className="flex-1 overflow-y-auto p-10">
+               {/* PASSO 1: INFORMAÇÃO BASE */}
                {currentStep === 1 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Info size={16} className="text-blue-500"/> Passo 1: Informação Base</h4>
@@ -269,6 +277,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 2: PREÇO */}
                {currentStep === 2 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Euro size={16} className="text-blue-500"/> Passo 2: Condições Financeiras</h4>
@@ -289,6 +298,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 3: LOCALIZAÇÃO */}
                {currentStep === 3 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin size={16} className="text-blue-500"/> Passo 3: Localização</h4>
@@ -313,6 +323,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 4: ÁREAS */}
                {currentStep === 4 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Square size={16} className="text-blue-500"/> Passo 4: Áreas e Pisos</h4>
@@ -333,6 +344,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 5: DIVISÕES */}
                {currentStep === 5 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Home size={16} className="text-blue-500"/> Passo 5: Divisões</h4>
@@ -343,6 +355,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 6: DESCRIÇÃO E IA */}
                {currentStep === 6 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <div className="flex justify-between items-center">
@@ -355,6 +368,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 7: CARACTERÍSTICAS */}
                {currentStep === 7 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><LayoutList size={16} className="text-blue-500"/> Passo 7: Características</h4>
@@ -372,12 +386,13 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 8: CERTIFICAÇÃO */}
                {currentStep === 8 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Shield size={16} className="text-blue-500"/> Passo 8: Certificação Energética</h4>
                     <div className="flex flex-wrap gap-3">
                        {['A+', 'A', 'B', 'B-', 'C', 'D', 'E', 'F', 'Isento'].map(grade => (
-                         <button key={grade} onClick={() => setEditingImovel({...editingImovel, certificacao: {...editingImovel.certificacao!, certificado_energetico: grade}})} className={`w-14 h-14 rounded-xl border-2 font-black transition-all flex items-center justify-center ${editingImovel.certificacao?.certificado_energetico === grade ? 'bg-emerald-50 border-emerald-500 text-white shadow-lg' : 'border-slate-100 text-slate-400'}`}>
+                         <button key={grade} onClick={() => setEditingImovel({...editingImovel, certificacao: {...editingImovel.certificacao!, certificado_energetico: grade}})} className={`w-14 h-14 rounded-xl border-2 font-black transition-all flex items-center justify-center ${editingImovel.certificacao?.certificado_energetico === grade ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'border-slate-100 text-slate-400'}`}>
                            {grade}
                          </button>
                        ))}
@@ -385,6 +400,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 9: GALERIA */}
                {currentStep === 9 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Camera size={16} className="text-blue-500"/> Passo 9: Galeria de Fotos</h4>
@@ -407,6 +423,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
+               {/* PASSO 10: PUBLICAÇÃO */}
                {currentStep === 10 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Passo 10: Publicação</h4>

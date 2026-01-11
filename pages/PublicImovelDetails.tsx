@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
@@ -7,7 +6,7 @@ import { Tenant, Imovel, ImovelMedia } from '../types';
 import { LeadService } from '../services/leadService';
 import { PropertyService } from '../services/propertyService';
 import { 
-  MapPin, Bed, Bath, Square, Loader2, ChevronLeft, 
+  MapPin, Bed, Bath, Square, Loader2, ChevronLeft, ChevronRight,
   Send, Check, Menu, X, MessageCircle, Instagram, Facebook, Linkedin, Building2, Info, Camera
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
@@ -59,8 +58,6 @@ const PublicImovelDetails: React.FC = () => {
           if (!iSnap.empty) {
             const data = { id: iSnap.docs[0].id, ...(iSnap.docs[0].data() as any) } as Imovel;
             setImovel(data);
-            
-            // BUSCA OBRIGATÓRIA DE TODAS AS FOTOS NA SUBCOLEÇÃO "media"
             const propertyMedia = await PropertyService.getPropertyMedia(tData.id, data.id);
             setMedia(propertyMedia);
           }
@@ -73,6 +70,9 @@ const PublicImovelDetails: React.FC = () => {
     };
     fetchData();
   }, [agencySlug, imovelSlug]);
+
+  const nextPhoto = () => setActiveImage(prev => (prev + 1) % displayImages.length);
+  const prevPhoto = () => setActiveImage(prev => (prev - 1 + displayImages.length) % displayImages.length);
 
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,8 +99,6 @@ const PublicImovelDetails: React.FC = () => {
   if (!imovel || !tenant) return <div className="h-screen flex items-center justify-center font-black text-slate-300 uppercase">Imóvel não encontrado</div>;
 
   const cms = tenant.cms || DEFAULT_TENANT_CMS;
-  
-  // Lista de imagens final: Prioriza as fotos da subcoleção, fallback para cover_url
   const displayImages = media.length > 0 
     ? media 
     : (imovel.media as any)?.cover_url 
@@ -132,15 +130,39 @@ const PublicImovelDetails: React.FC = () => {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Coluna Galeria */}
           <div className="lg:col-span-8 space-y-6">
+            {/* CARROSSEL PRINCIPAL */}
             <div className="relative aspect-[16/9] rounded-[3.5rem] overflow-hidden bg-slate-100 shadow-2xl group">
-               <img src={displayImages[activeImage]?.url} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={imovel.titulo} />
+               <img 
+                 src={displayImages[activeImage]?.url} 
+                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+                 alt={imovel.titulo} 
+               />
+               
+               {/* Setas de Navegação */}
+               {displayImages.length > 1 && (
+                 <>
+                   <button 
+                     onClick={(e) => { e.preventDefault(); prevPhoto(); }}
+                     className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-xl"
+                   >
+                     <ChevronLeft size={28} />
+                   </button>
+                   <button 
+                     onClick={(e) => { e.preventDefault(); nextPhoto(); }}
+                     className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-xl"
+                   >
+                     <ChevronRight size={28} />
+                   </button>
+                 </>
+               )}
+
                <div className="absolute top-8 left-8">
                   <span className="bg-white/90 backdrop-blur px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#1c2d51] shadow-lg">
                     {imovel.operacao}
                   </span>
                </div>
+               
                {displayImages.length > 1 && (
                  <div className="absolute bottom-8 right-8 bg-black/40 backdrop-blur text-white px-4 py-2 rounded-full text-[10px] font-black flex items-center gap-2">
                     <Camera size={14}/> {activeImage + 1} / {displayImages.length}
@@ -148,7 +170,7 @@ const PublicImovelDetails: React.FC = () => {
                )}
             </div>
             
-            {/* Miniaturas */}
+            {/* MINIATURAS (CARROSSEL INFERIOR) */}
             {displayImages.length > 1 && (
               <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                 {displayImages.map((img, idx) => (
@@ -167,20 +189,20 @@ const PublicImovelDetails: React.FC = () => {
                <div>
                  <h1 className="text-4xl md:text-6xl font-black text-[#1c2d51] tracking-tighter leading-tight mb-4">{imovel.titulo}</h1>
                  <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest">
-                    <MapPin size={18} className="text-blue-500" /> {imovel.localizacao.concelho}, {imovel.localizacao.distrito}
+                    <MapPin size={18} className="text-blue-500" /> {imovel.localizacao.concelho.toUpperCase()}, {imovel.localizacao.distrito.toUpperCase()}
                  </div>
                </div>
 
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <SpecBox icon={<Bed size={22}/>} label="Quartos" val={imovel.divisoes.quartos || 'N/A'} />
-                  <SpecBox icon={<Bath size={22}/>} label="Banheiros" val={imovel.divisoes.casas_banho || 'N/A'} />
+                  <SpecBox icon={<Bath size={22}/>} label="Banhos" val={imovel.divisoes.casas_banho || 'N/A'} />
                   <SpecBox icon={<Square size={22}/>} label="Área Útil" val={imovel.areas.area_util_m2 ? `${imovel.areas.area_util_m2}m²` : 'Sob Consulta'} />
                   <SpecBox icon={<Building2 size={22}/>} label="Tipologia" val={imovel.tipologia} />
                </div>
 
                <div className="bg-slate-50/50 p-10 md:p-14 rounded-[4rem] border border-slate-100">
                   <h3 className="text-2xl font-black text-[#1c2d51] uppercase tracking-tighter mb-8 flex items-center gap-3">
-                    <Info size={28} className="text-blue-500" /> Descrição Completa
+                    <Info size={28} className="text-blue-500" /> Descrição
                   </h3>
                   <div className="prose prose-slate max-w-none text-slate-600 font-medium leading-relaxed whitespace-pre-line text-lg">
                     {imovel.descricao.completa_md || imovel.descricao.curta || "Sem descrição disponível."}
@@ -189,7 +211,6 @@ const PublicImovelDetails: React.FC = () => {
             </div>
           </div>
 
-          {/* Coluna Sidebar */}
           <div className="lg:col-span-4 space-y-6">
             <div className="sticky top-28 space-y-6">
               <div className="bg-[#1c2d51] p-12 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden group">
@@ -225,7 +246,7 @@ const PublicImovelDetails: React.FC = () => {
                       <label className="flex items-start gap-4 cursor-pointer pt-4 group">
                          <input type="checkbox" required checked={gdprConsent} onChange={e => setGdprConsent(e.target.checked)} className="mt-1 w-5 h-5 rounded-lg border-slate-200 text-[#1c2d51] focus:ring-[#1c2d51]" />
                          <span className="text-[10px] font-medium text-slate-400 leading-relaxed group-hover:text-slate-600 transition-colors">
-                           Aceito o tratamento dos meus dados para fins de contacto comercial conforme a <Link to="/privacidade" className="text-blue-500 underline">Política de Privacidade</Link>.
+                           Aceito o tratamento dos meus dados para contacto comercial.
                          </span>
                       </label>
 
