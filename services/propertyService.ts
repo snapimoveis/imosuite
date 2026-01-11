@@ -57,13 +57,11 @@ export const PropertyService = {
     if (!tenantId || tenantId === 'pending') throw new Error("Sessão expirada ou agência inválida.");
     
     const propertiesRef = collection(db, "tenants", tenantId, "properties");
-    
     const coverImage = mediaItems.find(m => m.is_cover) || mediaItems[0];
 
     const finalData = prepareData({
       ...propertyData,
-      tipology: propertyData.tipologia || 'T0',
-      tipologia: propertyData.tipologia || 'T0',
+      tipologia: propertyData.tipologia || propertyData.tipology || 'T0',
       tenant_id: tenantId,
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
@@ -73,7 +71,6 @@ export const PropertyService = {
         cover_media_id: coverImage?.id || null,
         cover_url: coverImage?.url || null, // Guardamos apenas o URL da capa para economia de espaço
         total: mediaItems.length
-        // Not including 'items' here to stay under 1MB limit
       }
     }, false);
 
@@ -104,7 +101,6 @@ export const PropertyService = {
     
     const cleanUpdates = prepareData({
       ...updates,
-      tipology: updates.tipologia || updates.tipology || 'T0',
       tipologia: updates.tipologia || updates.tipology || 'T0',
       ...(mediaItems && {
         media: {

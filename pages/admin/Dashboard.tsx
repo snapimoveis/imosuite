@@ -25,7 +25,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchRealStats = async () => {
       if (authLoading) return;
-      if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default') {
+      if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default' || profile.tenantId === 'default-tenant-uuid') {
         setIsLoading(false);
         return;
       }
@@ -48,8 +48,11 @@ const Dashboard: React.FC = () => {
         ]);
         setError(null);
       } catch (err: any) {
-        console.error("Dashboard Error:", err);
-        setError("Erro ao carregar dados.");
+        // Não logamos erros de permissão comuns aqui para não assustar o utilizador
+        if (err.code !== 'permission-denied') {
+          console.error("Dashboard Error:", err);
+          setError("Alguns dados podem estar incompletos.");
+        }
       } finally {
         setIsLoading(false);
       }

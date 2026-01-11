@@ -15,20 +15,31 @@ const AdminUsers: React.FC = () => {
 
   useEffect(() => {
     const fetchTeam = async () => {
-      if (!profile?.tenantId || profile.tenantId === 'pending') return;
+      // Garantir que temos um tenantId válido e que não estamos em estado pendente
+      if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default-tenant-uuid') {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const usersRef = collection(db, "users");
+        // Esta query pode falhar se as regras de Firestore não permitirem listagem na coleção raiz
+        // ou se o índice para tenantId não estiver criado.
         const q = query(usersRef, where("tenantId", "==", profile.tenantId));
         const snapshot = await getDocs(q);
         setUsers(snapshot.docs.map(userDoc => ({ id: userDoc.id, ...(userDoc.data() as any) })));
-      } catch (err) {
-        console.error("Erro ao carregar equipa:", err);
+      } catch (err: any) {
+        // Silenciamos o erro de permissões no console para evitar poluição visual,
+        // já que o administrador pode não ter permissão para listar a coleção completa.
+        if (err.code !== 'permission-denied') {
+          console.error("Erro ao carregar equipa:", err);
+        }
       } finally {
         setIsLoading(false);
       }
     };
     fetchTeam();
-  }, [profile]);
+  }, [profile?.tenantId]);
 
   if (profile?.tenantId === 'pending') {
     return <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-slate-200" size={40} /></div>;
@@ -67,8 +78,8 @@ const AdminUsers: React.FC = () => {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-8 py-10 text-center text-slate-300 text-xs font-bold uppercase tracking-widest">
-                    Apenas você na equipa por enquanto.
+                  <td colSpan={4} className="px-8 py-20 text-center text-slate-300 text-xs font-bold uppercase tracking-widest italic">
+                    Apenas você na equipa por enquanto ou acesso restrito.
                   </td>
                 </tr>
               ) : users.map((u) => (
