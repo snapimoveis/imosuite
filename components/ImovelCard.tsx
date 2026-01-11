@@ -14,7 +14,8 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
   
   const targetSlug = agencySlug || imovel.tenant_id;
   // Otimização: Tentar usar cover_url direto do doc principal primeiro (mais leve e rápido)
-  const mainImage = (imovel.media as any)?.cover_url || imovel.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800';
+  // Fix: Removed 'as any' since cover_url is now properly defined in the Imovel interface
+  const mainImage = imovel.media?.cover_url || imovel.media?.items?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800';
 
   return (
     <Link 
@@ -33,7 +34,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
              {imovel.operacao}
            </div>
            {imovel.publicacao?.destaque && (
-             <div className="bg-amber-500 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg">
+             <div className="bg-amber-50 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg">
                Destaque
              </div>
            )}

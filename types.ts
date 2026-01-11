@@ -144,6 +144,8 @@ export interface Imovel {
   };
   media: {
     cover_media_id: string | null;
+    // Fix: Adding cover_url property to explicitly support the optimized image field used in the UI
+    cover_url?: string | null;
     total: number;
     items?: ImovelMedia[];
   };
