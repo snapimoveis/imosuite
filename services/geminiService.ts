@@ -1,7 +1,7 @@
-
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
 export const generatePropertyDescription = async (property: any, tone: string = 'formal'): Promise<{ curta: string; completa: string }> => {
+  // Inicialização dentro da função conforme diretrizes para garantir acesso à API_KEY
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const toneInstructions = {
@@ -18,7 +18,7 @@ export const generatePropertyDescription = async (property: any, tone: string = 
   - Usa parágrafos para a descrição completa.
   Instrução de Estilo: ${toneInstructions}`;
 
-  const prompt = `Gera duas descrições para este imóvel: ${JSON.stringify(property)}. 
+  const prompt = `Gera duas descrições (curta e completa) para este imóvel: ${JSON.stringify(property)}. 
   Retorna estritamente um objeto JSON com os campos "curta" e "completa".`;
 
   try {
@@ -42,14 +42,14 @@ export const generatePropertyDescription = async (property: any, tone: string = 
     const text = response.text;
     if (!text) throw new Error("A IA não retornou conteúdo.");
     
-    // Limpeza de possíveis markdown wrappers caso o modelo ignore o mimeType (raro mas acontece)
+    // Limpeza de possíveis markdown wrappers caso o modelo ignore o mimeType
     const jsonString = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(jsonString);
   } catch (error) {
     console.error("Erro Gemini:", error);
     return {
       curta: "Imóvel de excelência com ótimas áreas e localização privilegiada.",
-      completa: "Este imóvel destaca-se pelo seu excelente estado de conservação e áreas generosas. Localizado numa zona calma e com bons acessos, oferece o conforto ideal para a sua família.\n\nComposto por divisões bem iluminadas e acabamentos de qualidade, esta é a oportunidade que procurava no mercado. Agende já a sua visita."
+      completa: "Este imóvel destaca-se pelo seu excelente estado de conservação e áreas generosas. Localizado numa zona calma e com bons acessos, oferece o conforto ideal para a sua família.\n\nAgende já a sua visita para conhecer este imóvel único."
     };
   }
 };
@@ -59,9 +59,9 @@ export const generateAgencySlogan = async (agencyName: string): Promise<string> 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Gera um slogan curto e memorável em PT-PT para a imobiliária "${agencyName}". Retorna apenas o texto do slogan.`,
+      contents: `Gera um slogan curto e impactante em PT-PT para a imobiliária "${agencyName}". Retorna apenas o texto do slogan.`,
     });
-    return response.text?.trim() || "A sua agência de confiança.";
+    return response.text?.trim() || "A sua confiança é o nosso compromisso.";
   } catch { 
     return "Excelência no mercado imobiliário."; 
   }
