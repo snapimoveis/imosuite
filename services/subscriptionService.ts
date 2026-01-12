@@ -11,30 +11,59 @@ export const StripePlans = {
 export const SubscriptionService = {
   /**
    * Verifica se o tenant está num estado válido (Trial ou Ativo)
-   * Adicionado suporte para bypass de Administrador Master
    */
   checkAccess: (tenant: Tenant, userEmail?: string | null): { hasAccess: boolean; isTrial: boolean; daysLeft: number } => {
-    // BYPASS PARA ADMINISTRADOR MASTER
+    // 1. BYPASS PARA ADMINISTRADOR MASTER
     if (userEmail === 'snapimoveis@gmail.com') {
       return { hasAccess: true, isTrial: true, daysLeft: 999 };
     }
 
-    if (!tenant.subscription) return { hasAccess: false, isTrial: false, daysLeft: 0 };
-    
+    // 2. SEGURANÇA PARA NOVAS CONTAS (Evitar race conditions no Firestore)
+    // Se a subscrição ainda não existe mas o tenant foi criado agora mesmo (últimos 30 min)
+    const createdAt = tenant.created_at?.toDate?.() || new Date(tenant.created_at);
     const now = new Date();
-    const trialEnd = tenant.subscription.trial_ends_at?.toDate?.() || new Date(tenant.subscription.trial_ends_at);
+    const diffCreation = now.getTime() - createdAt.getTime();
+    
+    if (!tenant.subscription && diffCreation < 1000 * 60 * 30) {
+      return { hasAccess: true, isTrial: true, daysLeft: 14 };
+    }
+
+    // 3. VERIFICAÇÃO DE ASSINATURA EXISTENTE
+    if (!tenant.subscription) {
+      return { hasAccess: false, isTrial: false, daysLeft: 0 };
+    }
+    
+    // Tratamento robusto da data de fim de trial
+    let trialEnd: Date;
+    const rawEnd = tenant.subscription.trial_ends_at;
+    
+    if (rawEnd?.toDate) {
+      trialEnd = rawEnd.toDate();
+    } else if (rawEnd instanceof Date) {
+      trialEnd = rawEnd;
+    } else if (typeof rawEnd === 'string' || typeof rawEnd === 'number') {
+      trialEnd = new Date(rawEnd);
+    } else {
+      // Fallback: se não houver data válida, usamos 14 dias a partir da criação
+      trialEnd = new Date(createdAt);
+      trialEnd.setDate(trialEnd.getDate() + 14);
+    }
     
     const isTrial = tenant.subscription.status === 'trialing';
     const isActive = ['active', 'past_due'].includes(tenant.subscription.status);
     
+    // Cálculo preciso de dias restantes
     const diffTime = trialEnd.getTime() - now.getTime();
     const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // Tem acesso se estiver no trial (mesmo com dias negativos, dependendo da sua tolerância)
-    // ou se tiver uma subscrição ativa.
-    const hasAccess = (isTrial && daysLeft > 0) || isActive;
+    // Tem acesso se for trial com dias restantes OU se for conta paga ativa
+    const hasAccess = (isTrial && daysLeft >= 0) || isActive;
 
-    return { hasAccess, isTrial, daysLeft: Math.max(0, daysLeft) };
+    return { 
+      hasAccess, 
+      isTrial, 
+      daysLeft: Math.max(0, daysLeft) 
+    };
   },
 
   /**
@@ -49,14 +78,13 @@ export const SubscriptionService = {
       cancel_url: window.location.origin + "/#/admin/billing?session=cancel",
       allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: 0, // Como já teve trial no tenant, aqui cobramos direto
+        trial_period_days: 0,
         metadata: {
             source: 'imosuite_app'
         }
       }
     });
 
-    // Esperar pelo URL de redirecionamento do Stripe gerado pela extensão
     onSnapshot(docRef, (snap) => {
       const { error, url } = snap.data() as any;
       if (error) {
