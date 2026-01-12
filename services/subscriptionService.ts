@@ -4,11 +4,12 @@ import { db } from "../lib/firebase";
 import { Tenant } from "../types";
 
 /**
- * IMPORTANTE: Substitua estes IDs pelos IDs reais do seu Dashboard do Stripe (Produto -> Preço)
+ * IMPORTANTE: Use apenas IDs que começam por 'price_'. 
+ * IDs que começam por 'prod_' NÃO funcionam aqui.
  */
 export const StripePlans = {
-  starter: "prod_Tm7LyBsSaBGIz2", // Preço: 29€
-  business: "prod_Tm7MKWkIVoxLvP" // Preço: 49€
+  starter: "price_1StarterID_ReplaceMe", // Substitua pelo ID real: price_...
+  business: "price_1BusinessID_ReplaceMe" // Substitua pelo ID real: price_...
 };
 
 export const SubscriptionService = {
@@ -79,9 +80,13 @@ export const SubscriptionService = {
   createCheckoutSession: async (userId: string, priceId: string) => {
     if (!userId) throw new Error("Utilizador não autenticado.");
     
+    // Validação de segurança para evitar o erro de Product vs Price ID
+    if (!priceId.startsWith('price_')) {
+      throw new Error(`ID Inválido: enviou '${priceId}'. O ID deve começar com 'price_'. Verifique o Dashboard do Stripe no separador Preços.`);
+    }
+
     console.log(`Iniciando checkout para o user ${userId} com o preço ${priceId}`);
 
-    // Referência para a coleção onde a extensão Stripe ouve novos pedidos
     const checkoutSessionsRef = collection(db, "users", userId, "checkout_sessions");
     
     try {
@@ -99,18 +104,27 @@ export const SubscriptionService = {
       });
 
       return new Promise((resolve, reject) => {
+        // Timeout de 15 segundos para evitar ficar "congelado" se a extensão não responder
+        const timeout = setTimeout(() => {
+          unsubscribe();
+          reject(new Error("A extensão do Stripe não respondeu. Verifique se a extensão está instalada no Firebase e se a API Key do Stripe é válida."));
+        }, 15000);
+
         const unsubscribe = onSnapshot(docRef, (snap) => {
           const data = snap.data() as any;
           if (data?.error) {
+            clearTimeout(timeout);
             unsubscribe();
             reject(new Error(data.error.message));
           }
           if (data?.url) {
+            clearTimeout(timeout);
             unsubscribe();
             window.location.assign(data.url);
             resolve(true);
           }
         }, (err) => {
+          clearTimeout(timeout);
           unsubscribe();
           reject(err);
         });
