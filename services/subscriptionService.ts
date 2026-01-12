@@ -7,8 +7,8 @@ import { Tenant } from "../types";
  * IMPORTANTE: Substitua estes IDs pelos IDs reais do seu Dashboard do Stripe (Produto -> Preço)
  */
 export const StripePlans = {
-  starter: "price_1StarterID_ReplaceMe", // Preço: 29€
-  business: "price_1BusinessID_ReplaceMe" // Preço: 49€
+  starter: "prod_Tm7LyBsSaBGIz2", // Preço: 29€
+  business: "prod_Tm7MKWkIVoxLvP" // Preço: 49€
 };
 
 export const SubscriptionService = {
