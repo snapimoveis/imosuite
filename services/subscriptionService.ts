@@ -4,8 +4,8 @@ import { db } from "../lib/firebase";
 import { Tenant } from "../types";
 
 export const StripePlans = {
-  starter: "price_1StarterID_ReplaceMe", // Substitua pelo ID real do Stripe (29€)
-  business: "price_1BusinessID_ReplaceMe" // Substitua pelo ID real do Stripe (49€)
+  starter: "price_1SoZ6p4YnWSDKFky1MPxkfES", // Substitua pelo ID real do Stripe (29€)
+  business: "price_1SoZ7q4YnWSDKFkyVKJ2dc0f" // Substitua pelo ID real do Stripe (49€)
 };
 
 export const SubscriptionService = {
