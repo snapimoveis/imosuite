@@ -14,8 +14,8 @@ const STRIPE_ROOT_COLLECTION = "customers";
  * Verifique se está em Test Mode (price_...test...) ou Live Mode.
  */
 export const StripePlans = {
-  starter: "price_1StarterID_ReplaceMe", 
-  business: "price_1BusinessID_ReplaceMe" 
+starter: "price_1SoZ6p4YnWSDKFky1MPxkfES", // Substitua pelo ID real: price_...
+business: "price_1SoZ7q4YnWSDKFkyVKJ2dc0f" // Substitua pelo ID real: price_...
 };
 
 export const SubscriptionService = {
