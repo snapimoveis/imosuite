@@ -40,7 +40,6 @@ const AdminSettings: React.FC = () => {
   const [isGeneratingSlogan, setIsGeneratingSlogan] = useState(false);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const heroInputRef = useRef<HTMLInputElement>(null);
   
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
@@ -151,7 +150,7 @@ const AdminSettings: React.FC = () => {
                  </div>
                  <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-4 block">Logótipo da Agência</label>
-                    <div onClick={() => logoInputRef.current?.click()} className="h-64 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6 relative group">
+                    <div onClick={() => logoInputRef.current?.click()} className="h-64 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6 relative group">
                        {localTenant.logo_url ? (
                          <>
                            <img src={localTenant.logo_url} className="h-full w-auto object-contain" alt="Logo" />
@@ -168,17 +167,6 @@ const AdminSettings: React.FC = () => {
                     <p className="text-[9px] font-bold text-slate-400 uppercase mt-3 text-center">Recomendamos logótipos em PNG transparente.</p>
                  </div>
               </div>
-              
-              {!isBusiness && (
-                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 flex flex-col items-center text-center gap-4">
-                  <Lock className="text-slate-300" size={24}/>
-                  <div>
-                    <p className="text-xs font-black uppercase text-[#1c2d51]">Remover Branding ImoSuite</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Apenas disponível no plano Business.</p>
-                  </div>
-                  <Link to="/planos" className="text-blue-500 font-black text-[10px] uppercase tracking-widest border-b border-blue-500 pb-0.5">Fazer Upgrade</Link>
-                </div>
-              )}
             </div>
           )}
 
@@ -205,9 +193,8 @@ const AdminSettings: React.FC = () => {
             </div>
           )}
           
-          {/* Websites & Menus can be kept similar but using generic colors if needed */}
           {activeTab === 'website' && (
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
               <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Catálogo de Templates</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {TEMPLATE_OPTIONS.map((tmpl) => (
@@ -220,6 +207,7 @@ const AdminSettings: React.FC = () => {
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-8">{tmpl.desc}</p>
                     <div className="flex gap-2">
                        <button onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id })} className="flex-1 bg-[#1c2d51] text-white py-3 rounded-xl text-[10px] font-black uppercase">Selecionar</button>
+                       <button onClick={() => setPreviewingTemplate(tmpl.id)} className="px-4 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-[#1c2d51] transition-colors"><Eye size={16}/></button>
                     </div>
                   </div>
                 ))}
@@ -228,6 +216,19 @@ const AdminSettings: React.FC = () => {
           )}
         </div>
       </div>
+
+      {previewingTemplate && (
+        <TemplatePreviewModal 
+          templateId={previewingTemplate} 
+          onClose={() => setPreviewingTemplate(null)} 
+          onSelect={() => { 
+            const templateId = previewingTemplate;
+            if (templateId) setLocalTenant({ ...localTenant, template_id: templateId }); 
+            setPreviewingTemplate(null); 
+          }} 
+          tenantData={localTenant}
+        />
+      )}
 
       <style>{`
         .admin-input-settings { width: 100%; padding: 1.25rem 1.5rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.5rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; }
@@ -243,5 +244,80 @@ const TabLink = ({ active, icon, label, tab }: { active: boolean, icon: any, lab
     <div className={`font-black text-[11px] uppercase tracking-tighter leading-none ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
   </Link>
 );
+
+const TemplatePreviewModal = ({ templateId, onClose, onSelect, tenantData }: any) => {
+  const [page, setPage] = useState('home');
+  return (
+    <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col animate-in fade-in duration-300">
+      <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0">
+        <button onClick={onClose} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"><ChevronLeft size={16}/> Voltar</button>
+        <div className="bg-slate-50 p-1.5 rounded-2xl flex gap-1">
+           {['home', 'catalogo', 'detalhe'].map(p => (
+             <button key={p} onClick={() => setPage(p)} className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${page === p ? 'bg-white text-[#1c2d51] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{p}</button>
+           ))}
+        </div>
+        <button onClick={onSelect} className="bg-[#1c2d51] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl">Aplicar Template</button>
+      </header>
+      <div className="flex-1 overflow-y-auto bg-slate-100 p-8 sm:p-12 lg:p-20">
+        <div className="max-w-[1440px] mx-auto min-h-full bg-white shadow-2xl rounded-[3rem] overflow-hidden">
+          <PreviewEngine templateId={templateId} page={page} tenant={tenantData} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PreviewEngine = ({ templateId, page, tenant }: any) => {
+  const dummyProps = [
+    { id: 1, title: 'Apartamento T3 com Vista Rio', price: 425000, loc: 'Lisboa', img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' },
+    { id: 2, title: 'Moradia V4 com Piscina', price: 950000, loc: 'Cascais', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-white">
+       <nav className="h-24 px-10 border-b border-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#1c2d51] flex items-center justify-center text-white text-[10px] font-black">IS</div>
+            <span className="font-black text-xl text-[#1c2d51]">{tenant.nome}</span>
+          </div>
+          <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <span>Início</span>
+            <span>Imóveis</span>
+            <span>Contactos</span>
+          </div>
+       </nav>
+
+       <main>
+          {page === 'home' && (
+            <>
+              <header className="py-32 px-10 text-center bg-slate-50 relative overflow-hidden">
+                 <div className="relative z-10">
+                   <h1 className={`text-7xl font-black text-[#1c2d51] mb-6 ${templateId === 'prestige' ? 'italic' : ''}`}>{tenant.nome}</h1>
+                   <p className="text-xl text-slate-400 font-medium max-w-xl mx-auto">{tenant.slogan || 'Encontre o seu próximo lar.'}</p>
+                 </div>
+              </header>
+              <div className="p-20 grid grid-cols-2 gap-10">
+                {dummyProps.map(p => (
+                  <div key={p.id} className="group cursor-pointer">
+                    <div className="aspect-video bg-slate-100 rounded-[2.5rem] overflow-hidden mb-6">
+                      <img src={p.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    </div>
+                    <h3 className="text-2xl font-black text-[#1c2d51]">{p.title}</h3>
+                    <p className="text-[#357fb2] font-black text-lg">{formatCurrency(p.price)}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {page !== 'home' && (
+            <div className="p-20 flex flex-col items-center justify-center text-slate-300 space-y-4">
+              <Loader2 className="animate-spin" />
+              <p className="font-black text-xs uppercase tracking-widest">A renderizar visualização de {page}...</p>
+            </div>
+          )}
+       </main>
+    </div>
+  );
+};
 
 export default AdminSettings;

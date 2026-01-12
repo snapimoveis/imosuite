@@ -7,7 +7,7 @@ import { ADMIN_NAV_ITEMS } from '../../constants.tsx';
 import { 
   LogOut, Bell, ChevronLeft, ChevronRight, User as UserIcon, 
   Settings, Building2, BellRing, ChevronDown, CheckCircle2, 
-  X, AlertTriangle, CreditCard, Lock, Sparkles, Zap
+  X, AlertTriangle, CreditCard, Lock, Sparkles, Zap, User
 } from 'lucide-react';
 import { collection, query, where, onSnapshot } from '@firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -21,6 +21,7 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const { hasAccess, isTrial, daysLeft } = SubscriptionService.checkAccess(tenant, user?.email);
 
@@ -31,6 +32,17 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [profile?.tenantId]);
 
+  // Fechar menu ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
@@ -38,7 +50,7 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-brand overflow-hidden">
-      {/* Sidebar - Visualmente idêntica ao screenshot */}
+      {/* Sidebar */}
       <aside className={`bg-white border-r border-slate-100 transition-all duration-500 flex flex-col z-40 ${isCollapsed ? 'w-24' : 'w-80'}`}>
         <div className="p-8 border-b border-slate-50 flex items-center justify-between h-24 shrink-0">
           {!isCollapsed && (
@@ -79,35 +91,20 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           })}
         </nav>
 
-        {/* TRIAL BANNER - Conforme Screenshot */}
         {!isCollapsed && isTrial && (
           <div className="mx-6 mb-8 p-8 bg-[#1c2d51] rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)] rounded-full blur-[60px] opacity-40 -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-1000"></div>
-            
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)] rounded-full blur-[80px] opacity-40 -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-1000"></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
-                <div className="bg-white/10 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/10">
-                  PERÍODO TRIAL
-                </div>
+                <div className="bg-white/10 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/10">PERÍODO TRIAL</div>
                 <Sparkles size={16} className="text-blue-300 animate-pulse" />
               </div>
-              
               <div className="space-y-1 mb-6">
-                <p className="text-4xl font-black tracking-tighter leading-none">
-                  {user?.email === 'snapimoveis@gmail.com' ? 'Vitalício' : `${daysLeft} dias restantes`}
-                </p>
-                <p className="text-[10px] font-bold text-slate-300 uppercase leading-relaxed tracking-tight">
-                  Aproveite todas as funções Business grátis.
-                </p>
+                <p className="text-4xl font-black tracking-tighter leading-none">{user?.email === 'snapimoveis@gmail.com' ? 'Vitalício' : `${daysLeft} dias`}</p>
+                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-tight">Aproveite todas as funções grátis.</p>
               </div>
-
               {user?.email !== 'snapimoveis@gmail.com' && (
-                <Link 
-                  to="/planos" 
-                  className="w-full bg-blue-500 hover:bg-blue-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl"
-                >
-                  <Zap size={14} fill="currentColor" /> Assinar Agora
-                </Link>
+                <Link to="/planos" className="w-full bg-blue-500 hover:bg-blue-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl"><Zap size={14} fill="currentColor" /> Assinar Agora</Link>
               )}
             </div>
           </div>
@@ -121,7 +118,6 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         </div>
       </aside>
 
-      {/* Main Area */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
         <header className="h-24 bg-white border-b border-slate-50 flex items-center justify-between px-10 sticky top-0 z-30 shrink-0">
           <div className="flex items-center gap-4">
@@ -136,17 +132,48 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               {unreadCount > 0 && <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full border-4 border-white font-black">{unreadCount}</span>}
             </Link>
 
-            <div className="relative group">
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-4 p-2 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
-                <div className="w-11 h-11 rounded-2xl bg-[var(--primary)] text-white flex items-center justify-center font-black shadow-xl">
-                  {profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover rounded-2xl" alt="User" /> : user?.email?.charAt(0).toUpperCase()}
+            {/* WIDGET DE PERFIL - DESIGN CONFORME SCREENSHOT */}
+            <div className="relative" ref={menuRef}>
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                className="flex items-center gap-6 p-3 pr-6 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-inner">
+                  {tenant.logo_url ? (
+                    <img src={tenant.logo_url} className="w-full h-full object-contain p-2" alt="Agency Logo" />
+                  ) : (
+                    <Building2 className="text-slate-300" size={24} />
+                  )}
                 </div>
-                <div className="text-left hidden md:block leading-none">
-                   <p className="font-black text-sm text-[#1c2d51]">{profile?.displayName?.split(' ')[0]}</p>
-                   <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">Administrador</p>
+                <div className="text-left hidden md:block leading-tight">
+                   <p className="font-black text-lg text-[#1c2d51] tracking-tight">{tenant.nome.split(' ')[0]}</p>
+                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-0.5">Administrador</p>
                 </div>
-                <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={18} className={`text-slate-200 transition-transform duration-300 ${isMenuOpen ? 'rotate-180 text-[#1c2d51]' : ''}`} />
               </button>
+
+              {/* DROPDOWN MENU */}
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-4 w-64 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-4 animate-in slide-in-from-top-2 duration-200 z-50">
+                   <div className="p-4 border-b border-slate-50 mb-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ligado como</p>
+                      <p className="font-bold text-[#1c2d51] truncate text-sm">{user?.email}</p>
+                   </div>
+                   <Link to="/admin/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-4 hover:bg-slate-50 rounded-2xl transition-colors group">
+                      <User size={18} className="text-slate-300 group-hover:text-[#1c2d51]" />
+                      <span className="font-black text-xs uppercase tracking-widest text-[#1c2d51]">O Meu Perfil</span>
+                   </Link>
+                   <Link to="/admin/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-4 hover:bg-slate-50 rounded-2xl transition-colors group">
+                      <Settings size={18} className="text-slate-300 group-hover:text-[#1c2d51]" />
+                      <span className="font-black text-xs uppercase tracking-widest text-[#1c2d51]">Configurações</span>
+                   </Link>
+                   <div className="h-px bg-slate-50 my-2"></div>
+                   <button onClick={handleLogout} className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-2xl transition-colors group text-left">
+                      <LogOut size={18} className="text-slate-300 group-hover:text-red-500" />
+                      <span className="font-black text-xs uppercase tracking-widest text-[#1c2d51] group-hover:text-red-600">Terminar Sessão</span>
+                   </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -155,19 +182,12 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           {hasAccess ? children : (
             <div className="absolute inset-0 z-50 bg-[#F8FAFC]/90 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-700">
                <div className="max-w-md w-full bg-white p-14 rounded-[4rem] shadow-2xl text-center space-y-10 border border-slate-100">
-                  <div className="w-24 h-24 bg-red-50 text-red-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner">
-                    <Lock size={48} />
-                  </div>
+                  <div className="w-24 h-24 bg-red-50 text-red-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner"><Lock size={48} /></div>
                   <div>
                     <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter">Período de Teste Terminou</h2>
-                    <p className="text-slate-500 font-medium mt-4 text-lg">A sua agência está temporariamente offline. Ative um plano para retomar a gestão.</p>
+                    <p className="text-slate-500 font-medium mt-4 text-lg">Ative um plano para retomar a gestão.</p>
                   </div>
-                  <Link 
-                    to="/planos"
-                    className="w-full bg-[#1c2d51] text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-1 transition-all"
-                  >
-                    <CreditCard size={20} /> Escolher Plano
-                  </Link>
+                  <Link to="/planos" className="w-full bg-[#1c2d51] text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-1 transition-all"><CreditCard size={20} /> Escolher Plano</Link>
                </div>
             </div>
           )}
