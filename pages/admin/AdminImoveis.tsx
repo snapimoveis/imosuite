@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { PropertyService } from '../../services/propertyService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTenant } from '../../contexts/TenantContext';
 import { Imovel, TipoImovel, ImovelMedia } from '../../types';
+import { Link } from 'react-router-dom';
 import { 
   Plus, X, Loader2, Sparkles, Check, ChevronRight, ChevronLeft, 
   Trash, UploadCloud, Building2, Star, MapPin, Edit3, Trash2, Camera, Info, Globe, 
-  FileText, Bed, Bath, Square, Home, Shield, Euro, LayoutList
+  FileText, Bed, Bath, Square, Home, Shield, Euro, LayoutList, Zap, Lock
 } from 'lucide-react';
 import { formatCurrency, generateSlug, compressImage } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
@@ -20,6 +23,7 @@ const DISTRICTS_DATA: Record<string, string[]> = {
 
 const AdminImoveis: React.FC = () => {
   const { profile } = useAuth();
+  const { tenant } = useTenant();
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,7 +32,12 @@ const AdminImoveis: React.FC = () => {
   const [mediaItems, setMediaItems] = useState<ImovelMedia[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const isBusiness = tenant.subscription?.plan_id === 'business' || profile?.email === 'snapimoveis@gmail.com';
+  const propertyLimit = isBusiness ? 9999 : 50;
+  const reachedLimit = imoveis.length >= propertyLimit;
 
   const loadProperties = useCallback(async () => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
@@ -48,9 +57,10 @@ const AdminImoveis: React.FC = () => {
   }, [loadProperties]);
 
   const openModal = async (imovel: Imovel | null) => {
+    if (!imovel && reachedLimit) return; // Bloqueio manual
+    
     setCurrentStep(1);
     if (imovel) {
-      // Garante que o objeto tem a estrutura mínima para evitar erros de undefined na IA
       setEditingImovel({ 
         ...imovel,
         descricao: imovel.descricao || { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null },
@@ -125,9 +135,7 @@ const AdminImoveis: React.FC = () => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  const processFiles = async (files: FileList) => {
     const newMedia: ImovelMedia[] = [];
     for (let i = 0; i < files.length; i++) {
       const reader = new FileReader();
@@ -150,7 +158,11 @@ const AdminImoveis: React.FC = () => {
       });
       await promise;
     }
-    setMediaItems([...mediaItems, ...newMedia]);
+    setMediaItems(prev => [...prev, ...newMedia]);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) processFiles(e.target.files);
   };
 
   const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 10));
@@ -166,11 +178,29 @@ const AdminImoveis: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Inventário Imobiliário</h1>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Gestão centralizada da sua carteira</p>
+          <div className="flex items-center gap-2 mt-1">
+             <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Controlo de carteira</p>
+             {!isBusiness && (
+               <div className="bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1.5">
+                  <div className="w-16 h-1 bg-slate-200 rounded-full overflow-hidden">
+                     <div className="bg-[#1c2d51] h-full" style={{ width: `${(imoveis.length / propertyLimit) * 100}%` }}></div>
+                  </div>
+                  <span className="text-[8px] font-black text-[#1c2d51]">{imoveis.length} / {propertyLimit}</span>
+               </div>
+             )}
+             {isBusiness && <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border border-blue-100">Ilimitado Business</span>}
+          </div>
         </div>
-        <button onClick={() => openModal(null)} className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl hover:-translate-y-1 transition-all">
-          <Plus size={18}/> Novo Imóvel
-        </button>
+        
+        {reachedLimit ? (
+          <Link to="/planos" className="bg-amber-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl hover:scale-105 transition-all">
+            <Zap size={18} fill="currentColor"/> Limite Atingido - Upgrade
+          </Link>
+        ) : (
+          <button onClick={() => openModal(null)} className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl hover:-translate-y-1 transition-all">
+            <Plus size={18}/> Novo Imóvel
+          </button>
+        )}
       </div>
 
       <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
@@ -333,7 +363,7 @@ const AdminImoveis: React.FC = () => {
                           <input type="number" className="admin-input-v3" value={editingImovel.areas?.area_util_m2 || ''} onChange={e => setEditingImovel({...editingImovel, areas: {...editingImovel.areas!, area_util_m2: parseFloat(e.target.value)}})} />
                        </div>
                        <div className="space-y-2">
-                          <label className="admin-label">Área Bruta (m²)</label>
+                          <label className="admin-label">Area Bruta (m²)</label>
                           <input type="number" className="admin-input-v3" value={editingImovel.areas?.area_bruta_m2 || ''} onChange={e => setEditingImovel({...editingImovel, areas: {...editingImovel.areas!, area_bruta_m2: parseFloat(e.target.value)}})} />
                        </div>
                        <div className="space-y-2">
@@ -360,9 +390,13 @@ const AdminImoveis: React.FC = () => {
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <div className="flex justify-between items-center">
                        <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><FileText size={16} className="text-blue-500"/> Passo 6: Descrição</h4>
-                       <button onClick={handleGenerateAI} disabled={isGenerating} className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-blue-100 disabled:opacity-50">
-                          {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14}/>} Gerar com Gemini IA
-                       </button>
+                       <div className="flex items-center gap-2">
+                          {!isBusiness && <span className="text-[7px] font-black bg-slate-100 px-1.5 py-0.5 rounded text-slate-400 uppercase">AI Basic</span>}
+                          {isBusiness && <span className="text-[7px] font-black bg-blue-500 px-1.5 py-0.5 rounded text-white uppercase flex items-center gap-1"><Sparkles size={8} fill="currentColor"/> AI Business Unlim.</span>}
+                          <button onClick={handleGenerateAI} disabled={isGenerating} className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-blue-100 disabled:opacity-50">
+                             {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14}/>} Gerar com Gemini IA
+                          </button>
+                       </div>
                     </div>
                     <textarea rows={10} className="admin-input-v3 font-medium leading-relaxed" value={editingImovel.descricao?.completa_md || ''} onChange={e => setEditingImovel({...editingImovel, descricao: {...editingImovel.descricao!, completa_md: e.target.value}})} placeholder="Escreva a descrição detalhada do imóvel..." />
                  </div>
@@ -400,7 +434,7 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 9: GALERIA */}
+               {/* PASSO 9: GALERIA COM DRAG AND DROP */}
                {currentStep === 9 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Camera size={16} className="text-blue-500"/> Passo 9: Galeria de Fotos</h4>
@@ -414,9 +448,22 @@ const AdminImoveis: React.FC = () => {
                             </div>
                          </div>
                        ))}
-                       <label className="aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100">
-                          <UploadCloud size={24}/>
-                          <span className="text-[8px] font-black uppercase mt-1">Upload</span>
+                       <label 
+                          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                          onDragLeave={() => setIsDragging(false)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setIsDragging(false);
+                            if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
+                          }}
+                          className={`aspect-video border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                            isDragging 
+                              ? 'bg-blue-50 border-blue-500 text-blue-500 scale-105 shadow-xl' 
+                              : 'bg-slate-50 border-slate-200 text-slate-300 hover:bg-slate-100 hover:border-slate-300'
+                          }`}
+                        >
+                          <UploadCloud size={isDragging ? 32 : 24} className="transition-all" />
+                          <span className="text-[8px] font-black uppercase mt-1">{isDragging ? 'Largar para Upload' : 'Upload ou Arrastar'}</span>
                           <input type="file" multiple className="hidden" accept="image/*" onChange={handleImageUpload} />
                        </label>
                     </div>

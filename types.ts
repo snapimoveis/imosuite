@@ -17,6 +17,15 @@ export interface CMSSection {
   };
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  avatar_url: string;
+}
+
 export interface CMSPage {
   id: string;
   title: string;
@@ -24,6 +33,11 @@ export interface CMSPage {
   content_md: string;
   enabled: boolean;
   seo?: { title: string; description: string; };
+  missao?: string;
+  visao?: string;
+  valores?: string[];
+  galeria_fotos?: string[];
+  equipa?: TeamMember[];
 }
 
 export interface MenuItem {
@@ -46,6 +60,7 @@ export interface TenantCMS {
     instagram?: string;
     linkedin?: string;
     whatsapp?: string;
+    complaints_book_link?: string;
   };
 }
 
@@ -75,7 +90,7 @@ export interface Tenant {
   cor_secundaria: string;
   ativo: boolean;
   onboarding_completed?: boolean;
-  subscription: TenantSubscription; // Campo obrigatório para SaaS
+  subscription: TenantSubscription;
   cms: TenantCMS;
   created_at: any;
   updated_at?: any;

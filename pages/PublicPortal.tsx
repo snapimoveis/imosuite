@@ -88,6 +88,22 @@ const PublicPortal: React.FC = () => {
             <div className="space-y-6">
                <h4 className="text-xl font-black tracking-tighter uppercase">{tenant.nome}</h4>
                <p className="text-sm font-medium leading-relaxed opacity-50">{tenant.slogan}</p>
+               
+               {/* LIVRO DE RECLAMAÇÕES - VERSÃO POSITIVA (Light BG) */}
+               {cms.social?.complaints_book_link && (
+                 <a 
+                   href={cms.social.complaints_book_link} 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   className="block w-fit mt-8 transition-opacity hover:opacity-80"
+                 >
+                   <img 
+                     src="https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png" 
+                     alt="Livro de Reclamações Online" 
+                     className="h-10 w-auto grayscale contrast-125"
+                   />
+                 </a>
+               )}
             </div>
             <div className="space-y-6">
                <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Links</p>

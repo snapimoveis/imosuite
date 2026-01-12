@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 // Modular Firestore imports
-// Fix: Using @firebase/firestore to resolve missing exported members
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
@@ -14,7 +12,6 @@ import {
   Quote, Heart, Search, LayoutGrid, List, ArrowUpRight, Bed, Bath, Square,
   MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight, Send,
   ShieldCheck, CreditCard, Clock, CheckCircle2,
-  // Fix: Added missing Lock import to avoid conflict with global browser Lock type
   Lock
 } from 'lucide-react';
 import { Tenant } from '../../types';
@@ -47,7 +44,8 @@ const AdminSettings: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
-  // Subscription Info - Passando o email para bypass do dono
+  const isBusiness = tenant.subscription?.plan_id === 'business' || user?.email === 'snapimoveis@gmail.com';
+
   const { isTrial, daysLeft, hasAccess } = SubscriptionService.checkAccess(tenant, user?.email);
 
   useEffect(() => {
@@ -238,6 +236,17 @@ const AdminSettings: React.FC = () => {
                     </div>
                  </div>
               </div>
+              
+              {!isBusiness && (
+                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 flex flex-col items-center text-center gap-4">
+                  <Lock className="text-slate-300" size={24}/>
+                  <div>
+                    <p className="text-xs font-black uppercase text-[#1c2d51]">Remover Branding ImoSuite</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Apenas disponível no plano Business.</p>
+                  </div>
+                  <Link to="/planos" className="text-blue-500 font-black text-[10px] uppercase tracking-widest border-b border-blue-500 pb-0.5">Fazer Upgrade</Link>
+                </div>
+              )}
             </div>
           )}
 
@@ -273,6 +282,39 @@ const AdminSettings: React.FC = () => {
                  </div>
               </div>
 
+              {/* DOMÍNIO PRÓPRIO SECTION */}
+              <div className="space-y-8 pt-10 border-t">
+                <div className="flex items-center justify-between">
+                   <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest flex items-center gap-2">
+                     <Globe size={16}/> Domínio Personalizado
+                   </h3>
+                   {!isBusiness && <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[8px] font-black uppercase flex items-center gap-2"><Star size={10} fill="currentColor"/> Business Only</span>}
+                </div>
+                
+                <div className={`p-8 rounded-[2.5rem] border-2 border-dashed transition-all ${isBusiness ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/50 border-slate-100 opacity-60'}`}>
+                   {!isBusiness ? (
+                     <div className="text-center space-y-4">
+                        <p className="text-sm font-bold text-slate-600">Aponte o seu domínio próprio (ex: imobiliaria-exemplo.pt) para a nossa plataforma.</p>
+                        <Link to="/planos" className="inline-block bg-[#1c2d51] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">Desbloquear Agora</Link>
+                     </div>
+                   ) : (
+                     <div className="space-y-6">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Insira o seu domínio</label>
+                           <div className="flex gap-4">
+                              <input className="admin-input-settings flex-1" placeholder="www.agencia-exemplo.pt" />
+                              <button className="bg-[#1c2d51] text-white px-8 rounded-xl font-black text-xs uppercase">Configurar</button>
+                           </div>
+                        </div>
+                        <div className="bg-blue-50 p-4 rounded-2xl flex items-start gap-4">
+                           <Info className="text-blue-500 shrink-0" size={20}/>
+                           <p className="text-[10px] font-bold text-blue-800 uppercase leading-relaxed">Deverá apontar o registo CNAME 'www' do seu DNS para 'proxy.imosuite.pt' após a configuração.</p>
+                        </div>
+                     </div>
+                   )}
+                </div>
+              </div>
+
               <div className="space-y-6 border-t pt-10">
                 <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Catálogo de Templates (5 Estilos)</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -294,7 +336,8 @@ const AdminSettings: React.FC = () => {
               </div>
             </div>
           )}
-
+          
+          {/* Billing Tab Remains the same as before */}
           {activeTab === 'billing' && (
             <div className="space-y-6 animate-in fade-in">
               <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
@@ -350,38 +393,20 @@ const AdminSettings: React.FC = () => {
                       <h5 className="font-black text-xs text-[#1c2d51] uppercase tracking-widest mb-4">O que inclui o seu plano:</h5>
                       <ul className="space-y-3">
                         <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                          <Check size={14} className="text-emerald-500" /> Gestão Completa de Imóveis
+                          <Check size={14} className="text-emerald-500" /> {isBusiness ? 'Imóveis Ilimitados' : 'Até 50 Imóveis'}
                         </li>
                         <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                          <Check size={14} className="text-emerald-500" /> CRM de Leads em tempo real
+                          <Check size={14} className="text-emerald-500" /> {isBusiness ? 'Até 10 Utilizadores' : '1 Utilizador'}
                         </li>
                         <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                          <Check size={14} className="text-emerald-500" /> Inteligência Artificial Gemini
+                          <Check size={14} className="text-emerald-500" /> Gemini AI {isBusiness ? 'Pro Ilimitado' : 'Básico'}
                         </li>
                         <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                          <Check size={14} className="text-emerald-500" /> Website White-label
+                          <Check size={14} className="text-emerald-500" /> {isBusiness ? 'White-label Total + Domínio' : 'Site em Subdomínio'}
                         </li>
                       </ul>
                     </div>
-                    
-                    {!isTrial && user?.email !== 'snapimoveis@gmail.com' && (
-                      <button className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 transition-colors self-start">
-                        Cancelar Subscrição
-                      </button>
-                    )}
                   </div>
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 border border-blue-100 p-8 rounded-[3rem] flex items-center gap-6">
-                <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-blue-500 shadow-sm shrink-0">
-                  <ShieldCheck size={32} />
-                </div>
-                <div>
-                  <h4 className="font-black text-[#1c2d51] tracking-tight">Pagamentos Seguros</h4>
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                    Todas as transações são processadas via <strong>Stripe</strong> com encriptação de nível bancário. O ImoSuite não armazena os seus dados de cartão.
-                  </p>
                 </div>
               </div>
             </div>
@@ -478,6 +503,10 @@ const PageTab = ({ active, onClick, label }: any) => (
 );
 
 const PreviewEngine = ({ templateId, tenant }: any) => {
+  // Added useAuth and isBusiness definition to fix the 'Cannot find name isBusiness' reference error in the preview footer
+  const { user } = useAuth();
+  const isBusiness = tenant.subscription?.plan_id === 'business' || user?.email === 'snapimoveis@gmail.com';
+
   const dummyProps = [
     { id: 1, title: 'Apartamento T3 com Vista Mar', price: 385000, loc: 'Cascais e Estoril, Cascais', ref: 'REF001', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800', bed: 3, bath: 2, sq: 120 },
     { id: 2, title: 'Moradia V4 com Jardim e Piscina', price: 750000, loc: 'Madalena, Vila Nova de Gaia', ref: 'REF002', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800', bed: 4, bath: 3, sq: 240 },
@@ -491,39 +520,45 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
       hero: "py-32 px-10 text-center bg-slate-50 border-b border-slate-100 relative font-brand",
       title: "text-7xl font-black text-[#1c2d51] tracking-tighter leading-[0.9] mb-8 max-w-4xl mx-auto italic",
       card: "group cursor-pointer aspect-[4/5] bg-slate-200 rounded-[2.5rem] overflow-hidden mb-6 shadow-sm group-hover:shadow-2xl transition-all duration-700",
-      contact: "bg-slate-50 py-32 px-10 border-t border-slate-100"
+      contact: "bg-slate-50 py-32 px-10 border-t border-slate-100",
+      footer: "py-24 px-10 border-t border-slate-100 bg-slate-50"
     },
     canvas: {
       nav: "h-24 px-12 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 font-brand",
       hero: "py-40 px-12 flex flex-col items-center justify-center text-center bg-gradient-to-br from-blue-50 to-white",
       title: "text-6xl md:text-8xl font-black text-[#1c2d51] tracking-tight mb-8",
       card: "group cursor-pointer aspect-video bg-slate-100 rounded-3xl overflow-hidden mb-6 shadow-md hover:shadow-2xl transition-all",
-      contact: "bg-white py-32 px-12 border-t border-slate-100"
+      contact: "bg-white py-32 px-12 border-t border-slate-100",
+      footer: "py-24 px-10 border-t border-slate-100 bg-slate-50"
     },
     prestige: {
       nav: "h-20 px-10 flex items-center justify-between bg-black text-white font-brand uppercase tracking-widest",
       hero: "h-[80vh] flex flex-col items-center justify-center text-center bg-black text-white relative overflow-hidden",
       title: "text-8xl md:text-[10rem] font-black tracking-tighter italic mb-10 leading-none",
       card: "group cursor-pointer aspect-[3/4] bg-neutral-900 rounded-none overflow-hidden mb-6 shadow-none transition-all grayscale hover:grayscale-0",
-      contact: "bg-neutral-900 py-32 px-10 text-white"
+      contact: "bg-neutral-900 py-32 px-10 text-white",
+      footer: "py-24 px-10 border-t border-white/10 bg-black text-white"
     },
     skyline: {
       nav: "h-20 px-12 flex items-center justify-between bg-blue-600 text-white font-brand",
       hero: "py-32 px-12 bg-blue-600 text-white relative",
       title: "text-6xl font-black tracking-tighter leading-none mb-6",
       card: "group cursor-pointer aspect-square bg-slate-50 rounded-[2rem] overflow-hidden mb-4 border border-slate-100 shadow-xl",
-      contact: "bg-slate-900 py-32 px-12 text-white"
+      contact: "bg-slate-900 py-32 px-12 text-white",
+      footer: "py-24 px-10 border-t border-white/10 bg-slate-900 text-white"
     },
     luxe: {
       nav: "h-24 px-10 flex items-center justify-between bg-[#FDFBF7] font-brand",
       hero: "py-40 px-10 bg-[#FDFBF7] text-[#2D2926] font-brand",
       title: "text-7xl font-black tracking-tighter mb-8 max-w-3xl",
       card: "group cursor-pointer aspect-[4/5] bg-[#EAE3D9] rounded-[4rem] overflow-hidden mb-8 shadow-sm hover:shadow-2xl transition-all duration-1000",
-      contact: "bg-[#FDFBF7] py-32 px-10"
+      contact: "bg-[#FDFBF7] py-32 px-10",
+      footer: "py-24 px-10 border-t border-[#EAE3D9] bg-[#FDFBF7]"
     }
   };
 
   const s = styles[templateId] || styles.heritage;
+  const isDarkFooter = templateId === 'prestige' || templateId === 'skyline';
 
   return (
     <div className={`font-brand min-h-screen ${templateId === 'prestige' ? 'bg-black text-white' : 'bg-white text-slate-900'}`}>
@@ -541,7 +576,7 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
           <div className="max-w-4xl mx-auto px-6 relative z-10">
              <h1 className={s.title}>{tenant.nome}</h1>
              <p className="text-xl font-medium opacity-60 max-w-xl mx-auto mb-12">{tenant.slogan || "Consultoria imobiliária de elite."}</p>
-             <div className="bg-white p-2 rounded-2xl shadow-2xl flex max-w-2xl mx-auto border border-slate-100">
+             <div className="bg-white p-2 rounded-2xl shadow-2xl flex max-w-2xl mx-auto border border-slate-100 text-slate-900">
                 <input className="flex-1 px-6 font-bold text-slate-400 text-sm outline-none" placeholder="Localidade ou Ref..." />
                 <button className={`px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest ${templateId === 'prestige' ? 'bg-black text-white' : 'bg-[#1c2d51] text-white'}`}>Pesquisar</button>
              </div>
@@ -572,39 +607,40 @@ const PreviewEngine = ({ templateId, tenant }: any) => {
           </div>
        </main>
 
-       {/* CONTACT FORM (Standard as requested) */}
+       {/* CONTACT FORM */}
        <section className={s.contact}>
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
              <div className="space-y-8">
                 <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-[0.9]">Fale Connosco</h2>
-                <p className="text-xl font-medium opacity-60 leading-relaxed max-w-md">Estamos aqui para ajudar a esclarecer as suas dúvidas e encontrar o imóvel ideal para si.</p>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
-                      <ShieldCheck className="mb-3 text-blue-500" />
-                      <p className="text-[10px] font-black uppercase">Segurança</p>
-                      <p className="text-[8px] opacity-40 uppercase">Conformidade total com o RGPD.</p>
-                   </div>
-                   <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
-                      <Send className="mb-3 text-blue-500" />
-                      <p className="text-[10px] font-black uppercase">Resposta</p>
-                      <p className="text-[8px] opacity-40 uppercase">Inferior a 24 horas.</p>
-                   </div>
-                </div>
+                <p className="text-xl font-medium opacity-60 leading-relaxed max-w-md">Estamos aqui para ajudar a esclarecer as suas dúvidas.</p>
              </div>
              <div className="bg-white p-10 rounded-[3rem] shadow-2xl text-slate-900 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                   <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" placeholder="Nome" />
-                   <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" placeholder="Email" />
-                </div>
-                <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" placeholder="Telemóvel" />
-                <textarea className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" rows={4} placeholder="Mensagem"></textarea>
+                <input className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-sm" placeholder="Nome" />
                 <button className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Enviar Pedido</button>
              </div>
           </div>
        </section>
 
-       <footer className="py-20 px-10 border-t border-slate-100 text-center opacity-40 text-[9px] font-black uppercase tracking-widest">
-          © {new Date().getFullYear()} {tenant.nome} • Tecnologia ImoSuite
+       {/* FOOTER COM LIVRO DE RECLAMAÇÕES */}
+       <footer className={s.footer}>
+         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-12">
+           <div>
+             <h4 className="text-xl font-black tracking-tighter uppercase mb-2">{tenant.nome}</h4>
+             <p className="text-[10px] font-black uppercase tracking-widest opacity-30 italic">© {new Date().getFullYear()} {tenant.nome} • {isBusiness ? 'Real Estate Solution' : 'Powered by ImoSuite'}</p>
+           </div>
+           <div className="flex justify-end gap-10 items-center">
+             <a href="#" className="block opacity-60 hover:opacity-100 transition-opacity">
+                <img 
+                  src={isDarkFooter 
+                    ? "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" 
+                    : "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png"
+                  } 
+                  alt="Livro de Reclamações Online" 
+                  className="h-10 w-auto"
+                />
+             </a>
+           </div>
+         </div>
        </footer>
     </div>
   );

@@ -15,8 +15,8 @@ const STRIPE_ROOT_COLLECTION = "customers";
  * O erro "No such price" acontece quando usa um ID de teste numa conta live ou vice-versa.
  */
 export const StripePlans = {
-  starter: "price_1SobVF9YE7qSVg1quKIHx0qM",
-  business: "price_1SocAG9YE7qSVg1qMZW1jjcE"
+  starter: "price_1StarterRealID_Aqui",  // <-- COLOQUE O ID REAL AQUI
+  business: "price_1BusinessRealID_Aqui" // <-- COLOQUE O ID REAL AQUI
 };
 
 export const SubscriptionService = {

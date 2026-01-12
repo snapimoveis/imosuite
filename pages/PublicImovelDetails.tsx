@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../lib/firebase';
@@ -7,7 +8,8 @@ import { LeadService } from '../services/leadService';
 import { PropertyService } from '../services/propertyService';
 import { 
   MapPin, Bed, Bath, Square, Loader2, ChevronLeft, ChevronRight,
-  Send, Check, Menu, X, MessageCircle, Instagram, Facebook, Linkedin, Building2, Info, Camera
+  Send, Check, Menu, X, MessageCircle, Instagram, Facebook, Linkedin, Building2, Info, Camera,
+  Maximize2
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import SEO from '../components/SEO';
@@ -23,6 +25,7 @@ const PublicImovelDetails: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [formData, setFormData] = useState({ nome: '', email: '', telefone: '', mensagem: '' });
   const [gdprConsent, setGdprConsent] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -71,8 +74,27 @@ const PublicImovelDetails: React.FC = () => {
     fetchData();
   }, [agencySlug, imovelSlug]);
 
-  const nextPhoto = () => setActiveImage(prev => (prev + 1) % displayImages.length);
-  const prevPhoto = () => setActiveImage(prev => (prev - 1 + displayImages.length) % displayImages.length);
+  const nextPhoto = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setActiveImage(prev => (prev + 1) % displayImages.length);
+  }, []);
+
+  const prevPhoto = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setActiveImage(prev => (prev - 1 + displayImages.length) % displayImages.length);
+  }, []);
+
+  // Keyboard support for Lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isLightboxOpen) return;
+      if (e.key === 'Escape') setIsLightboxOpen(false);
+      if (e.key === 'ArrowRight') nextPhoto();
+      if (e.key === 'ArrowLeft') prevPhoto();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen, nextPhoto, prevPhoto]);
 
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +128,7 @@ const PublicImovelDetails: React.FC = () => {
       : [{ url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200', id: 'placeholder' }];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-brand selection:bg-[var(--primary)] selection:text-white">
+    <div className={`min-h-screen flex flex-col bg-white font-brand selection:bg-[var(--primary)] selection:text-white ${isLightboxOpen ? 'overflow-hidden' : ''}`}>
       <SEO title={`${imovel.titulo} - ${tenant.nome}`} overrideFullTitle={true} />
       
       <nav className="h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-50">
@@ -132,25 +154,28 @@ const PublicImovelDetails: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           <div className="lg:col-span-8 space-y-6">
             {/* CARROSSEL PRINCIPAL */}
-            <div className="relative aspect-[16/9] rounded-[3.5rem] overflow-hidden bg-slate-100 shadow-2xl group">
+            <div 
+              onClick={() => setIsLightboxOpen(true)}
+              className="relative aspect-[16/9] rounded-[3.5rem] overflow-hidden bg-slate-100 shadow-2xl group cursor-zoom-in"
+            >
                <img 
                  src={displayImages[activeImage]?.url} 
                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
                  alt={imovel.titulo} 
                />
                
-               {/* Setas de Navegação */}
+               {/* Setas de Navegação (Desktop) */}
                {displayImages.length > 1 && (
                  <>
                    <button 
-                     onClick={(e) => { e.preventDefault(); prevPhoto(); }}
-                     className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-xl"
+                     onClick={(e) => prevPhoto(e)}
+                     className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-xl z-10"
                    >
                      <ChevronLeft size={28} />
                    </button>
                    <button 
-                     onClick={(e) => { e.preventDefault(); nextPhoto(); }}
-                     className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-xl"
+                     onClick={(e) => nextPhoto(e)}
+                     className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-xl z-10"
                    >
                      <ChevronRight size={28} />
                    </button>
@@ -161,6 +186,10 @@ const PublicImovelDetails: React.FC = () => {
                   <span className="bg-white/90 backdrop-blur px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#1c2d51] shadow-lg">
                     {imovel.operacao}
                   </span>
+               </div>
+
+               <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#1c2d51] shadow-lg opacity-0 group-hover:opacity-100 transition-all flex items-center gap-2">
+                  <Maximize2 size={12}/> Clique para ampliar
                </div>
                
                {displayImages.length > 1 && (
@@ -260,6 +289,62 @@ const PublicImovelDetails: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* LIGHTBOX / FULLSCREEN VIEWER */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-[200] bg-slate-950/98 backdrop-blur-xl flex items-center justify-center animate-in fade-in duration-300">
+           <div className="absolute top-0 left-0 right-0 h-24 px-8 flex items-center justify-between z-10">
+              <div className="flex flex-col">
+                 <h4 className="text-white font-black text-sm uppercase tracking-widest">{imovel.titulo}</h4>
+                 <p className="text-slate-400 text-[10px] font-bold uppercase">{activeImage + 1} / {displayImages.length} fotos</p>
+              </div>
+              <button 
+                onClick={() => setIsLightboxOpen(false)}
+                className="w-14 h-14 bg-white/10 hover:bg-white text-white hover:text-slate-950 rounded-2xl flex items-center justify-center transition-all shadow-2xl"
+              >
+                 <X size={28}/>
+              </button>
+           </div>
+
+           <div className="relative w-full h-full flex items-center justify-center p-4 md:p-20">
+              <img 
+                src={displayImages[activeImage]?.url} 
+                className="max-w-full max-h-full object-contain shadow-[0_0_100px_rgba(0,0,0,0.5)] rounded-2xl animate-in zoom-in-95 duration-500" 
+                alt="Fullscreen View"
+              />
+
+              {displayImages.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => prevPhoto()}
+                    className="absolute left-4 md:left-10 w-16 h-16 bg-white/5 hover:bg-white text-white hover:text-slate-950 rounded-full flex items-center justify-center transition-all group"
+                  >
+                     <ChevronLeft size={32} className="group-hover:-translate-x-1 transition-transform" />
+                  </button>
+                  <button 
+                    onClick={() => nextPhoto()}
+                    className="absolute right-4 md:right-10 w-16 h-16 bg-white/5 hover:bg-white text-white hover:text-slate-950 rounded-full flex items-center justify-center transition-all group"
+                  >
+                     <ChevronRight size={32} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </>
+              )}
+           </div>
+
+           {/* Thumbnails Strip at bottom of Lightbox */}
+           <div className="absolute bottom-0 left-0 right-0 h-32 px-8 flex items-center justify-center gap-3 overflow-x-auto bg-gradient-to-t from-black/80 to-transparent">
+              {displayImages.map((img, idx) => (
+                <button 
+                  key={img.id}
+                  onClick={() => setActiveImage(idx)}
+                  className={`h-16 aspect-video rounded-xl overflow-hidden border-2 transition-all shrink-0 ${activeImage === idx ? 'border-white scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
+                >
+                   <img src={img.url} className="w-full h-full object-cover" alt="Lightbox thumbnail" />
+                </button>
+              ))}
+           </div>
+        </div>
+      )}
       
       <style>{`
         .detail-input-v2 { width: 100%; padding: 1.25rem 1.5rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.5rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }

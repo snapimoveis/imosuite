@@ -24,7 +24,6 @@ const Register: React.FC = () => {
 
   const [legalConsent, setLegalConsent] = useState(false);
   const [processorConsent, setProcessorConsent] = useState(false);
-  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +36,7 @@ const Register: React.FC = () => {
     setError(null);
 
     try {
-      // 1. Gerar slug antes de autenticar para evitar timeouts
+      // 1. Gerar slug antes
       const uniqueSlug = await generateUniqueSlug(formData.agencyName);
       
       // 2. Criar utilizador na Auth
@@ -48,12 +47,11 @@ const Register: React.FC = () => {
       await updateProfile(user, { displayName: formData.agencyName });
 
       const tenantId = `tnt_${user.uid.slice(0, 12)}`;
-      
-      // Definir trial para exatamente 14 dias a partir de agora
-      const now = new Date();
-      const trialEndsAt = new Date(now);
+      const now = new Date().toISOString();
+      const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
+      // 4. Gravar Tenant primeiro (Dono)
       const tenantDoc = {
         id: tenantId,
         nome: formData.agencyName,
@@ -67,42 +65,41 @@ const Register: React.FC = () => {
         subscription: {
           status: 'trialing',
           plan_id: 'starter',
-          trial_ends_at: trialEndsAt.toISOString(), // ISO String é mais segura para parsing inicial
-          created_at: now.toISOString()
+          trial_ends_at: trialEndsAt.toISOString()
         },
         onboarding_completed: false,
-        created_at: now.toISOString() // Usar ISO em vez de serverTimestamp para disponibilidade imediata no snapshot
+        created_at: now
       };
 
-      // 4. Gravar Tenant e User Profile em paralelo
-      await Promise.all([
-        setDoc(doc(db, 'tenants', tenantId), tenantDoc),
-        setDoc(doc(db, 'users', user.uid), {
-          id: user.uid,
-          displayName: formData.agencyName,
-          email: formData.email,
-          role: 'admin',
-          tenantId: tenantId,
-          created_at: now.toISOString()
-        })
-      ]);
+      await setDoc(doc(db, 'tenants', tenantId), tenantDoc);
+
+      // 5. Gravar Perfil do Utilizador
+      await setDoc(doc(db, 'users', user.uid), {
+        id: user.uid,
+        displayName: formData.agencyName,
+        email: formData.email,
+        role: 'admin',
+        tenantId: tenantId,
+        created_at: now
+      });
 
       setTenant(tenantDoc as any);
       setSuccessData({ slug: uniqueSlug });
 
-      // Delay ligeiro para garantir que os snapshots do context apanham a mudança
       setTimeout(() => {
         navigate(`/admin`);
       }, 1500);
 
     } catch (err: any) {
-      console.error("Erro no registo ImoSuite:", err);
+      console.error("Erro no registo:", err);
       
-      let msg = 'Não foi possível criar a sua agência. Verifique os dados.';
+      let msg = 'Erro ao criar conta. Tente novamente.';
       if (err.code === 'permission-denied') {
-        msg = 'Erro de permissão no Firebase. Verifique se as Regras do Firestore permitem escrita.';
+        msg = 'Erro de permissão no Database. Verifique as Regras (Rules) no Firebase Console.';
       } else if (err.code === 'auth/email-already-in-use') {
-        msg = 'Este email já está registado.';
+        msg = 'Este email já está em uso.';
+      } else if (err.code === 'auth/weak-password') {
+        msg = 'A palavra-passe deve ter pelo menos 6 caracteres.';
       }
       
       setError(msg);
@@ -119,8 +116,8 @@ const Register: React.FC = () => {
             <CheckCircle2 size={48} strokeWidth={2.5} className="animate-bounce" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter">Bem-vindo!</h2>
-            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">A preparar o seu portal...</p>
+            <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter">Conta Criada!</h2>
+            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">A preparar o seu cockpit...</p>
           </div>
           <Loader2 className="animate-spin mx-auto text-slate-200" />
         </div>
