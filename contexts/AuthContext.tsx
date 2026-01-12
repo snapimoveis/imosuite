@@ -35,13 +35,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (currentUser) {
         const profileRef = doc(db, 'users', currentUser.uid);
         
+        // Adicionado callback de erro para lidar com permissões insuficientes durante o registo
         const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
           if (docSnap.exists()) {
             setProfile(docSnap.data() as UserProfile);
-            setLoading(false);
           } else {
-            // Se o documento não existe, definimos um perfil básico para não travar a UI
-            // mas mantemos o tenantId como 'pending' para forçar a inicialização se necessário
+            // Perfil básico temporário enquanto o documento é criado no Register.tsx
             setProfile({
               id: currentUser.uid,
               email: currentUser.email || '',
@@ -49,10 +48,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               role: 'admin',
               tenantId: 'pending'
             });
-            setLoading(false); // Definimos logo como false para permitir a interação
           }
+          setLoading(false);
         }, (error) => {
-          console.error("Erro ao escutar perfil:", error);
+          // Erro de permissão é esperado durante os primeiros segundos do registo
+          if (error.code !== 'permission-denied') {
+             console.error("Erro ao escutar perfil:", error);
+          }
+          // Se não temos perfil, mantemos o estado carregando ou pendente
           setLoading(false);
         });
 

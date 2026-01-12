@@ -29,7 +29,7 @@ const Register: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!legalConsent || !processorConsent) {
-      setError("Deverá aceitar as condições obrigatórias para criar a sua conta.");
+      setError("Deverá aceitar as condições obrigatórias.");
       return;
     }
 
@@ -37,14 +37,17 @@ const Register: React.FC = () => {
     setError(null);
 
     try {
+      // 1. Gerar slug antes de autenticar para evitar timeouts
       const uniqueSlug = await generateUniqueSlug(formData.agencyName);
+      
+      // 2. Criar utilizador na Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
+      
+      // 3. Atualizar perfil básico da Auth
       await updateProfile(user, { displayName: formData.agencyName });
 
       const tenantId = `tnt_${user.uid.slice(0, 12)}`;
-      
-      // LÓGICA DE TRIAL: 14 dias a partir de hoje
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
@@ -54,7 +57,7 @@ const Register: React.FC = () => {
         slug: uniqueSlug,
         owner_uid: user.uid,
         template_id: "heritage", 
-        estado: "ativo",
+        ativo: true,
         cor_primaria: "#1c2d51",
         cor_secundaria: "#357fb2",
         email: formData.email,
@@ -62,39 +65,46 @@ const Register: React.FC = () => {
           status: 'trialing',
           plan_id: 'starter',
           trial_ends_at: trialEndsAt,
-          created_at: serverTimestamp()
+          created_at: new Date().toISOString()
         },
-        gdpr_log: {
-          legal_accepted: legalConsent,
-          processor_accepted: processorConsent,
-          marketing_accepted: marketingConsent,
-          timestamp: new Date().toISOString(),
-          ip: 'client-side-logged'
-        },
+        onboarding_completed: false,
         created_at: serverTimestamp()
       };
 
-      await setDoc(doc(db, 'tenants', tenantId), tenantDoc);
-
-      await setDoc(doc(db, 'users', user.uid), {
-        id: user.uid,
-        displayName: formData.agencyName,
-        email: formData.email,
-        role: 'admin',
-        tenantId: tenantId,
-        created_at: serverTimestamp()
-      });
+      // 4. Gravar Tenant e User Profile em paralelo
+      // Nota: Se isto falhar com "Permission Denied", tens de verificar as regras do Firestore no Console do Firebase.
+      await Promise.all([
+        setDoc(doc(db, 'tenants', tenantId), tenantDoc),
+        setDoc(doc(db, 'users', user.uid), {
+          id: user.uid,
+          displayName: formData.agencyName,
+          email: formData.email,
+          role: 'admin',
+          tenantId: tenantId,
+          created_at: serverTimestamp()
+        })
+      ]);
 
       setTenant(tenantDoc as any);
       setSuccessData({ slug: uniqueSlug });
 
+      // Delay ligeiro para garantir que os snapshots do context apanham a mudança
       setTimeout(() => {
         navigate(`/admin`);
-      }, 2500);
+      }, 2000);
 
     } catch (err: any) {
       console.error("Erro no registo ImoSuite:", err);
-      setError('Não foi possível criar a sua agência. Verifique os dados e tente novamente.');
+      
+      let msg = 'Não foi possível criar a sua agência. Verifique os dados.';
+      // Fix: Use 'err.code' instead of 'error.code' because 'error' is a state string and 'err' is the caught error object
+      if (err.code === 'permission-denied') {
+        msg = 'Erro de permissão no Firebase. Verifique se as Regras do Firestore permitem escrita.';
+      } else if (err.code === 'auth/email-already-in-use') {
+        msg = 'Este email já está registado.';
+      }
+      
+      setError(msg);
       setIsLoading(false);
     }
   };
@@ -108,13 +118,10 @@ const Register: React.FC = () => {
             <CheckCircle2 size={48} strokeWidth={2.5} className="animate-bounce" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter">Parabéns!</h2>
-            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">A sua conta de Trial (14 dias) está ativa</p>
+            <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter">Bem-vindo!</h2>
+            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">A preparar o seu portal...</p>
           </div>
-          <div className="flex flex-col items-center gap-4">
-             <Loader2 className="animate-spin text-[#1c2d51]/20" size={24} />
-             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">A carregar o seu cockpit...</p>
-          </div>
+          <Loader2 className="animate-spin mx-auto text-slate-200" />
         </div>
       </div>
     );
@@ -122,8 +129,8 @@ const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center pt-32 pb-20 px-6 font-brand">
-      <SEO title="Crie a sua Agência Digital" description="Inicie o seu portal imobiliário white-label com 14 dias grátis." />
-      <div className="max-w-xl w-full bg-white p-12 md:p-16 rounded-[3.5rem] shadow-2xl shadow-slate-200 border border-slate-100">
+      <SEO title="Crie a sua Agência" />
+      <div className="max-w-xl w-full bg-white p-12 md:p-16 rounded-[3.5rem] shadow-2xl border border-slate-100">
         <div className="text-center mb-12">
           <div className="mx-auto h-20 w-20 bg-[#1c2d51] rounded-[2rem] flex items-center justify-center text-white mb-6">
             <Building2 size={32} />
@@ -157,8 +164,8 @@ const Register: React.FC = () => {
              </label>
           </div>
 
-          <button type="submit" disabled={isLoading} className="w-full bg-[#1c2d51] text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 shadow-2xl hover:-translate-y-1 transition-all disabled:opacity-50">
-            {isLoading ? <Loader2 className="animate-spin" /> : <>Criar Conta e Iniciar Trial <ArrowRight /></>}
+          <button type="submit" disabled={isLoading} className="w-full bg-[#1c2d51] text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50">
+            {isLoading ? <Loader2 className="animate-spin" /> : <>Criar Conta <ArrowRight /></>}
           </button>
         </form>
       </div>

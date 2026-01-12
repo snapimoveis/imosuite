@@ -22,9 +22,6 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Determinar o ID real do tenant: 
-    // 1. Do perfil sincronizado
-    // 2. Fallback previsível baseado no UID do utilizador
     let effectiveTenantId = profile?.tenantId;
     
     if ((!effectiveTenantId || effectiveTenantId === 'pending') && user) {
@@ -32,7 +29,7 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     if (!effectiveTenantId || effectiveTenantId === 'pending') {
-      const timer = setTimeout(() => setIsLoading(false), 1500);
+      const timer = setTimeout(() => setIsLoading(false), 2000);
       return () => clearTimeout(timer);
     }
 
@@ -50,17 +47,16 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         const tenantData = { id: docSnap.id, ...(docSnap.data() as any) } as Tenant;
         setTenant(tenantData);
         
-        // Aplicar cores ao CSS
         const root = document.documentElement;
         root.style.setProperty('--primary', tenantData.cor_primaria);
         root.style.setProperty('--secondary', tenantData.cor_secundaria || tenantData.cor_primaria);
-      } else if (user) {
-        // Se o documento ainda não existe, mantemos o ID para permitir a criação via gravação
-        setTenant(prev => ({ ...prev, id: effectiveTenantId }));
       }
       setIsLoading(false);
     }, (error) => {
-      console.error("Erro no TenantContext:", error);
+      // Ignorar erros de permissão durante o onboarding inicial
+      if (error.code !== 'permission-denied') {
+        console.error("Erro no TenantContext:", error);
+      }
       setIsLoading(false);
     });
 
