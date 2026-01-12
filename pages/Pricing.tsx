@@ -17,9 +17,8 @@ const PricingPage: React.FC = () => {
       return;
     }
 
-    // Verificar se os IDs do Stripe foram preenchidos
     if (StripePlans[planKey].includes('ReplaceMe')) {
-      alert("Configuração incompleta: É necessário substituir os IDs 'price_...' no ficheiro subscriptionService.ts pelos IDs reais do seu Dashboard Stripe.");
+      alert("Aviso: Os IDs de preço do Stripe ainda são os exemplos. Substitua-os no ficheiro 'services/subscriptionService.ts' pelos seus IDs reais (price_...).");
       return;
     }
 
@@ -27,11 +26,14 @@ const PricingPage: React.FC = () => {
     try {
       await SubscriptionService.createCheckoutSession(user.uid, StripePlans[planKey]);
     } catch (err: any) {
-      console.error("Erro detalhado no checkout:", err);
-      // Mostrar o erro real para ajudar no debug
-      const errorMsg = err.code === 'permission-denied' 
-        ? "Erro de Permissão: Verifique se as Regras do Firestore permitem escrita na coleção checkout_sessions."
-        : `Erro ao iniciar pagamento: ${err.message}`;
+      console.error("Erro no checkout:", err);
+      
+      let errorMsg = "Erro ao iniciar o pagamento.";
+      if (err.code === 'permission-denied') {
+        errorMsg = "Erro de Permissão (Firestore): Vá ao console do Firebase e adicione as regras de escrita para a coleção 'users/{userId}/checkout_sessions'.";
+      } else if (err.message) {
+        errorMsg = `Erro: ${err.message}`;
+      }
       
       alert(errorMsg);
       setLoadingPlan(null);
@@ -75,7 +77,7 @@ const PricingPage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white min-h-screen pt-32 pb-20">
+    <div className="bg-white min-h-screen pt-32 pb-20 font-brand">
       <SEO title="Planos e Preços" description="14 dias grátis. Escolha entre Starter 29€ ou Business 49€." />
       <main className="px-6">
         <div className="max-w-5xl mx-auto text-center mb-16">
