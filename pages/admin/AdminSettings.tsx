@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
@@ -13,11 +12,14 @@ import {
   Settings, AlertTriangle, Eye, ChevronLeft, ChevronRight, Info,
   Quote, Heart, Search, LayoutGrid, List, ArrowUpRight, Bed, Bath, Square,
   MessageSquare, Camera, Share2, Sparkles, Image as ImageIcon, Car, Handshake, Key, ArrowRight, Send,
-  ShieldCheck
+  ShieldCheck, CreditCard, Clock, CheckCircle2,
+  // Fix: Added missing Lock import to avoid conflict with global browser Lock type
+  Lock
 } from 'lucide-react';
 import { Tenant } from '../../types';
 import { generateSlug, formatCurrency, compressImage } from '../../lib/utils';
 import { generateAgencySlogan } from '../../services/geminiService';
+import { SubscriptionService } from '../../services/subscriptionService';
 
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
@@ -43,6 +45,9 @@ const AdminSettings: React.FC = () => {
   
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
+
+  // Subscription Info
+  const { isTrial, daysLeft, hasAccess } = SubscriptionService.checkAccess(tenant);
 
   useEffect(() => {
     if (!tenantLoading) {
@@ -151,6 +156,7 @@ const AdminSettings: React.FC = () => {
           <TabLink active={activeTab === 'general'} icon={<Building2 size={18}/>} label="Empresa" tab="general" />
           <TabLink active={activeTab === 'branding'} icon={<Brush size={18}/>} label="Branding" tab="branding" />
           <TabLink active={activeTab === 'website'} icon={<Globe size={18}/>} label="Website" tab="website" />
+          <TabLink active={activeTab === 'billing'} icon={<CreditCard size={18}/>} label="Faturação" tab="billing" />
         </div>
 
         <div className="lg:col-span-3">
@@ -283,6 +289,98 @@ const AdminSettings: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'billing' && (
+            <div className="space-y-6 animate-in fade-in">
+              <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+                <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Gestão de Subscrição</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Current Status Card */}
+                  <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 relative overflow-hidden">
+                    <div className="relative z-10">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Plano Atual</p>
+                      <h4 className="text-3xl font-black text-[#1c2d51] uppercase tracking-tighter mb-6">
+                        {tenant.subscription?.plan_id || 'Starter'}
+                      </h4>
+                      
+                      <div className="space-y-4 mb-8">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${hasAccess ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                            {hasAccess ? <CheckCircle2 size={16} /> : <Lock size={16} />}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400">Estado da Conta</p>
+                            <p className="text-xs font-bold text-[#1c2d51]">{hasAccess ? 'Ativa e Funcional' : 'Acesso Bloqueado'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <Clock size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400">{isTrial ? 'Trial Termina em' : 'Próxima Fatura'}</p>
+                            <p className="text-xs font-bold text-[#1c2d51]">
+                              {isTrial ? `${daysLeft} dias restantes` : 'Faturação ativa'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isTrial && (
+                        <Link 
+                          to="/planos" 
+                          className="inline-flex bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl items-center gap-2 hover:-translate-y-1 transition-all"
+                        >
+                          <Zap size={14} fill="currentColor" /> Atualizar Plano
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Limits Info */}
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-center space-y-6">
+                    <div>
+                      <h5 className="font-black text-xs text-[#1c2d51] uppercase tracking-widest mb-4">O que inclui o seu plano:</h5>
+                      <ul className="space-y-3">
+                        <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                          <Check size={14} className="text-emerald-500" /> Gestão Completa de Imóveis
+                        </li>
+                        <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                          <Check size={14} className="text-emerald-500" /> CRM de Leads em tempo real
+                        </li>
+                        <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                          <Check size={14} className="text-emerald-500" /> Inteligência Artificial Gemini
+                        </li>
+                        <li className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                          <Check size={14} className="text-emerald-500" /> Website White-label
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    {!isTrial && (
+                      <button className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 transition-colors self-start">
+                        Cancelar Subscrição
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-100 p-8 rounded-[3rem] flex items-center gap-6">
+                <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-blue-500 shadow-sm shrink-0">
+                  <ShieldCheck size={32} />
+                </div>
+                <div>
+                  <h4 className="font-black text-[#1c2d51] tracking-tight">Pagamentos Seguros</h4>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                    Todas as transações são processadas via <strong>Stripe</strong> com encriptação de nível bancário. O ImoSuite não armazena os seus dados de cartão.
+                  </p>
                 </div>
               </div>
             </div>

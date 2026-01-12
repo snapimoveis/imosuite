@@ -49,6 +49,16 @@ export interface TenantCMS {
   };
 }
 
+export interface TenantSubscription {
+  status: 'trialing' | 'active' | 'past_due' | 'unpaid' | 'canceled' | 'incomplete';
+  plan_id: 'starter' | 'business';
+  trial_ends_at: any;
+  current_period_end?: any;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  cancel_at_period_end?: boolean;
+}
+
 export interface Tenant {
   id: string;
   slug: string;
@@ -65,6 +75,7 @@ export interface Tenant {
   cor_secundaria: string;
   ativo: boolean;
   onboarding_completed?: boolean;
+  subscription: TenantSubscription; // Campo obrigatório para SaaS
   cms: TenantCMS;
   created_at: any;
   updated_at?: any;
@@ -144,7 +155,6 @@ export interface Imovel {
   };
   media: {
     cover_media_id: string | null;
-    // Fix: Adding cover_url property to explicitly support the optimized image field used in the UI
     cover_url?: string | null;
     total: number;
     items?: ImovelMedia[];

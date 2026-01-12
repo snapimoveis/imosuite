@@ -97,6 +97,12 @@ export const DEFAULT_TENANT: Tenant = {
   cor_primaria: '#1c2d51',
   cor_secundaria: '#357fb2',
   template_id: 'heritage',
+  // Add missing subscription property
+  subscription: {
+    status: 'active',
+    plan_id: 'business',
+    trial_ends_at: null,
+  },
   cms: DEFAULT_TENANT_CMS,
   ativo: true,
   onboarding_completed: true,
