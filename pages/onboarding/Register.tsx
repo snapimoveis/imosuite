@@ -48,7 +48,10 @@ const Register: React.FC = () => {
       await updateProfile(user, { displayName: formData.agencyName });
 
       const tenantId = `tnt_${user.uid.slice(0, 12)}`;
-      const trialEndsAt = new Date();
+      
+      // Definir trial para exatamente 14 dias a partir de agora
+      const now = new Date();
+      const trialEndsAt = new Date(now);
       trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
       const tenantDoc = {
@@ -64,15 +67,14 @@ const Register: React.FC = () => {
         subscription: {
           status: 'trialing',
           plan_id: 'starter',
-          trial_ends_at: trialEndsAt,
-          created_at: new Date().toISOString()
+          trial_ends_at: trialEndsAt.toISOString(), // ISO String é mais segura para parsing inicial
+          created_at: now.toISOString()
         },
         onboarding_completed: false,
-        created_at: serverTimestamp()
+        created_at: now.toISOString() // Usar ISO em vez de serverTimestamp para disponibilidade imediata no snapshot
       };
 
       // 4. Gravar Tenant e User Profile em paralelo
-      // Nota: Se isto falhar com "Permission Denied", tens de verificar as regras do Firestore no Console do Firebase.
       await Promise.all([
         setDoc(doc(db, 'tenants', tenantId), tenantDoc),
         setDoc(doc(db, 'users', user.uid), {
@@ -81,7 +83,7 @@ const Register: React.FC = () => {
           email: formData.email,
           role: 'admin',
           tenantId: tenantId,
-          created_at: serverTimestamp()
+          created_at: now.toISOString()
         })
       ]);
 
@@ -91,13 +93,12 @@ const Register: React.FC = () => {
       // Delay ligeiro para garantir que os snapshots do context apanham a mudança
       setTimeout(() => {
         navigate(`/admin`);
-      }, 2000);
+      }, 1500);
 
     } catch (err: any) {
       console.error("Erro no registo ImoSuite:", err);
       
       let msg = 'Não foi possível criar a sua agência. Verifique os dados.';
-      // Fix: Use 'err.code' instead of 'error.code' because 'error' is a state string and 'err' is the caught error object
       if (err.code === 'permission-denied') {
         msg = 'Erro de permissão no Firebase. Verifique se as Regras do Firestore permitem escrita.';
       } else if (err.code === 'auth/email-already-in-use') {

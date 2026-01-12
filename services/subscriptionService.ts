@@ -4,8 +4,8 @@ import { db } from "../lib/firebase";
 import { Tenant } from "../types";
 
 export const StripePlans = {
-  starter: "price_1SoZ6p4YnWSDKFky1MPxkfES", // Substitua pelo ID real do Stripe (29€)
-  business: "price_1SoZ7q4YnWSDKFkyVKJ2dc0f" // Substitua pelo ID real do Stripe (49€)
+  starter: "price_1StarterID_ReplaceMe", // Substitua pelo ID real do Stripe (29€)
+  business: "price_1BusinessID_ReplaceMe" // Substitua pelo ID real do Stripe (49€)
 };
 
 export const SubscriptionService = {
@@ -18,23 +18,33 @@ export const SubscriptionService = {
       return { hasAccess: true, isTrial: true, daysLeft: 999 };
     }
 
-    // 2. SEGURANÇA PARA NOVAS CONTAS (Evitar race conditions no Firestore)
-    // Se a subscrição ainda não existe mas o tenant foi criado agora mesmo (últimos 30 min)
-    const createdAt = tenant.created_at?.toDate?.() || new Date(tenant.created_at);
     const now = new Date();
-    const diffCreation = now.getTime() - createdAt.getTime();
     
-    if (!tenant.subscription && diffCreation < 1000 * 60 * 30) {
+    // 2. PARSING DA DATA DE CRIAÇÃO DO TENANT
+    let createdAt: Date;
+    if (tenant.created_at?.toDate) {
+      createdAt = tenant.created_at.toDate();
+    } else if (typeof tenant.created_at === 'string' || typeof tenant.created_at === 'number') {
+      createdAt = new Date(tenant.created_at);
+    } else {
+      // Se não há data (ex: ainda a gravar no Firebase), assumimos que foi criado AGORA
+      createdAt = new Date();
+    }
+
+    // 3. SEGURANÇA PARA CONTAS CRIADAS RECENTEMENTE (Grace Period de 1 hora)
+    // Se a conta foi criada há menos de 60 minutos, damos acesso incondicional
+    const diffCreationMs = now.getTime() - createdAt.getTime();
+    if (diffCreationMs < 1000 * 60 * 60) {
       return { hasAccess: true, isTrial: true, daysLeft: 14 };
     }
 
-    // 3. VERIFICAÇÃO DE ASSINATURA EXISTENTE
+    // 4. VERIFICAÇÃO DE ASSINATURA EXISTENTE
     if (!tenant.subscription) {
       return { hasAccess: false, isTrial: false, daysLeft: 0 };
     }
     
-    // Tratamento robusto da data de fim de trial
-    let trialEnd: Date;
+    // 5. TRATAMENTO ROBUSTO DA DATA DE FIM DE TRIAL
+    let trialEnd: Date | null = null;
     const rawEnd = tenant.subscription.trial_ends_at;
     
     if (rawEnd?.toDate) {
@@ -43,26 +53,31 @@ export const SubscriptionService = {
       trialEnd = rawEnd;
     } else if (typeof rawEnd === 'string' || typeof rawEnd === 'number') {
       trialEnd = new Date(rawEnd);
-    } else {
-      // Fallback: se não houver data válida, usamos 14 dias a partir da criação
-      trialEnd = new Date(createdAt);
-      trialEnd.setDate(trialEnd.getDate() + 14);
     }
-    
+
     const isTrial = tenant.subscription.status === 'trialing';
     const isActive = ['active', 'past_due'].includes(tenant.subscription.status);
     
-    // Cálculo preciso de dias restantes
-    const diffTime = trialEnd.getTime() - now.getTime();
-    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Se for Trial mas a data for inválida/ausente, damos 14 dias a partir da criação como fallback
+    if (isTrial && (!trialEnd || isNaN(trialEnd.getTime()))) {
+      trialEnd = new Date(createdAt);
+      trialEnd.setDate(trialEnd.getDate() + 14);
+    }
 
-    // Tem acesso se for trial com dias restantes OU se for conta paga ativa
-    const hasAccess = (isTrial && daysLeft >= 0) || isActive;
+    // Cálculo de dias restantes (mínimo 0 se já passou)
+    let daysLeft = 0;
+    if (trialEnd) {
+      const diffTime = trialEnd.getTime() - now.getTime();
+      daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    }
+
+    // Tem acesso se for trial ativo (mesmo com 0 dias, se for o último dia) OU conta paga
+    const hasAccess = (isTrial && (daysLeft >= 0 || diffCreationMs < 1000 * 60 * 60)) || isActive;
 
     return { 
       hasAccess, 
       isTrial, 
-      daysLeft: Math.max(0, daysLeft) 
+      daysLeft 
     };
   },
 
