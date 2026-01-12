@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ArrowRight, HelpCircle, Star, ShieldCheck, Zap, Globe, Loader2 } from 'lucide-react';
+import { Check, ArrowRight, HelpCircle, Star, ShieldCheck, Zap, Globe, Loader2, AlertCircle } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import { SubscriptionService, StripePlans } from '../services/subscriptionService';
@@ -13,16 +13,27 @@ const PricingPage: React.FC = () => {
 
   const handleSubscribe = async (planKey: 'starter' | 'business') => {
     if (!user) {
-      navigate('/register');
+      navigate('/login?redirect=planos');
+      return;
+    }
+
+    // Verificar se os IDs do Stripe foram preenchidos
+    if (StripePlans[planKey].includes('ReplaceMe')) {
+      alert("Configuração incompleta: É necessário substituir os IDs 'price_...' no ficheiro subscriptionService.ts pelos IDs reais do seu Dashboard Stripe.");
       return;
     }
 
     setLoadingPlan(planKey);
     try {
       await SubscriptionService.createCheckoutSession(user.uid, StripePlans[planKey]);
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao iniciar pagamento.");
+    } catch (err: any) {
+      console.error("Erro detalhado no checkout:", err);
+      // Mostrar o erro real para ajudar no debug
+      const errorMsg = err.code === 'permission-denied' 
+        ? "Erro de Permissão: Verifique se as Regras do Firestore permitem escrita na coleção checkout_sessions."
+        : `Erro ao iniciar pagamento: ${err.message}`;
+      
+      alert(errorMsg);
       setLoadingPlan(null);
     }
   };

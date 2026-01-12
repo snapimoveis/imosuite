@@ -3,17 +3,20 @@ import { collection, addDoc, onSnapshot, query, limit } from "@firebase/firestor
 import { db } from "../lib/firebase";
 import { Tenant } from "../types";
 
+/**
+ * IMPORTANTE: Substitua estes IDs pelos IDs reais do seu Dashboard do Stripe (Produto -> Preço)
+ */
 export const StripePlans = {
-  starter: "price_1StarterID_ReplaceMe", // Substitua pelo ID real do Stripe (29€)
-  business: "price_1BusinessID_ReplaceMe" // Substitua pelo ID real do Stripe (49€)
+  starter: "price_1StarterID_ReplaceMe", // Preço: 29€
+  business: "price_1BusinessID_ReplaceMe" // Preço: 49€
 };
 
 export const SubscriptionService = {
   /**
-   * Verifica se o tenant está num estado válido (Trial ou Ativo)
+   * Verifica se o tenant tem acesso às funcionalidades administrativas
    */
   checkAccess: (tenant: Tenant, userEmail?: string | null): { hasAccess: boolean; isTrial: boolean; daysLeft: number } => {
-    // 1. BYPASS PARA ADMINISTRADOR MASTER
+    // 1. BYPASS PARA ADMINISTRADOR MASTER (Snap Imóveis)
     if (userEmail === 'snapimoveis@gmail.com') {
       return { hasAccess: true, isTrial: true, daysLeft: 999 };
     }
@@ -27,12 +30,11 @@ export const SubscriptionService = {
     } else if (typeof tenant.created_at === 'string' || typeof tenant.created_at === 'number') {
       createdAt = new Date(tenant.created_at);
     } else {
-      // Se não há data (ex: ainda a gravar no Firebase), assumimos que foi criado AGORA
-      createdAt = new Date();
+      createdAt = new Date(); // Fallback imediato
     }
 
-    // 3. SEGURANÇA PARA CONTAS CRIADAS RECENTEMENTE (Grace Period de 1 hora)
-    // Se a conta foi criada há menos de 60 minutos, damos acesso incondicional
+    // 3. SEGURANÇA PARA CONTAS NOVAS (Grace Period de 1 hora)
+    // Evita que o utilizador seja bloqueado se o Firestore ainda não propagou os dados da subscrição
     const diffCreationMs = now.getTime() - createdAt.getTime();
     if (diffCreationMs < 1000 * 60 * 60) {
       return { hasAccess: true, isTrial: true, daysLeft: 14 };
@@ -43,7 +45,7 @@ export const SubscriptionService = {
       return { hasAccess: false, isTrial: false, daysLeft: 0 };
     }
     
-    // 5. TRATAMENTO ROBUSTO DA DATA DE FIM DE TRIAL
+    // 5. TRATAMENTO DA DATA DE FIM DE TRIAL
     let trialEnd: Date | null = null;
     const rawEnd = tenant.subscription.trial_ends_at;
     
@@ -58,33 +60,42 @@ export const SubscriptionService = {
     const isTrial = tenant.subscription.status === 'trialing';
     const isActive = ['active', 'past_due'].includes(tenant.subscription.status);
     
-    // Se for Trial mas a data for inválida/ausente, damos 14 dias a partir da criação como fallback
+    // Se for Trial mas a data for inválida, assume-se 14 dias após criação
     if (isTrial && (!trialEnd || isNaN(trialEnd.getTime()))) {
       trialEnd = new Date(createdAt);
       trialEnd.setDate(trialEnd.getDate() + 14);
     }
 
-    // Cálculo de dias restantes (mínimo 0 se já passou)
+    // 6. CÁLCULO DE DIAS E ESTADO DE ACESSO
     let daysLeft = 0;
+    let expired = true;
+
     if (trialEnd) {
-      const diffTime = trialEnd.getTime() - now.getTime();
-      daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      const diffMs = trialEnd.getTime() - now.getTime();
+      expired = diffMs < 0;
+      daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     }
 
-    // Tem acesso se for trial ativo (mesmo com 0 dias, se for o último dia) OU conta paga
-    const hasAccess = (isTrial && (daysLeft >= 0 || diffCreationMs < 1000 * 60 * 60)) || isActive;
+    // Tem acesso se:
+    // - Subscrição Paga estiver ativa
+    // - OU Estiver em Trial e a data ainda não passou
+    // - OU For uma conta criada há menos de 1 hora (Grace Period)
+    const hasAccess = isActive || (isTrial && !expired) || (diffCreationMs < 1000 * 60 * 60);
 
     return { 
       hasAccess, 
       isTrial, 
-      daysLeft 
+      daysLeft: expired ? 0 : daysLeft 
     };
   },
 
   /**
-   * Cria uma sessão de checkout do Stripe via extensão Firebase
+   * Inicia o processo de Checkout do Stripe
+   * Requer a extensão "Run Subscription Payments with Stripe" instalada no Firebase
    */
   createCheckoutSession: async (userId: string, priceId: string) => {
+    if (!userId) throw new Error("Utilizador não autenticado.");
+
     const checkoutSessionsRef = collection(db, "users", userId, "checkout_sessions");
     
     const docRef = await addDoc(checkoutSessionsRef, {
@@ -93,20 +104,24 @@ export const SubscriptionService = {
       cancel_url: window.location.origin + "/#/admin/billing?session=cancel",
       allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: 0,
+        trial_period_days: 0, // O trial é gerido manualmente pela nossa app no início
         metadata: {
-            source: 'imosuite_app'
+            source: 'imosuite_app',
+            user_id: userId
         }
       }
     });
 
-    onSnapshot(docRef, (snap) => {
-      const { error, url } = snap.data() as any;
-      if (error) {
-        alert(`Erro Stripe: ${error.message}`);
+    // Aguarda que a extensão do Stripe gere o URL de redirecionamento
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      const data = snap.data() as any;
+      if (data?.error) {
+        unsubscribe();
+        alert(`Erro Stripe: ${data.error.message}`);
       }
-      if (url) {
-        window.location.assign(url);
+      if (data?.url) {
+        unsubscribe();
+        window.location.assign(data.url);
       }
     });
   }
