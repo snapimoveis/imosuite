@@ -1,5 +1,5 @@
+
 // Modular Firestore imports for Firebase v9+
-// Fix: Importing from @firebase/firestore to ensure modular exports are correctly resolved
 import { collection, query, where, getDocs, limit } from '@firebase/firestore';
 import { db } from './firebase';
 
@@ -31,8 +31,8 @@ export function cn(...classes: (string | boolean | undefined)[]) {
 }
 
 /**
- * Redimensiona e comprime uma imagem Base64 para reduzir o tamanho em disco.
- * Essencial para não ultrapassar o limite de 1MB por documento do Firestore.
+ * Redimensiona e comprime uma imagem Base64.
+ * CORREÇÃO: Preservação estrita de transparência para PNG.
  */
 export const compressImage = (base64Str: string, maxWidth = 1200, maxHeight = 1200, quality = 0.7): Promise<string> => {
   return new Promise((resolve) => {
@@ -58,46 +58,50 @@ export const compressImage = (base64Str: string, maxWidth = 1200, maxHeight = 12
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0, width, height);
-      // Exportamos como JPEG para garantir compressão real
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      if (!ctx) return resolve(base64Str);
+
+      // Limpar o canvas com transparência total antes de desenhar
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Deteção robusta de PNG
+      const isPng = base64Str.toLowerCase().includes('image/png') || base64Str.toLowerCase().includes('.png');
+      
+      if (isPng) {
+        // Para PNG, não usamos o parâmetro 'quality' no toDataURL do browser, 
+        // pois isso forçaria a perda de canais de alfa em alguns motores.
+        resolve(canvas.toDataURL('image/png'));
+      } else {
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      }
     };
-    img.onerror = () => resolve(base64Str); // Fallback em caso de erro
+    img.onerror = () => resolve(base64Str);
   });
 };
 
-/**
- * Gera um slug normalizado: lowercase, sem acentos, sem caracteres especiais.
- */
 export function generateSlug(text: string): string {
   return text
     .toString()
-    .normalize('NFD')                   // Decompõe caracteres acentuados
-    .replace(/[\u0300-\u036f]/g, '')     // Remove os acentos
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')                // Substitui espaços por hífens
-    .replace(/[^\w-]+/g, '')             // Remove tudo o que não é letra, número ou hífen
-    .replace(/--+/g, '-')                // Evita hífens duplos
-    .replace(/^-+/, '')                  // Remove hífen no início
-    .replace(/-+$/, '');                 // Remove hífen no fim
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 
-/**
- * Consulta o Firestore para garantir um slug único.
- */
 export async function generateUniqueSlug(baseName: string): Promise<string> {
   const baseSlug = generateSlug(baseName);
   let slug = baseSlug;
   let counter = 1;
   let isUnique = false;
-
   const tenantsRef = collection(db, 'tenants');
-
   while (!isUnique) {
     const q = query(tenantsRef, where('slug', '==', slug), limit(1));
     const querySnapshot = await getDocs(q);
-
     if (querySnapshot.empty) {
       isUnique = true;
     } else {
@@ -105,6 +109,5 @@ export async function generateUniqueSlug(baseName: string): Promise<string> {
       slug = `${baseSlug}-${counter}`;
     }
   }
-
   return slug;
 }

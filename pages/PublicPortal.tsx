@@ -58,7 +58,7 @@ const PublicPortal: React.FC = () => {
   const styles: Record<string, any> = {
     heritage: {
       wrapper: "font-brand",
-      nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
+      nav: "h-28 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
       navText: "font-heritage italic text-[#1c2d51]",
       footer: "py-24 px-10 border-t border-slate-100 bg-slate-50",
       footerText: "text-[#1c2d51] font-heritage italic",
@@ -67,7 +67,7 @@ const PublicPortal: React.FC = () => {
     },
     canvas: {
       wrapper: "font-brand bg-white",
-      nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
+      nav: "h-32 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
       navText: "font-black tracking-tight text-[#1c2d51]",
       footer: "py-24 px-12 border-t border-slate-50 bg-white",
       footerText: "text-[#1c2d51] font-black",
@@ -76,7 +76,7 @@ const PublicPortal: React.FC = () => {
     },
     prestige: {
       wrapper: "font-brand bg-black text-white",
-      nav: "h-20 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white uppercase tracking-[0.2em] border-b border-white/5",
+      nav: "h-28 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white uppercase tracking-[0.2em] border-b border-white/5",
       navText: "font-black italic",
       footer: "py-24 px-10 border-t border-white/5 bg-black text-white",
       footerText: "text-white font-black italic",
@@ -85,7 +85,7 @@ const PublicPortal: React.FC = () => {
     },
     skyline: {
       wrapper: "font-brand",
-      nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white shadow-xl",
+      nav: "h-28 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white shadow-xl",
       navText: "font-black uppercase tracking-tighter",
       footer: "py-24 px-10 bg-slate-900 text-white",
       footerText: "text-white font-black uppercase",
@@ -94,7 +94,7 @@ const PublicPortal: React.FC = () => {
     },
     luxe: {
       wrapper: "font-brand bg-[#FDFBF7]",
-      nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
+      nav: "h-32 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
       navText: "font-black text-[#2D2926] tracking-widest",
       footer: "py-24 px-12 border-t border-[#EAE3D9] bg-[#FDFBF7] text-[#2D2926]",
       footerText: "text-[#2D2926] font-black tracking-widest",
@@ -113,7 +113,7 @@ const PublicPortal: React.FC = () => {
       {/* NAVBAR DINÂMICA */}
       <nav className={s.nav}>
          <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-3">
-            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" /> : <span className={`text-2xl ${s.navText}`}>{tenant.nome}</span>}
+            {tenant.logo_url ? <img src={tenant.logo_url} className="h-20 w-auto object-contain drop-shadow-md" /> : <span className={`text-2xl ${s.navText}`}>{tenant.nome}</span>}
          </Link>
          <div className="hidden md:flex gap-10">
             {cms.menus.main.map(m => (

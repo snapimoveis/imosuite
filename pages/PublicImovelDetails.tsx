@@ -130,7 +130,7 @@ const PublicImovelDetails: React.FC = () => {
   const styles: Record<string, any> = {
     heritage: {
       wrapper: "font-brand bg-white",
-      nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
+      nav: "h-28 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
       navText: "font-heritage italic text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-none font-black uppercase text-xs",
       heading: "font-heritage italic text-[#1c2d51]",
@@ -139,7 +139,7 @@ const PublicImovelDetails: React.FC = () => {
     },
     canvas: {
       wrapper: "font-brand bg-white",
-      nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
+      nav: "h-32 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
       navText: "font-black tracking-tight text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-2xl font-black uppercase text-xs shadow-lg",
       heading: "font-black text-[#1c2d51] tracking-tight",
@@ -148,7 +148,7 @@ const PublicImovelDetails: React.FC = () => {
     },
     prestige: {
       wrapper: "font-brand bg-black text-white",
-      nav: "h-20 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white border-b border-white/5 uppercase tracking-widest",
+      nav: "h-28 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white border-b border-white/5 uppercase tracking-widest",
       navText: "font-black italic",
       button: "bg-white text-black px-10 py-4 rounded-none font-black uppercase text-[10px]",
       heading: "font-black italic uppercase text-white",
@@ -157,7 +157,7 @@ const PublicImovelDetails: React.FC = () => {
     },
     skyline: {
       wrapper: "font-brand bg-white",
-      nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white",
+      nav: "h-28 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white",
       navText: "font-black uppercase",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-xl font-black uppercase text-xs shadow-xl",
       heading: "font-black uppercase text-[#1c2d51]",
@@ -166,7 +166,7 @@ const PublicImovelDetails: React.FC = () => {
     },
     luxe: {
       wrapper: "font-brand bg-[#FDFBF7] text-[#2D2926]",
-      nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
+      nav: "h-32 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
       navText: "font-black text-[#2D2926]",
       button: "bg-[#2D2926] text-white px-10 py-5 rounded-[2.5rem] font-bold text-xs uppercase shadow-2xl",
       heading: "font-black text-[#2D2926] tracking-widest",
@@ -184,7 +184,7 @@ const PublicImovelDetails: React.FC = () => {
       
       <nav className={s.nav}>
          <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-3">
-            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" alt={tenant.nome} /> : <span className={`text-2xl ${s.navText}`}>{tenant.nome}</span>}
+            {tenant.logo_url ? <img src={tenant.logo_url} className="h-20 w-auto object-contain drop-shadow-md" alt={tenant.nome} /> : <span className={`text-2xl ${s.navText}`}>{tenant.nome}</span>}
          </Link>
          <div className="hidden md:flex gap-10">
             {cms.menus.main.map(m => (

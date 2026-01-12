@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 // Correct modular imports for Firestore
-// Fix: Using @firebase/firestore to resolve missing exported members
 import { doc, onSnapshot } from '@firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant } from '../types';
@@ -47,13 +46,19 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         const tenantData = { id: docSnap.id, ...(docSnap.data() as any) } as Tenant;
         setTenant(tenantData);
         
+        // Aplicação dinâmica do Branding no Root
         const root = document.documentElement;
-        root.style.setProperty('--primary', tenantData.cor_primaria);
-        root.style.setProperty('--secondary', tenantData.cor_secundaria || tenantData.cor_primaria);
+        if (tenantData.cor_primaria) {
+          root.style.setProperty('--primary', tenantData.cor_primaria);
+        }
+        if (tenantData.cor_secundaria) {
+          root.style.setProperty('--secondary', tenantData.cor_secundaria);
+        } else {
+          root.style.setProperty('--secondary', tenantData.cor_primaria);
+        }
       }
       setIsLoading(false);
     }, (error) => {
-      // Ignorar erros de permissão durante o onboarding inicial
       if (error.code !== 'permission-denied') {
         console.error("Erro no TenantContext:", error);
       }
