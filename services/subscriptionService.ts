@@ -4,12 +4,18 @@ import { db } from "../lib/firebase";
 import { Tenant } from "../types";
 
 /**
- * IMPORTANTE: Use apenas IDs que começam por 'price_'. 
- * IDs que começam por 'prod_' NÃO funcionam aqui.
+ * CONFIGURAÇÃO DA EXTENSÃO STRIPE
+ * De acordo com a sua imagem, a coleção está configurada como 'customers'.
+ */
+const STRIPE_ROOT_COLLECTION = "customers"; 
+
+/**
+ * IMPORTANTE: Substitua pelos IDs reais que começam por 'price_' do seu Stripe.
+ * Verifique se está em Test Mode (price_...test...) ou Live Mode.
  */
 export const StripePlans = {
-  starter: "price_1SoZ6p4YnWSDKFky1MPxkfES", // Substitua pelo ID real: price_...
-  business: "price_1SoZ7q4YnWSDKFkyVKJ2dc0f" // Substitua pelo ID real: price_...
+  starter: "price_1StarterID_ReplaceMe", 
+  business: "price_1BusinessID_ReplaceMe" 
 };
 
 export const SubscriptionService = {
@@ -80,14 +86,12 @@ export const SubscriptionService = {
   createCheckoutSession: async (userId: string, priceId: string) => {
     if (!userId) throw new Error("Utilizador não autenticado.");
     
-    // Validação de segurança para evitar o erro de Product vs Price ID
     if (!priceId.startsWith('price_')) {
-      throw new Error(`ID Inválido: enviou '${priceId}'. O ID deve começar com 'price_'. Verifique o Dashboard do Stripe no separador Preços.`);
+      throw new Error(`ID Inválido: '${priceId}'. Certifique-se que copiou o PRICE ID (não o Product ID) do Dashboard do Stripe.`);
     }
 
-    console.log(`Iniciando checkout para o user ${userId} com o preço ${priceId}`);
-
-    const checkoutSessionsRef = collection(db, "users", userId, "checkout_sessions");
+    console.log(`[STRIPE] Tentando criar checkout em: ${STRIPE_ROOT_COLLECTION}/${userId}/checkout_sessions`);
+    const checkoutSessionsRef = collection(db, STRIPE_ROOT_COLLECTION, userId, "checkout_sessions");
     
     try {
       const docRef = await addDoc(checkoutSessionsRef, {
@@ -95,42 +99,50 @@ export const SubscriptionService = {
         success_url: window.location.origin + "/#/admin?session=success",
         cancel_url: window.location.origin + "/#/admin/settings?tab=billing&session=cancel",
         allow_promotion_codes: true,
-        subscription_data: {
-          metadata: {
-              source: 'imosuite_app',
-              user_id: userId
-          }
+        trial_from_plan: true,
+        metadata: {
+          user_id: userId,
+          source: 'imosuite_web'
         }
       });
 
+      console.log(`[STRIPE] Documento ${docRef.id} criado. Aguardando processamento da Cloud Function...`);
+
       return new Promise((resolve, reject) => {
-        // Timeout de 15 segundos para evitar ficar "congelado" se a extensão não responder
         const timeout = setTimeout(() => {
           unsubscribe();
-          reject(new Error("A extensão do Stripe não respondeu. Verifique se a extensão está instalada no Firebase e se a API Key do Stripe é válida."));
-        }, 15000);
+          reject(new Error("Timeout: A extensão não respondeu. 1. Verifique os logs da função no Firebase. 2. Confirme que as regras de segurança permitem ler/escrever na coleção 'customers'."));
+        }, 25000);
 
         const unsubscribe = onSnapshot(docRef, (snap) => {
           const data = snap.data() as any;
-          if (data?.error) {
+          if (!data) return;
+
+          if (data.error) {
             clearTimeout(timeout);
             unsubscribe();
-            reject(new Error(data.error.message));
+            console.error("[STRIPE] Erro retornado pela extensão:", data.error);
+            reject(new Error(`Erro Stripe: ${data.error.message}`));
           }
-          if (data?.url) {
+          if (data.url) {
             clearTimeout(timeout);
             unsubscribe();
+            console.log("[STRIPE] Sucesso! Redirecionando para:", data.url);
             window.location.assign(data.url);
             resolve(true);
           }
         }, (err) => {
           clearTimeout(timeout);
           unsubscribe();
+          console.error("[STRIPE] Erro no listener do documento:", err);
           reject(err);
         });
       });
-    } catch (err) {
-      console.error("Erro na criação do documento de checkout:", err);
+    } catch (err: any) {
+      console.error("[STRIPE] Erro ao criar documento inicial:", err);
+      if (err.code === 'permission-denied') {
+        throw new Error("Erro de Permissão: O seu Firestore não permite escrever na coleção 'customers'. Atualize as regras no Firebase Console.");
+      }
       throw err;
     }
   }
