@@ -10,7 +10,7 @@ import {
   User, ArrowRight
 } from 'lucide-react';
 import SEO from '../components/SEO';
-import { DEFAULT_TENANT_CMS } from '../constants';
+import { DEFAULT_TENANT_CMS, DEFAULT_TENANT } from '../constants';
 import ContactSection from '../components/ContactSection';
 
 const PublicPage: React.FC = () => {
@@ -24,11 +24,20 @@ const PublicPage: React.FC = () => {
     const fetchData = async () => {
       if (!slug || !pageSlug) return;
       try {
-        const tSnap = await getDocs(query(collection(db, "tenants"), where("slug", "==", slug), limit(1)));
-        if (!tSnap.empty) {
-          const tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
+        let tData: Tenant | null = null;
+        
+        if (slug === 'demo-imosuite') {
+          tData = DEFAULT_TENANT;
+        } else {
+          const tSnap = await getDocs(query(collection(db, "tenants"), where("slug", "==", slug), limit(1)));
+          if (!tSnap.empty) {
+            tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
+          }
+        }
+
+        if (tData) {
           setTenant(tData);
-          const p = tData.cms?.pages?.find(p => p.slug === pageSlug);
+          const p = (tData.cms?.pages || DEFAULT_TENANT_CMS.pages).find(p => p.slug === pageSlug);
           if (p) setPage(p);
           document.documentElement.style.setProperty('--primary', tData.cor_primaria);
           document.documentElement.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
@@ -39,7 +48,7 @@ const PublicPage: React.FC = () => {
   }, [slug, pageSlug]);
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-slate-200" size={48} /></div>;
-  if (!tenant || !page) return <div className="h-screen flex flex-col items-center justify-center p-10 font-brand"><Building2 size={48} className="text-slate-100 mb-4"/><h2 className="text-xl font-black text-slate-800 tracking-tighter">Página não encontrada.</h2><Link to="/" className="text-blue-500 mt-4 font-bold underline">Voltar</Link></div>;
+  if (!tenant || !page) return <div className="h-screen flex flex-col items-center justify-center p-10 font-brand"><Building2 size={48} className="text-slate-100 mb-4"/><h2 className="text-xl font-black text-slate-800 tracking-tighter">Página não encontrada.</h2><Link to={`/agencia/${slug}`} className="text-blue-500 mt-4 font-bold underline">Voltar</Link></div>;
 
   const cms = tenant.cms || DEFAULT_TENANT_CMS;
   const tid = tenant.template_id || 'heritage';

@@ -78,7 +78,25 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
     ]
   },
   pages: [
-    { id: 'p1', title: 'A Nossa Agência', slug: 'quem-somos', content_md: 'Fundada com o propósito de simplificar o mercado imobiliário em Portugal, a nossa agência destaca-se pela transparência e eficácia.', enabled: true },
+    { 
+      id: 'p1', 
+      title: 'A Nossa Agência', 
+      slug: 'quem-somos', 
+      content_md: 'Fundada com o propósito de simplificar o mercado imobiliário em Portugal, a nossa agência destaca-se pela transparência e eficácia. Acreditamos que cada casa conta uma história e estamos aqui para garantir que a sua seja de sucesso.', 
+      enabled: true,
+      missao: 'Proporcionar um serviço de excelência na mediação imobiliária, focando na personalização e satisfação total do cliente.',
+      visao: 'Ser a agência de referência em Portugal pela inovação tecnológica e ética profissional.',
+      valores: ['Transparência', 'Integridade', 'Foco no Cliente', 'Inovação'],
+      galeria_fotos: [
+        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200',
+        'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800',
+        'https://images.unsplash.com/photo-1522071823991-b518ee7f1d98?w=800'
+      ],
+      equipa: [
+        { id: 't1', name: 'Ricardo Santos', role: 'CEO & Founder', email: 'ricardo@exemplo.pt', phone: '+351 910 000 000', avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400' },
+        { id: 't2', name: 'Ana Oliveira', role: 'Diretora Comercial', email: 'ana@exemplo.pt', phone: '+351 920 000 000', avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400' }
+      ]
+    },
     { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber para um café e uma conversa sobre o seu próximo investimento.', enabled: true }
   ],
   social: {
@@ -97,7 +115,6 @@ export const DEFAULT_TENANT: Tenant = {
   cor_primaria: '#1c2d51',
   cor_secundaria: '#357fb2',
   template_id: 'heritage',
-  // Add missing subscription property
   subscription: {
     status: 'active',
     plan_id: 'business',
