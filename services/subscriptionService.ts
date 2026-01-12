@@ -15,8 +15,8 @@ const STRIPE_ROOT_COLLECTION = "customers";
  * Devem começar por 'price_'.
  */
 export const StripePlans = {
-  starter: "price_1Qtq6qC796q1v7V8Z8Z8Z8Z8", // COLOQUE O ID STARTER AQUI
-  business: "price_1Qtq7RC796q1v7V8Y7Y7Y7Y7" // COLOQUE O ID BUSINESS AQUI
+  starter: "price_1SobVF9YE7qSVg1quKIHx0qM", // COLOQUE O ID STARTER AQUI
+  business: "price_1SocAG9YE7qSVg1qMZW1jjcE" // COLOQUE O ID BUSINESS AQUI
 };
 
 export const SubscriptionService = {
