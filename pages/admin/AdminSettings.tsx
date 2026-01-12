@@ -69,24 +69,24 @@ const AdminSettings: React.FC = () => {
     <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter">Configurações</h1>
-          <p className="text-slate-400 font-bold uppercase text-[9px] tracking-[0.2em]">Gestão da Identidade da sua Imobiliária</p>
+          <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter uppercase">Configurações</h1>
+          <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">Identidade e faturação</p>
         </div>
-        <button onClick={handleSave} disabled={isSaving} className="bg-[#1c2d51] text-white px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.15em] flex items-center gap-2 shadow-xl hover:opacity-90 transition-all">
+        <button onClick={handleSave} disabled={isSaving} className="bg-[#1c2d51] text-white px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all hover:opacity-90">
           {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
-          {success ? 'Guardado' : 'Guardar Alterações'}
+          {success ? 'GUARDADO' : 'GUARDAR ALTERAÇÕES'}
         </button>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Tabs Simples na Esquerda */}
+        {/* Sidebar Tabs */}
         <aside className="lg:w-60 shrink-0">
           <nav className="flex lg:flex-col gap-1 overflow-x-auto pb-4 lg:pb-0">
             {tabs.map(tab => (
               <Link 
                 key={tab.id}
                 to={`/admin/settings?tab=${tab.id}`}
-                className={`flex items-center gap-3 px-5 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${
+                className={`flex items-center gap-3 px-5 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
                   activeTab === tab.id ? 'bg-[#1c2d51] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#1c2d51]'
                 }`}
               >
@@ -96,19 +96,19 @@ const AdminSettings: React.FC = () => {
           </nav>
         </aside>
 
-        {/* Content Area - Cartão Branco Limpo */}
-        <div className="flex-1 bg-white p-10 rounded-[2.5rem] border border-slate-50 shadow-sm min-h-[500px]">
+        {/* Content Area */}
+        <div className="flex-1 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm min-h-[500px]">
           {activeTab === 'general' && (
             <div className="space-y-8 animate-in fade-in duration-300">
-              <h3 className="text-sm font-black text-[#1c2d51] uppercase tracking-widest border-b border-slate-50 pb-4">Dados Principais</h3>
-              <div className="grid gap-8 max-w-2xl">
-                <div className="space-y-3">
-                  <label className="text-[9px] font-black uppercase text-slate-400 ml-1 tracking-widest">Nome Comercial</label>
-                  <input className="admin-input-refined" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
+              <h3 className="text-sm font-black text-[#1c2d51] uppercase tracking-widest border-b pb-4">Dados Principais</h3>
+              <div className="grid gap-6 max-w-2xl">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Nome Comercial</label>
+                  <input className="admin-input-sober" value={localTenant.nome} onChange={e => setLocalTenant({...localTenant, nome: e.target.value})} />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[9px] font-black uppercase text-slate-400 ml-1 tracking-widest">Slogan da Agência</label>
-                  <input className="admin-input-refined" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} />
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Slogan da Agência</label>
+                  <input className="admin-input-sober" value={localTenant.slogan || ''} onChange={e => setLocalTenant({...localTenant, slogan: e.target.value})} />
                 </div>
               </div>
             </div>
@@ -116,24 +116,24 @@ const AdminSettings: React.FC = () => {
 
           {activeTab === 'branding' && (
             <div className="space-y-10 animate-in fade-in duration-300">
-              <h3 className="text-sm font-black text-[#1c2d51] uppercase tracking-widest border-b border-slate-50 pb-4">Identidade Visual</h3>
-              <div className="grid md:grid-cols-2 gap-12">
+              <h3 className="text-sm font-black text-[#1c2d51] uppercase tracking-widest border-b pb-4">Visual da Marca</h3>
+              <div className="grid md:grid-cols-2 gap-10">
                 <div className="space-y-6">
                   <div className="space-y-3">
-                    <label className="text-[9px] font-black uppercase text-slate-400 ml-1 tracking-widest">Cor de Branding (Primária)</label>
-                    <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Cor Primária</label>
+                    <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                       <input type="color" className="w-10 h-10 border-none bg-transparent cursor-pointer rounded-lg" value={localTenant.cor_primaria} onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value})} />
-                      <span className="font-mono font-black text-xs uppercase text-[#1c2d51]">{localTenant.cor_primaria}</span>
+                      <span className="font-mono font-black text-xs uppercase tracking-tighter">{localTenant.cor_primaria}</span>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <label className="text-[9px] font-black uppercase text-slate-400 ml-1 tracking-widest">Logótipo da Empresa</label>
+                  <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Logótipo da Empresa</label>
                   <div onClick={() => logoInputRef.current?.click()} className="aspect-video bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all p-6 overflow-hidden relative group">
                     {localTenant.logo_url ? (
                       <>
                         <img src={localTenant.logo_url} className="h-full object-contain" alt="Logo" />
-                        <div className="absolute inset-0 bg-[#1c2d51]/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[10px] uppercase tracking-widest">Alterar Imagem</div>
+                        <div className="absolute inset-0 bg-[#1c2d51]/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[9px] uppercase tracking-widest">Alterar Imagem</div>
                       </>
                     ) : <Camera className="text-slate-300" size={32} />}
                     <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
@@ -145,22 +145,22 @@ const AdminSettings: React.FC = () => {
 
           {activeTab === 'billing' && (
             <div className="space-y-8 animate-in fade-in duration-300">
-              <div className="flex items-center justify-between border-b border-slate-50 pb-4">
-                <h3 className="text-sm font-black text-[#1c2d51] uppercase tracking-widest">Gestão de Conta</h3>
+              <div className="flex items-center justify-between border-b pb-4">
+                <h3 className="text-sm font-black text-[#1c2d51] uppercase tracking-widest">A minha Subscrição</h3>
                 <span className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1.5"><CheckCircle2 size={12}/> Plano Ativo</span>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Plano Escolhido</p>
+                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 shadow-inner">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Plano Atual</p>
                   <p className="text-2xl font-black text-[#1c2d51] uppercase tracking-tight">{localTenant.subscription?.plan_id || 'Starter'}</p>
                 </div>
-                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100">
+                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 shadow-inner">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Ciclo de Faturação</p>
-                  <p className="text-2xl font-black text-[#1c2d51] flex items-center gap-2 tracking-tight"><Clock size={20}/> Mensal</p>
+                  <p className="text-2xl font-black text-[#1c2d51] flex items-center gap-2"><Clock size={20}/> Mensal</p>
                 </div>
               </div>
-              <div className="pt-6">
-                <Link to="/planos" className="inline-flex items-center gap-2 text-xs font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-colors">
+              <div className="pt-4">
+                <Link to="/planos" className="inline-flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700">
                   Alterar o meu Plano <ArrowRight size={14}/>
                 </Link>
               </div>
@@ -170,22 +170,21 @@ const AdminSettings: React.FC = () => {
       </div>
       
       <style>{`
-        .admin-input-refined { 
+        .admin-input-sober { 
           width: 100%; 
-          padding: 1.15rem 1.4rem; 
-          background: #F8F9FB; 
-          border: 1px solid #E6E9EF; 
-          border-radius: 1.25rem; 
+          padding: 1rem 1.25rem; 
+          background: #f8fafc; 
+          border: 1px solid #e2e8f0; 
+          border-radius: 1rem; 
           outline: none; 
-          font-weight: 800; 
+          font-weight: 700; 
           color: #1c2d51; 
           transition: all 0.2s;
-          font-size: 0.9rem;
         }
-        .admin-input-refined:focus { 
+        .admin-input-sober:focus { 
           border-color: #1c2d51; 
           background: #fff; 
-          box-shadow: 0 10px 20px -10px rgba(28, 45, 81, 0.1); 
+          box-shadow: 0 4px 20px -10px rgba(28, 45, 81, 0.1); 
         }
       `}</style>
     </div>
