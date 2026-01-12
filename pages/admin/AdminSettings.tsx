@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
@@ -46,8 +47,8 @@ const AdminSettings: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
-  // Subscription Info
-  const { isTrial, daysLeft, hasAccess } = SubscriptionService.checkAccess(tenant);
+  // Subscription Info - Passando o email para bypass do dono
+  const { isTrial, daysLeft, hasAccess } = SubscriptionService.checkAccess(tenant, user?.email);
 
   useEffect(() => {
     if (!tenantLoading) {
@@ -305,7 +306,7 @@ const AdminSettings: React.FC = () => {
                     <div className="relative z-10">
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Plano Atual</p>
                       <h4 className="text-3xl font-black text-[#1c2d51] uppercase tracking-tighter mb-6">
-                        {tenant.subscription?.plan_id || 'Starter'}
+                        {user?.email === 'snapimoveis@gmail.com' ? 'MASTER ADMIN' : (tenant.subscription?.plan_id || 'Starter')}
                       </h4>
                       
                       <div className="space-y-4 mb-8">
@@ -315,7 +316,7 @@ const AdminSettings: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-[10px] font-black uppercase text-slate-400">Estado da Conta</p>
-                            <p className="text-xs font-bold text-[#1c2d51]">{hasAccess ? 'Ativa e Funcional' : 'Acesso Bloqueado'}</p>
+                            <p className="text-xs font-bold text-[#1c2d51]">{hasAccess ? 'Ativa e Funcional (Master)' : 'Acesso Bloqueado'}</p>
                           </div>
                         </div>
                         
@@ -324,15 +325,15 @@ const AdminSettings: React.FC = () => {
                             <Clock size={16} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black uppercase text-slate-400">{isTrial ? 'Trial Termina em' : 'Próxima Fatura'}</p>
+                            <p className="text-[10px] font-black uppercase text-slate-400">Próxima Fatura</p>
                             <p className="text-xs font-bold text-[#1c2d51]">
-                              {isTrial ? `${daysLeft} dias restantes` : 'Faturação ativa'}
+                              {user?.email === 'snapimoveis@gmail.com' ? 'Vitalício / Isento' : (isTrial ? `${daysLeft} dias restantes` : 'Faturação ativa')}
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {isTrial && (
+                      {isTrial && user?.email !== 'snapimoveis@gmail.com' && (
                         <Link 
                           to="/planos" 
                           className="inline-flex bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl items-center gap-2 hover:-translate-y-1 transition-all"
@@ -363,7 +364,7 @@ const AdminSettings: React.FC = () => {
                       </ul>
                     </div>
                     
-                    {!isTrial && (
+                    {!isTrial && user?.email !== 'snapimoveis@gmail.com' && (
                       <button className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 transition-colors self-start">
                         Cancelar Subscrição
                       </button>

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext.tsx';
@@ -23,8 +24,8 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Verificação de Acesso (Trial / Subscrição)
-  const { hasAccess, isTrial, daysLeft } = SubscriptionService.checkAccess(tenant);
+  // Verificação de Acesso (Trial / Subscrição) - Passando o email para bypass do dono
+  const { hasAccess, isTrial, daysLeft } = SubscriptionService.checkAccess(tenant, user?.email);
 
   useEffect(() => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
@@ -86,7 +87,7 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <div className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border border-blue-500/20">
-                  Período Trial
+                  {user?.email === 'snapimoveis@gmail.com' ? 'Acesso Master' : 'Período Trial'}
                 </div>
                 <div className="text-blue-400">
                   <Sparkles size={14} className="animate-pulse" />
@@ -95,17 +96,21 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               
               <div className="space-y-1 mb-4">
                 <p className="text-xl font-black tracking-tighter leading-none">
-                  {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'} restantes
+                  {user?.email === 'snapimoveis@gmail.com' ? 'Vitalício' : `${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'} restantes`}
                 </p>
-                <p className="text-[10px] font-medium text-slate-400">Aproveite todas as funções Business grátis.</p>
+                <p className="text-[10px] font-medium text-slate-400">
+                  {user?.email === 'snapimoveis@gmail.com' ? 'Administrador do Sistema' : 'Aproveite todas as funções Business grátis.'}
+                </p>
               </div>
 
-              <Link 
-                to="/planos" 
-                className="w-full bg-blue-500 hover:bg-blue-400 text-white py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
-              >
-                <Zap size={12} fill="currentColor" /> Assinar Agora
-              </Link>
+              {user?.email !== 'snapimoveis@gmail.com' && (
+                <Link 
+                  to="/planos" 
+                  className="w-full bg-blue-500 hover:bg-blue-400 text-white py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+                >
+                  <Zap size={12} fill="currentColor" /> Assinar Agora
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -126,8 +131,8 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 Backoffice / <span className="text-[#1c2d51]">{ADMIN_NAV_ITEMS.find(i => i.path === location.pathname)?.name || 'Painel'}</span>
              </div>
              {isTrial && hasAccess && (
-               <div className="bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-2 border border-amber-100 animate-in fade-in slide-in-from-left-2">
-                  <AlertTriangle size={12} /> {daysLeft} dias de Trial
+               <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-2 border animate-in fade-in slide-in-from-left-2 ${user?.email === 'snapimoveis@gmail.com' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+                  <AlertTriangle size={12} /> {user?.email === 'snapimoveis@gmail.com' ? 'Administrador Master' : `${daysLeft} dias de Trial`}
                </div>
              )}
           </div>

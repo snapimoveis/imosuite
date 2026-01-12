@@ -11,8 +11,14 @@ export const StripePlans = {
 export const SubscriptionService = {
   /**
    * Verifica se o tenant está num estado válido (Trial ou Ativo)
+   * Adicionado suporte para bypass de Administrador Master
    */
-  checkAccess: (tenant: Tenant): { hasAccess: boolean; isTrial: boolean; daysLeft: number } => {
+  checkAccess: (tenant: Tenant, userEmail?: string | null): { hasAccess: boolean; isTrial: boolean; daysLeft: number } => {
+    // BYPASS PARA ADMINISTRADOR MASTER
+    if (userEmail === 'snapimoveis@gmail.com') {
+      return { hasAccess: true, isTrial: true, daysLeft: 999 };
+    }
+
     if (!tenant.subscription) return { hasAccess: false, isTrial: false, daysLeft: 0 };
     
     const now = new Date();
