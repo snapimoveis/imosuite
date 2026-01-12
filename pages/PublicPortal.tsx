@@ -30,6 +30,7 @@ const PublicPortal: React.FC = () => {
           setTenant(DEFAULT_TENANT);
           setProperties(MOCK_IMOVEIS);
           document.documentElement.style.setProperty('--primary', DEFAULT_TENANT.cor_primaria);
+          document.documentElement.style.setProperty('--secondary', DEFAULT_TENANT.cor_secundaria);
           setLoading(false);
         }, 800);
         return;
@@ -40,6 +41,7 @@ const PublicPortal: React.FC = () => {
           const tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
           setTenant(tData);
           document.documentElement.style.setProperty('--primary', tData.cor_primaria);
+          document.documentElement.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
           const pSnap = await getDocs(collection(db, "tenants", tData.id, "properties"));
           setProperties(pSnap.docs.map(d => ({ id: d.id, tenant_id: tData.id, ...d.data() } as Imovel)).filter(p => p.publicacao?.publicar_no_site));
         }
@@ -60,8 +62,8 @@ const PublicPortal: React.FC = () => {
       wrapper: "font-brand",
       nav: "h-28 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
       navText: "font-heritage italic text-[#1c2d51]",
-      footer: "py-24 px-10 border-t border-slate-100 bg-slate-50",
-      footerText: "text-[#1c2d51] font-heritage italic",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white",
+      footerText: "text-white font-heritage italic",
       button: "bg-[var(--primary)] text-white px-8 py-3 rounded-none font-bold uppercase tracking-widest",
       cardType: "classic"
     },
@@ -69,8 +71,8 @@ const PublicPortal: React.FC = () => {
       wrapper: "font-brand bg-white",
       nav: "h-32 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
       navText: "font-black tracking-tight text-[#1c2d51]",
-      footer: "py-24 px-12 border-t border-slate-50 bg-white",
-      footerText: "text-[#1c2d51] font-black",
+      footer: "py-24 px-12 bg-[var(--primary)] text-white",
+      footerText: "text-white font-black",
       button: "bg-[var(--primary)] text-white px-8 py-3.5 rounded-2xl font-black uppercase text-xs shadow-lg",
       cardType: "modern"
     },
@@ -78,7 +80,7 @@ const PublicPortal: React.FC = () => {
       wrapper: "font-brand bg-black text-white",
       nav: "h-28 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white uppercase tracking-[0.2em] border-b border-white/5",
       navText: "font-black italic",
-      footer: "py-24 px-10 border-t border-white/5 bg-black text-white",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white border-t border-white/5",
       footerText: "text-white font-black italic",
       button: "bg-white text-black px-10 py-3 rounded-none font-black uppercase text-[10px]",
       cardType: "luxury"
@@ -87,7 +89,7 @@ const PublicPortal: React.FC = () => {
       wrapper: "font-brand",
       nav: "h-28 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white shadow-xl",
       navText: "font-black uppercase tracking-tighter",
-      footer: "py-24 px-10 bg-slate-900 text-white",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white",
       footerText: "text-white font-black uppercase",
       button: "bg-white text-[var(--primary)] px-8 py-3 rounded-xl font-black uppercase text-xs shadow-xl",
       cardType: "urban"
@@ -96,8 +98,8 @@ const PublicPortal: React.FC = () => {
       wrapper: "font-brand bg-[#FDFBF7]",
       nav: "h-32 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
       navText: "font-black text-[#2D2926] tracking-widest",
-      footer: "py-24 px-12 border-t border-[#EAE3D9] bg-[#FDFBF7] text-[#2D2926]",
-      footerText: "text-[#2D2926] font-black tracking-widest",
+      footer: "py-24 px-12 bg-[var(--primary)] text-white",
+      footerText: "text-white font-black tracking-widest",
       button: "bg-[#2D2926] text-white px-10 py-4 rounded-[2rem] font-bold text-xs uppercase tracking-widest shadow-2xl",
       cardType: "artistic"
     }
@@ -136,42 +138,43 @@ const PublicPortal: React.FC = () => {
         {cms.homepage_sections.filter(s => s.enabled).sort((a,b) => a.order - b.order).map(section => (
           <SectionRenderer key={section.id} section={section} tenant={tenant} properties={properties} templateStyles={s} />
         ))}
-        <div className={tid === 'prestige' || tid === 'skyline' ? 'bg-neutral-900 text-white border-t border-white/5' : 'bg-slate-50 border-t border-slate-100'}>
+        {/* SECÇÃO DE CONTACTO COM COR SECUNDÁRIA */}
+        <div className="bg-[var(--secondary)] text-white">
           <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
         </div>
       </main>
 
-      {/* FOOTER DINÂMICO */}
+      {/* FOOTER DINÂMICO COM COR PRIMÁRIA */}
       <footer className={s.footer}>
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
             <div className="space-y-6">
                <h4 className={`text-xl font-black uppercase tracking-tighter ${s.footerText}`}>{tenant.nome}</h4>
-               <p className="text-sm font-medium leading-relaxed opacity-50">{tenant.slogan}</p>
+               <p className="text-sm font-medium leading-relaxed opacity-70">{tenant.slogan}</p>
                
                {cms.social?.complaints_book_link && (
                  <a href={cms.social.complaints_book_link} target="_blank" rel="noopener noreferrer" className="block w-fit mt-8 transition-opacity hover:opacity-80">
                    <img 
-                     src={tid === 'prestige' || tid === 'skyline' ? "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" : "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png"} 
+                     src="https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" 
                      alt="Livro de Reclamações Online" 
-                     className="h-10 w-auto grayscale contrast-125"
+                     className="h-10 w-auto brightness-0 invert"
                    />
                  </a>
                )}
             </div>
             <div className="space-y-6">
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Navegação</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Navegação</p>
                <div className="flex flex-col gap-3">
-                  {cms.menus.main.map(m => <Link key={m.id} to={m.path} className="text-sm font-bold opacity-60 hover:opacity-100 transition-all">{m.label}</Link>)}
+                  {cms.menus.main.map(m => <Link key={m.id} to={m.path} className="text-sm font-bold opacity-80 hover:opacity-100 transition-all">{m.label}</Link>)}
                </div>
             </div>
             <div className="space-y-6 md:text-right">
                <div className="flex md:justify-end gap-6 mb-8">
-                  {cms.social?.instagram && <a href={cms.social.instagram} className="opacity-60 hover:opacity-100"><Instagram size={20}/></a>}
-                  {cms.social?.facebook && <a href={cms.social.facebook} className="opacity-60 hover:opacity-100"><Facebook size={20}/></a>}
-                  {cms.social?.whatsapp && <a href={cms.social.whatsapp} className="opacity-60 hover:opacity-100"><MessageCircle size={20}/></a>}
+                  {cms.social?.instagram && <a href={cms.social.instagram} className="opacity-80 hover:opacity-100"><Instagram size={20}/></a>}
+                  {cms.social?.facebook && <a href={cms.social.facebook} className="opacity-80 hover:opacity-100"><Facebook size={20}/></a>}
+                  {cms.social?.whatsapp && <a href={cms.social.whatsapp} className="opacity-80 hover:opacity-100"><MessageCircle size={20}/></a>}
                </div>
-               <p className="text-xs font-bold opacity-40">{tenant.email}</p>
-               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20 block pt-10">
+               <p className="text-xs font-bold opacity-60">{tenant.email}</p>
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 block pt-10">
                  © {new Date().getFullYear()} {tenant.nome} • {isBusiness ? 'Real Estate' : 'Powered by ImoSuite'}
                </span>
             </div>

@@ -30,6 +30,7 @@ const PublicPage: React.FC = () => {
           const p = tData.cms?.pages?.find(p => p.slug === pageSlug);
           if (p) setPage(p);
           document.documentElement.style.setProperty('--primary', tData.cor_primaria);
+          document.documentElement.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
         }
       } catch (err) { console.error(err); } finally { setLoading(false); }
     };
@@ -50,7 +51,7 @@ const PublicPage: React.FC = () => {
       nav: "h-24 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
       navText: "font-heritage italic text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-3 rounded-none font-bold uppercase tracking-widest",
-      footer: "py-24 px-10 border-t border-slate-100 bg-slate-50",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white",
       heading: "font-heritage italic text-[#1c2d51]"
     },
     canvas: {
@@ -58,7 +59,7 @@ const PublicPage: React.FC = () => {
       nav: "h-28 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
       navText: "font-black tracking-tight text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-3.5 rounded-2xl font-black uppercase text-xs shadow-lg",
-      footer: "py-24 px-12 border-t border-slate-50 bg-white",
+      footer: "py-24 px-12 bg-[var(--primary)] text-white",
       heading: "font-black text-[#1c2d51] tracking-tight"
     },
     prestige: {
@@ -66,7 +67,7 @@ const PublicPage: React.FC = () => {
       nav: "h-24 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white border-b border-white/5 uppercase",
       navText: "font-black italic",
       button: "bg-white text-black px-10 py-3 rounded-none font-black uppercase text-[10px]",
-      footer: "py-24 px-10 border-t border-white/5 bg-black text-white",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white border-t border-white/5",
       heading: "font-black italic uppercase text-white"
     },
     skyline: {
@@ -74,7 +75,7 @@ const PublicPage: React.FC = () => {
       nav: "h-24 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white",
       navText: "font-black uppercase",
       button: "bg-white text-[var(--primary)] px-8 py-3 rounded-xl font-black uppercase text-xs shadow-xl",
-      footer: "py-24 px-10 bg-slate-900 text-white",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white",
       heading: "font-black uppercase text-[#1c2d51]"
     },
     luxe: {
@@ -82,7 +83,7 @@ const PublicPage: React.FC = () => {
       nav: "h-28 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
       navText: "font-black text-[#2D2926]",
       button: "bg-[#2D2926] text-white px-10 py-4 rounded-[2rem] font-bold text-xs uppercase tracking-widest shadow-2xl",
-      footer: "py-24 px-12 border-t border-[#EAE3D9] bg-[#FDFBF7] text-[#2D2926]",
+      footer: "py-24 px-12 bg-[var(--primary)] text-white",
       heading: "font-black text-[#2D2926] tracking-widest"
     }
   };
@@ -120,24 +121,6 @@ const PublicPage: React.FC = () => {
                   <div className={`prose prose-slate max-w-none font-medium leading-relaxed whitespace-pre-line text-lg ${tid === 'prestige' ? 'text-slate-400' : 'text-slate-600'}`}>
                     {page.content_md}
                   </div>
-
-                  {/* MISSÃO E VISÃO */}
-                  {(page.missao || page.visao) && (
-                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 border-t ${tid === 'prestige' ? 'border-white/5' : 'border-slate-50'}`}>
-                       {page.missao && (
-                         <div className="space-y-4">
-                           <h4 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-blue-500"><Target size={18}/> Nossa Missão</h4>
-                           <p className="text-sm font-medium leading-relaxed italic opacity-70">{page.missao}</p>
-                         </div>
-                       )}
-                       {page.visao && (
-                         <div className="space-y-4">
-                           <h4 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-500"><Eye size={18}/> Nossa Visão</h4>
-                           <p className="text-sm font-medium leading-relaxed italic opacity-70">{page.visao}</p>
-                         </div>
-                       )}
-                    </div>
-                  )}
                </div>
 
                <div className="lg:col-span-5">
@@ -154,26 +137,21 @@ const PublicPage: React.FC = () => {
             </div>
          </div>
 
-         {isContactPage && (
-           <div className={tid === 'prestige' || tid === 'skyline' ? 'bg-neutral-900 border-t border-white/5' : 'bg-slate-50 border-t border-slate-100'}>
-             <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
-           </div>
-         )}
+         {/* ÁREA DE CONTACTO COM COR SECUNDÁRIA */}
+         <div className="bg-[var(--secondary)] text-white">
+           <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
+         </div>
       </main>
 
+      {/* FOOTER COM COR PRIMÁRIA */}
       <footer className={s.footer}>
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
             <div className="space-y-6">
                <h4 className={`text-xl font-black uppercase tracking-tighter ${tid === 'prestige' ? 'italic' : ''}`}>{tenant.nome}</h4>
-               <p className="text-sm font-medium leading-relaxed opacity-50">{tenant.slogan}</p>
-               {cms.social?.complaints_book_link && (
-                 <a href={cms.social.complaints_book_link} target="_blank" rel="noopener noreferrer" className="block w-fit mt-8">
-                   <img src={tid === 'prestige' || tid === 'skyline' ? "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" : "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png"} alt="Livro de Reclamações" className="h-10 w-auto grayscale contrast-125" />
-                 </a>
-               )}
+               <p className="text-sm font-medium leading-relaxed opacity-70">{tenant.slogan}</p>
             </div>
             <div className="space-y-6 md:text-right">
-               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20 block pt-10">© {new Date().getFullYear()} {tenant.nome}</span>
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 block pt-10">© {new Date().getFullYear()} {tenant.nome}</span>
             </div>
          </div>
       </footer>

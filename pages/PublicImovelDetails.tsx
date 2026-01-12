@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import SEO from '../components/SEO';
+// Added missing import for ContactSection
+import ContactSection from '../components/ContactSection';
 import { DEFAULT_TENANT, DEFAULT_TENANT_CMS } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
 
@@ -62,6 +64,7 @@ const PublicImovelDetails: React.FC = () => {
           const tData = { id: tSnap.docs[0].id, ...(tSnap.docs[0].data() as any) } as Tenant;
           setTenant(tData);
           document.documentElement.style.setProperty('--primary', tData.cor_primaria);
+          document.documentElement.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
 
           const iQuery = query(collection(db, "tenants", tData.id, "properties"), where("slug", "==", imovelSlug), limit(1));
           const iSnap = await getDocs(iQuery);
@@ -134,8 +137,8 @@ const PublicImovelDetails: React.FC = () => {
       navText: "font-heritage italic text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-none font-black uppercase text-xs",
       heading: "font-heritage italic text-[#1c2d51]",
-      footer: "py-24 px-10 border-t border-slate-100 bg-slate-50",
-      footerText: "text-[#1c2d51] font-heritage italic"
+      footer: "py-24 px-10 bg-[var(--primary)] text-white",
+      footerText: "text-white font-heritage italic"
     },
     canvas: {
       wrapper: "font-brand bg-white",
@@ -143,8 +146,8 @@ const PublicImovelDetails: React.FC = () => {
       navText: "font-black tracking-tight text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-2xl font-black uppercase text-xs shadow-lg",
       heading: "font-black text-[#1c2d51] tracking-tight",
-      footer: "py-24 px-12 border-t border-slate-50 bg-white",
-      footerText: "text-[#1c2d51] font-black"
+      footer: "py-24 px-12 bg-[var(--primary)] text-white",
+      footerText: "text-white font-black"
     },
     prestige: {
       wrapper: "font-brand bg-black text-white",
@@ -152,7 +155,7 @@ const PublicImovelDetails: React.FC = () => {
       navText: "font-black italic",
       button: "bg-white text-black px-10 py-4 rounded-none font-black uppercase text-[10px]",
       heading: "font-black italic uppercase text-white",
-      footer: "py-24 px-10 border-t border-white/5 bg-black text-white",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white border-t border-white/5",
       footerText: "text-white font-black italic"
     },
     skyline: {
@@ -161,7 +164,7 @@ const PublicImovelDetails: React.FC = () => {
       navText: "font-black uppercase",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-xl font-black uppercase text-xs shadow-xl",
       heading: "font-black uppercase text-[#1c2d51]",
-      footer: "py-24 px-10 bg-slate-900 text-white",
+      footer: "py-24 px-10 bg-[var(--primary)] text-white",
       footerText: "text-white font-black uppercase"
     },
     luxe: {
@@ -170,8 +173,8 @@ const PublicImovelDetails: React.FC = () => {
       navText: "font-black text-[#2D2926]",
       button: "bg-[#2D2926] text-white px-10 py-5 rounded-[2.5rem] font-bold text-xs uppercase shadow-2xl",
       heading: "font-black text-[#2D2926] tracking-widest",
-      footer: "py-24 px-12 border-t border-[#EAE3D9] bg-[#FDFBF7] text-[#2D2926]",
-      footerText: "text-[#2D2926] font-black tracking-widest"
+      footer: "py-24 px-12 bg-[var(--primary)] text-white",
+      footerText: "text-white font-black tracking-widest"
     }
   };
 
@@ -285,7 +288,6 @@ const PublicImovelDetails: React.FC = () => {
                    </form>
                  )}
 
-                 {/* Contactos da Agência Adicionados */}
                  <div className={`pt-8 border-t space-y-4 ${tid === 'prestige' ? 'border-white/5' : 'border-slate-50'}`}>
                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Contactos da Agência</p>
                     <div className="space-y-3">
@@ -295,11 +297,6 @@ const PublicImovelDetails: React.FC = () => {
                        <div className="flex items-center gap-3 text-xs font-bold opacity-80">
                           <Mail size={14} className="text-blue-500" /> {tenant.email}
                        </div>
-                       {tenant.morada && (
-                         <div className="flex items-start gap-3 text-xs font-bold opacity-80">
-                            <MapPin size={14} className="text-blue-500 shrink-0 mt-0.5" /> {tenant.morada}
-                         </div>
-                       )}
                     </div>
                  </div>
               </div>
@@ -308,37 +305,37 @@ const PublicImovelDetails: React.FC = () => {
         </div>
       </main>
 
-      {/* FOOTER DINÂMICO ADICIONADO */}
+      {/* ÁREA DE CONTACTO COM COR SECUNDÁRIA */}
+      <div className="bg-[var(--secondary)] text-white">
+        <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
+      </div>
+
+      {/* FOOTER DINÂMICO COM COR PRIMÁRIA */}
       <footer className={s.footer}>
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
             <div className="space-y-6">
                <h4 className={`text-xl font-black uppercase tracking-tighter ${s.footerText}`}>{tenant.nome}</h4>
-               <p className="text-sm font-medium leading-relaxed opacity-50">{tenant.slogan}</p>
+               <p className="text-sm font-medium leading-relaxed opacity-70">{tenant.slogan}</p>
                
                {cms.social?.complaints_book_link && (
-                 <a href={cms.social.complaints_book_link} target="_blank" rel="noopener noreferrer" className="block w-fit mt-8 transition-opacity hover:opacity-80">
+                 <a href={cms.social.complaints_book_link} target="_blank" rel="noopener noreferrer" className="block w-fit mt-8">
                    <img 
-                     src={tid === 'prestige' || tid === 'skyline' ? "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" : "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png"} 
+                     src="https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" 
                      alt="Livro de Reclamações Online" 
-                     className="h-10 w-auto grayscale contrast-125"
+                     className="h-10 w-auto brightness-0 invert"
                    />
                  </a>
                )}
             </div>
             <div className="space-y-6">
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Navegação</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Navegação</p>
                <div className="flex flex-col gap-3">
-                  {cms.menus.main.map(m => <Link key={m.id} to={m.path} className="text-sm font-bold opacity-60 hover:opacity-100 transition-all">{m.label}</Link>)}
+                  {cms.menus.main.map(m => <Link key={m.id} to={m.path} className="text-sm font-bold opacity-80 hover:opacity-100 transition-all">{m.label}</Link>)}
                </div>
             </div>
             <div className="space-y-6 md:text-right">
-               <div className="flex md:justify-end gap-6 mb-8">
-                  {cms.social?.instagram && <a href={cms.social.instagram} className="opacity-60 hover:opacity-100"><Instagram size={20}/></a>}
-                  {cms.social?.facebook && <a href={cms.social.facebook} className="opacity-60 hover:opacity-100"><Facebook size={20}/></a>}
-                  {cms.social?.whatsapp && <a href={cms.social.whatsapp} className="opacity-60 hover:opacity-100"><MessageCircle size={20}/></a>}
-               </div>
-               <p className="text-xs font-bold opacity-40">{tenant.email}</p>
-               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20 block pt-10">
+               <p className="text-xs font-bold opacity-60">{tenant.email}</p>
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 block pt-10">
                  © {new Date().getFullYear()} {tenant.nome} • {isBusiness ? 'Real Estate' : 'Powered by ImoSuite'}
                </span>
             </div>
@@ -348,8 +345,6 @@ const PublicImovelDetails: React.FC = () => {
       <style>{`
         .detail-input-v2 { width: 100%; padding: 1.15rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
         .detail-input-v2:focus { background: #fff; border-color: var(--primary); }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   );

@@ -130,80 +130,53 @@ const AdminSettings: React.FC = () => {
 
         <div className="lg:col-span-3">
           {activeTab === 'branding' && (
-            <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-12 animate-in fade-in">
-              <div>
-                <h3 className="font-black text-[#1c2d51] uppercase text-sm tracking-widest mb-2">Branding & Cores</h3>
-                <div className="w-16 h-1 bg-[var(--primary)] rounded-full"></div>
-              </div>
-
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
+              <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest border-b pb-4">Branding & Cores</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                 <div className="space-y-10">
+                 <div className="space-y-8">
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Cor Primária</label>
-                       <div className="flex items-center gap-6 bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 group hover:border-[var(--primary)] transition-all">
-                          <div className="relative">
-                            <input 
-                              type="color" 
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
-                              value={localTenant.cor_primaria} 
-                              onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value.toUpperCase()})} 
-                            />
-                            <div style={{ backgroundColor: localTenant.cor_primaria }} className="w-16 h-16 rounded-2xl shadow-lg border-4 border-white"></div>
-                          </div>
-                          <span className="font-black text-xl tracking-tighter text-[#1c2d51]">{localTenant.cor_primaria}</span>
+                       <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
+                          <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_primaria} onChange={e => setLocalTenant({...localTenant, cor_primaria: e.target.value.toUpperCase()})} />
+                          <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_primaria}</span>
                        </div>
                     </div>
-
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Cor Secundária</label>
-                       <div className="flex items-center gap-6 bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 group hover:border-[var(--secondary)] transition-all">
-                          <div className="relative">
-                            <input 
-                              type="color" 
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
-                              value={localTenant.cor_secundaria} 
-                              onChange={e => setLocalTenant({...localTenant, cor_secundaria: e.target.value.toUpperCase()})} 
-                            />
-                            <div style={{ backgroundColor: localTenant.cor_secundaria }} className="w-16 h-16 rounded-2xl shadow-lg border-4 border-white"></div>
-                          </div>
-                          <span className="font-black text-xl tracking-tighter text-[#1c2d51]">{localTenant.cor_secundaria}</span>
+                       <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl">
+                          <input type="color" className="w-12 h-12 rounded-xl border-none cursor-pointer" value={localTenant.cor_secundaria} onChange={e => setLocalTenant({...localTenant, cor_secundaria: e.target.value.toUpperCase()})} />
+                          <span className="font-black text-xs uppercase tracking-widest">{localTenant.cor_secundaria}</span>
                        </div>
                     </div>
                  </div>
-
                  <div>
-                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-4 block text-center tracking-widest">Logótipo da Agência</label>
-                    <div 
-                      onClick={() => logoInputRef.current?.click()} 
-                      className="h-64 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-[var(--primary)] transition-all overflow-hidden p-10 relative group"
-                    >
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2 mb-4 block">Logótipo da Agência</label>
+                    <div onClick={() => logoInputRef.current?.click()} className="h-64 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 cursor-pointer hover:bg-slate-100 transition-all overflow-hidden p-6 relative group">
                        {localTenant.logo_url ? (
                          <>
-                           <img src={localTenant.logo_url} className="h-full w-full object-contain drop-shadow-2xl" alt="Logo" />
-                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[10px] uppercase tracking-widest">Substituir Logótipo</div>
+                           <img src={localTenant.logo_url} className="h-full w-auto object-contain" alt="Logo" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[10px] uppercase">Alterar Logótipo</div>
                          </>
                        ) : (
                          <>
-                           <Camera size={40} className="mb-3 text-slate-300"/>
-                           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload PNG Transparente</span>
+                           <Camera size={32} className="mb-2"/>
+                           <span className="text-[10px] font-black uppercase">Upload PNG/JPG</span>
                          </>
                        )}
                        <input type="file" ref={logoInputRef} onChange={(e) => handleFileChange(e, 'logo')} className="hidden" accept="image/png,image/jpeg,image/webp" />
                     </div>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-3 text-center">Recomendamos logótipos em PNG transparente.</p>
                  </div>
               </div>
               
               {!isBusiness && (
-                <div className="bg-slate-900 p-10 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)] rounded-full blur-[80px] opacity-30"></div>
-                  <div className="flex items-center gap-6 relative z-10">
-                    <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400"><Lock size={28}/></div>
-                    <div>
-                      <p className="text-lg font-black tracking-tighter">Remover marca "Powered by ImoSuite"</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Exclusivo para utilizadores com plano Business</p>
-                    </div>
+                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 flex flex-col items-center text-center gap-4">
+                  <Lock className="text-slate-300" size={24}/>
+                  <div>
+                    <p className="text-xs font-black uppercase text-[#1c2d51]">Remover Branding ImoSuite</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Apenas disponível no plano Business.</p>
                   </div>
-                  <Link to="/planos" className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all relative z-10 shadow-xl">Fazer Upgrade</Link>
+                  <Link to="/planos" className="text-blue-500 font-black text-[10px] uppercase tracking-widest border-b border-blue-500 pb-0.5">Fazer Upgrade</Link>
                 </div>
               )}
             </div>
@@ -213,7 +186,7 @@ const AdminSettings: React.FC = () => {
             <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-10 animate-in fade-in">
                <div>
                  <h3 className="font-black text-[#1c2d51] uppercase text-sm tracking-widest mb-2">Dados da Empresa</h3>
-                 <div className="w-16 h-1 bg-[var(--primary)] rounded-full"></div>
+                 <div className="w-16 h-1 bg-[#1c2d51] rounded-full"></div>
                </div>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
@@ -232,22 +205,42 @@ const AdminSettings: React.FC = () => {
             </div>
           )}
           
-          {/* Outras tabs mantêm-se funcionais */}
+          {/* Websites & Menus can be kept similar but using generic colors if needed */}
+          {activeTab === 'website' && (
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-10">
+              <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest">Catálogo de Templates</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {TEMPLATE_OPTIONS.map((tmpl) => (
+                  <div key={tmpl.id} className={`group relative p-8 rounded-[2.5rem] border-2 transition-all ${localTenant.template_id === tmpl.id ? 'border-[#1c2d51] bg-[#1c2d51]/5' : 'border-slate-50 hover:border-slate-200'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${localTenant.template_id === tmpl.id ? 'bg-[#1c2d51] text-white' : 'bg-slate-50 text-slate-400'}`}>{tmpl.icon}</div>
+                       {localTenant.template_id === tmpl.id && <div className="bg-[#1c2d51] text-white px-3 py-1 rounded-full text-[8px] font-black uppercase">Ativo</div>}
+                    </div>
+                    <h4 className="font-black text-lg text-[#1c2d51]">{tmpl.name}</h4>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-8">{tmpl.desc}</p>
+                    <div className="flex gap-2">
+                       <button onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id })} className="flex-1 bg-[#1c2d51] text-white py-3 rounded-xl text-[10px] font-black uppercase">Selecionar</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <style>{`
         .admin-input-settings { width: 100%; padding: 1.25rem 1.5rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.5rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; }
-        .admin-input-settings:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 5px rgba(28, 45, 81, 0.03); }
+        .admin-input-settings:focus { background: #fff; border-color: #1c2d51; }
       `}</style>
     </div>
   );
 };
 
 const TabLink = ({ active, icon, label, tab }: { active: boolean, icon: any, label: string, tab: string }) => (
-  <Link to={`/admin/settings?tab=${tab}`} className={`flex items-center gap-4 px-8 py-5 rounded-[2.5rem] transition-all border ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-2xl scale-105' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'}`}>
+  <Link to={`/admin/settings?tab=${tab}`} className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all border ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-xl' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
     <div className={active ? 'text-white' : 'text-slate-300'}>{icon}</div>
-    <div className={`font-black text-xs uppercase tracking-widest ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
+    <div className={`font-black text-[11px] uppercase tracking-tighter leading-none ${active ? 'text-white' : 'text-[#1c2d51]'}`}>{label}</div>
   </Link>
 );
 
