@@ -40,184 +40,143 @@ const PublicPage: React.FC = () => {
   if (!tenant || !page) return <div className="h-screen flex flex-col items-center justify-center p-10 font-brand"><Building2 size={48} className="text-slate-100 mb-4"/><h2 className="text-xl font-black text-slate-800 tracking-tighter">Página não encontrada.</h2><Link to="/" className="text-blue-500 mt-4 font-bold underline">Voltar</Link></div>;
 
   const cms = tenant.cms || DEFAULT_TENANT_CMS;
+  const tid = tenant.template_id || 'heritage';
   const isContactPage = page.slug === 'contactos' || page.title.toLowerCase().includes('contacto');
 
+  // Estilos de Template (Reutilizados para consistência)
+  const styles: Record<string, any> = {
+    heritage: {
+      wrapper: "font-brand bg-white",
+      nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
+      navText: "font-heritage italic text-[#1c2d51]",
+      button: "bg-[var(--primary)] text-white px-8 py-3 rounded-none font-bold uppercase tracking-widest",
+      footer: "py-24 px-10 border-t border-slate-100 bg-slate-50",
+      heading: "font-heritage italic text-[#1c2d51]"
+    },
+    canvas: {
+      wrapper: "font-brand bg-white",
+      nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
+      navText: "font-black tracking-tight text-[#1c2d51]",
+      button: "bg-[var(--primary)] text-white px-8 py-3.5 rounded-2xl font-black uppercase text-xs shadow-lg",
+      footer: "py-24 px-12 border-t border-slate-50 bg-white",
+      heading: "font-black text-[#1c2d51] tracking-tight"
+    },
+    prestige: {
+      wrapper: "font-brand bg-black text-white",
+      nav: "h-20 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white border-b border-white/5 uppercase",
+      navText: "font-black italic",
+      button: "bg-white text-black px-10 py-3 rounded-none font-black uppercase text-[10px]",
+      footer: "py-24 px-10 border-t border-white/5 bg-black text-white",
+      heading: "font-black italic uppercase text-white"
+    },
+    skyline: {
+      wrapper: "font-brand bg-white",
+      nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white",
+      navText: "font-black uppercase",
+      button: "bg-white text-[var(--primary)] px-8 py-3 rounded-xl font-black uppercase text-xs shadow-xl",
+      footer: "py-24 px-10 bg-slate-900 text-white",
+      heading: "font-black uppercase text-[#1c2d51]"
+    },
+    luxe: {
+      wrapper: "font-brand bg-[#FDFBF7]",
+      nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
+      navText: "font-black text-[#2D2926]",
+      button: "bg-[#2D2926] text-white px-10 py-4 rounded-[2rem] font-bold text-xs uppercase tracking-widest shadow-2xl",
+      footer: "py-24 px-12 border-t border-[#EAE3D9] bg-[#FDFBF7] text-[#2D2926]",
+      heading: "font-black text-[#2D2926] tracking-widest"
+    }
+  };
+
+  const s = styles[tid] || styles.heritage;
+
   return (
-    <div className="min-h-screen flex flex-col bg-white font-brand selection:bg-[var(--primary)] selection:text-white">
+    <div className={`${s.wrapper} min-h-screen flex flex-col selection:bg-[var(--primary)] selection:text-white`}>
       <SEO title={`${page.title} - ${tenant.nome}`} overrideFullTitle={true} />
       
-      <nav className="h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-50">
+      <nav className={s.nav}>
          <Link to={`/agencia/${tenant.slug}`} className="flex items-center gap-3">
-            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" alt={tenant.nome} /> : <span className="font-black text-xl uppercase tracking-tighter text-[var(--primary)]">{tenant.nome}</span>}
+            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto object-contain" alt={tenant.nome} /> : <span className={`text-2xl ${s.navText}`}>{tenant.nome}</span>}
          </Link>
          <div className="hidden md:flex gap-10">
             {cms.menus.main.map(m => (
-              <Link key={m.id} to={m.path === '/' ? `/agencia/${tenant.slug}` : `/agencia/${tenant.slug}/p/${m.path.replace('/', '')}`} className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-[var(--primary)] transition-colors">{m.label}</Link>
+              <Link key={m.id} to={m.path === '/' ? `/agencia/${tenant.slug}` : `/agencia/${tenant.slug}/p/${m.path.replace('/', '')}`} className={`text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition-all ${tid === 'prestige' ? 'text-white' : 'text-slate-400'}`}>{m.label}</Link>
             ))}
          </div>
          <div className="flex items-center gap-4">
-            <button className="bg-[var(--primary)] text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl transition-all hover:scale-105">Contactar</button>
+            <button className={s.button}>Contactar</button>
             <button onClick={() => setIsMenuOpen(true)} className="md:hidden text-slate-400"><Menu/></button>
          </div>
       </nav>
 
       <main className="flex-1 w-full animate-in fade-in duration-700">
          <div className="max-w-5xl mx-auto px-6 py-20">
-            <Link to={`/agencia/${tenant.slug}`} className="inline-flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--primary)] mb-12">
+            <Link to={`/agencia/${tenant.slug}`} className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest mb-12 opacity-40 hover:opacity-100 transition-all ${tid === 'prestige' ? 'text-white' : 'text-slate-400'}`}>
                <ChevronLeft size={16}/> Início
             </Link>
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
                <div className="lg:col-span-7 space-y-12">
-                  <h1 className="text-5xl md:text-8xl font-black tracking-tighter text-[#1c2d51] leading-[0.9]">{page.title}</h1>
-                  <div className="prose prose-slate max-w-none text-slate-600 font-medium leading-relaxed whitespace-pre-line text-lg">
+                  <h1 className={`text-5xl md:text-8xl leading-[0.9] ${s.heading}`}>{page.title}</h1>
+                  <div className={`prose prose-slate max-w-none font-medium leading-relaxed whitespace-pre-line text-lg ${tid === 'prestige' ? 'text-slate-400' : 'text-slate-600'}`}>
                     {page.content_md}
                   </div>
 
                   {/* MISSÃO E VISÃO */}
                   {(page.missao || page.visao) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 border-t border-slate-50">
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 border-t ${tid === 'prestige' ? 'border-white/5' : 'border-slate-50'}`}>
                        {page.missao && (
                          <div className="space-y-4">
                            <h4 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-blue-500"><Target size={18}/> Nossa Missão</h4>
-                           <p className="text-sm font-medium leading-relaxed italic text-slate-500">{page.missao}</p>
+                           <p className="text-sm font-medium leading-relaxed italic opacity-70">{page.missao}</p>
                          </div>
                        )}
                        {page.visao && (
                          <div className="space-y-4">
                            <h4 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-500"><Eye size={18}/> Nossa Visão</h4>
-                           <p className="text-sm font-medium leading-relaxed italic text-slate-500">{page.visao}</p>
+                           <p className="text-sm font-medium leading-relaxed italic opacity-70">{page.visao}</p>
                          </div>
                        )}
-                    </div>
-                  )}
-
-                  {/* VALORES */}
-                  {page.valores && page.valores.length > 0 && (
-                    <div className="space-y-6 pt-10">
-                       <h4 className="text-xs font-black uppercase tracking-[0.2em] text-[#1c2d51]">Nossos Valores</h4>
-                       <div className="flex flex-wrap gap-3">
-                          {page.valores.map((v, i) => (
-                            <span key={i} className="px-6 py-3 bg-slate-50 border border-slate-100 rounded-full text-xs font-bold text-slate-600 flex items-center gap-2">
-                               <Star size={14} className="text-amber-500" fill="currentColor"/> {v}
-                            </span>
-                          ))}
-                       </div>
                     </div>
                   )}
                </div>
 
                <div className="lg:col-span-5">
-                  {/* GALERIA DA PÁGINA */}
                   {page.galeria_fotos && page.galeria_fotos.length > 0 && (
                     <div className="grid grid-cols-2 gap-4">
                        {page.galeria_fotos.map((img, i) => (
-                         <div key={i} className={`rounded-[2.5rem] overflow-hidden shadow-xl ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}>
-                           <img src={img} className="w-full h-full object-cover" alt={`Galeria ${i}`} />
+                         <div key={i} className={`overflow-hidden shadow-xl ${i === 0 ? 'col-span-2 aspect-video' : 'aspect-square'} ${tid === 'luxe' ? 'rounded-[2.5rem]' : tid === 'canvas' ? 'rounded-[2rem]' : 'rounded-none'}`}>
+                           <img src={img} className={`w-full h-full object-cover ${tid === 'prestige' ? 'grayscale' : ''}`} alt={`Galeria ${i}`} />
                          </div>
                        ))}
                     </div>
                   )}
                </div>
             </div>
-
-            {/* EQUIPA DE CONSULTORES */}
-            {page.equipa && page.equipa.length > 0 && (
-               <div className="mt-32 space-y-16">
-                  <div className="text-center">
-                    <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-[#1c2d51] mb-4">A Nossa Equipa</h2>
-                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Profissionais focados no seu sucesso</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                     {page.equipa.map((m) => (
-                        <div key={m.id} className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm hover:shadow-2xl transition-all duration-500 text-center group">
-                           <div className="w-32 h-32 rounded-full mx-auto mb-8 overflow-hidden border-4 border-white shadow-xl transition-transform group-hover:scale-105">
-                              <img src={m.avatar_url || 'https://via.placeholder.com/400'} className="w-full h-full object-cover" alt={m.name} />
-                           </div>
-                           <h4 className="text-xl font-black text-[#1c2d51] mb-1">{m.name || 'Nome do Consultor'}</h4>
-                           <p className="text-[10px] font-black uppercase text-blue-500 tracking-widest mb-8">{m.role || 'Consultor Imobiliário'}</p>
-                           
-                           <div className="flex flex-col gap-3">
-                              {m.email && (
-                                <a href={`mailto:${m.email}`} className="flex items-center justify-center gap-3 py-3 px-4 bg-slate-50 rounded-2xl text-xs font-bold text-slate-500 hover:bg-[#1c2d51] hover:text-white transition-all">
-                                   <Mail size={16}/> {m.email}
-                                </a>
-                              )}
-                              {m.phone && (
-                                <a href={`tel:${m.phone}`} className="flex items-center justify-center gap-3 py-3 px-4 bg-slate-50 rounded-2xl text-xs font-bold text-slate-500 hover:bg-[#1c2d51] hover:text-white transition-all">
-                                   <Phone size={16}/> {m.phone}
-                                </a>
-                              )}
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               </div>
-            )}
          </div>
 
-         {/* FORMULÁRIO PADRÃO PARA PÁGINAS DE CONTACTO */}
          {isContactPage && (
-           <div className="bg-slate-50 border-t border-slate-100">
-             <ContactSection 
-               tenantId={tenant.id} 
-               isWhiteLabel={true} 
-               title="Envie-nos uma mensagem"
-               subtitle="Estamos aqui para responder a todas as suas questões sobre o mercado imobiliário."
-             />
+           <div className={tid === 'prestige' || tid === 'skyline' ? 'bg-neutral-900 border-t border-white/5' : 'bg-slate-50 border-t border-slate-100'}>
+             <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
            </div>
          )}
       </main>
 
-      <footer className="py-24 px-10 border-t border-slate-100 bg-slate-50">
+      <footer className={s.footer}>
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
             <div className="space-y-6">
-               <h4 className="text-xl font-black tracking-tighter uppercase">{tenant.nome}</h4>
+               <h4 className={`text-xl font-black uppercase tracking-tighter ${tid === 'prestige' ? 'italic' : ''}`}>{tenant.nome}</h4>
                <p className="text-sm font-medium leading-relaxed opacity-50">{tenant.slogan}</p>
-               
-               {/* LIVRO DE RECLAMAÇÕES - VERSÃO POSITIVA */}
                {cms.social?.complaints_book_link && (
-                 <a 
-                   href={cms.social.complaints_book_link} 
-                   target="_blank" 
-                   rel="noopener noreferrer" 
-                   className="block w-fit mt-8 transition-opacity hover:opacity-80"
-                 >
-                   <img 
-                     src="https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png" 
-                     alt="Livro de Reclamações Online" 
-                     className="h-10 w-auto grayscale contrast-125"
-                   />
+                 <a href={cms.social.complaints_book_link} target="_blank" rel="noopener noreferrer" className="block w-fit mt-8">
+                   <img src={tid === 'prestige' || tid === 'skyline' ? "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" : "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png"} alt="Livro de Reclamações" className="h-10 w-auto grayscale contrast-125" />
                  </a>
                )}
             </div>
-            <div className="space-y-6 text-right">
-               <div className="flex justify-end gap-6 mb-8">
-                  {cms.social?.instagram && <a href={cms.social.instagram} target="_blank" rel="noreferrer"><Instagram size={20}/></a>}
-                  {cms.social?.facebook && <a href={cms.social.facebook} target="_blank" rel="noreferrer"><Facebook size={20}/></a>}
-                  {cms.social?.whatsapp && <a href={cms.social.whatsapp} target="_blank" rel="noreferrer"><MessageCircle size={20}/></a>}
-               </div>
-               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20 block pt-10">© {new Date().getFullYear()} {tenant.nome} • Powered by ImoSuite</span>
+            <div className="space-y-6 md:text-right">
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20 block pt-10">© {new Date().getFullYear()} {tenant.nome}</span>
             </div>
          </div>
       </footer>
-
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-black p-10 flex flex-col items-center justify-center space-y-8 animate-in slide-in-from-top duration-300">
-           <button onClick={() => setIsMenuOpen(false)} className="absolute top-10 right-10 text-white"><X size={32}/></button>
-           {cms.menus.main.map(m => (
-             <Link 
-               key={m.id} 
-               to={m.path === '/' ? `/agencia/${tenant.slug}` : `/agencia/${tenant.slug}/p/${m.path.replace('/', '')}`} 
-               onClick={() => setIsMenuOpen(false)} 
-               className="text-2xl font-black text-white uppercase tracking-tighter"
-             >
-               {m.label}
-             </Link>
-           ))}
-        </div>
-      )}
     </div>
   );
 };

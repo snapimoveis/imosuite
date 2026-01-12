@@ -11,7 +11,8 @@ import {
   Plus, Trash2, Edit3, X, Navigation, Camera,
   Image as ImageIcon, LayoutGrid, Clock, Star, Sparkles,
   Facebook, Instagram, Linkedin, MessageCircle, FileText, Check,
-  Users, Target, Eye, ImagePlus, UserPlus, Phone, Mail, FileWarning, Zap, Lock
+  Users, Target, Eye, ImagePlus, UserPlus, Phone, Mail, FileWarning, Zap, Lock,
+  Trash
 } from 'lucide-react';
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { CMSSection, TenantCMS, MenuItem, CMSPage, TeamMember } from '../../types';
@@ -114,15 +115,6 @@ const AdminCMS: React.FC = () => {
       is_external: false
     });
     setIsMenuModalOpen(true);
-  };
-
-  const handleSaveMenuItem = () => {
-    if (!editingMenuItem || !editingMenuItem.label) return;
-    setCms(prev => ({
-      ...prev,
-      menus: { ...prev.menus, [menuTarget]: [...prev.menus[menuTarget], editingMenuItem] }
-    }));
-    setIsMenuModalOpen(false);
   };
 
   const openPageModal = (page: CMSPage | null = null) => {
@@ -383,7 +375,7 @@ const AdminCMS: React.FC = () => {
           <div className="bg-white w-full max-w-5xl h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-8 border-b flex items-center justify-between shrink-0 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#1c2d51] text-white rounded-xl flex items-center justify-center"><FileText size={20}/></div>
+                <div className="w-10 h-10 bg-[#1c2d51] text-white rounded-xl flex items-center justify-center shadow-lg"><FileText size={20}/></div>
                 <div>
                    <h3 className="text-xl font-black text-[#1c2d51] tracking-tight">Personalizar Página</h3>
                    <div className="flex gap-4 mt-2">
@@ -397,7 +389,7 @@ const AdminCMS: React.FC = () => {
               <button onClick={() => setIsPageModalOpen(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-colors"><X size={24}/></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-10">
+            <div className="flex-1 overflow-y-auto p-10 bg-slate-50/30">
               {/* TAB 1: CONTEÚDO BASE */}
               {pageModalTab === 'content' && (
                 <div className="space-y-8 animate-in fade-in">
@@ -421,12 +413,141 @@ const AdminCMS: React.FC = () => {
                 </div>
               )}
 
-              {/* OUTRAS TABS OMITIDAS PARA BREVIDADE - MANTIDAS IGUAIS */}
-              <div className="p-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest italic">Edite os detalhes da sua página corporativa.</div>
+              {/* TAB 2: INSTITUCIONAL M/V/V */}
+              {pageModalTab === 'institutional' && (
+                <div className="space-y-10 animate-in fade-in">
+                   <div className="space-y-4">
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 ml-2"><Target size={14}/> Nossa Missão</label>
+                      <textarea rows={3} className="admin-input-cms" value={editingPage.missao || ''} onChange={e => setEditingPage({...editingPage, missao: e.target.value})} placeholder="Descreva o propósito fundamental da sua agência..." />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 ml-2"><Eye size={14}/> Nossa Visão</label>
+                      <textarea rows={3} className="admin-input-cms" value={editingPage.visao || ''} onChange={e => setEditingPage({...editingPage, visao: e.target.value})} placeholder="Onde pretendem estar nos próximos 5 anos?" />
+                   </div>
+                   <div className="space-y-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 ml-2"><Star size={14}/> Nossos Valores</label>
+                        <button onClick={() => setEditingPage({...editingPage, valores: [...(editingPage.valores || []), '']})} className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase">Adicionar Valor</button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         {editingPage.valores?.map((val, idx) => (
+                           <div key={idx} className="flex gap-2">
+                              <input className="admin-input-cms" value={val} onChange={e => {
+                                const next = [...(editingPage.valores || [])];
+                                next[idx] = e.target.value;
+                                setEditingPage({...editingPage, valores: next});
+                              }} placeholder="Ex: Transparência" />
+                              <button onClick={() => setEditingPage({...editingPage, valores: editingPage.valores?.filter((_, i) => i !== idx)})} className="p-3 text-slate-300 hover:text-red-500"><Trash2 size={18}/></button>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {/* TAB 3: EQUIPA */}
+              {pageModalTab === 'team' && (
+                <div className="space-y-8 animate-in fade-in">
+                   <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                      <div>
+                        <h4 className="font-black text-[#1c2d51] text-sm uppercase">Equipa da Página</h4>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase">Gira os membros visíveis no "Quem Somos"</p>
+                      </div>
+                      <button onClick={() => setEditingPage({...editingPage, equipa: [...(editingPage.equipa || []), { id: crypto.randomUUID(), name: '', role: '', email: '', phone: '', avatar_url: '' }]})} className="bg-[#1c2d51] text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg">
+                        <UserPlus size={14}/> Adicionar Membro
+                      </button>
+                   </div>
+
+                   <div className="grid grid-cols-1 gap-4">
+                      {editingPage.equipa?.map((member, idx) => (
+                        <div key={member.id} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row gap-8 animate-in slide-in-from-bottom-2">
+                           <div className="flex flex-col items-center gap-4 shrink-0">
+                              <div onClick={() => document.getElementById(`avatar-input-${member.id}`)?.click()} className="w-24 h-24 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100 overflow-hidden relative group">
+                                 {member.avatar_url ? (
+                                   <>
+                                     <img src={member.avatar_url} className="w-full h-full object-cover" alt={member.name} />
+                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[8px] font-black">EDITAR</div>
+                                   </>
+                                 ) : <Camera size={20} className="text-slate-300"/>}
+                                 <input type="file" id={`avatar-input-${member.id}`} className="hidden" onChange={e => handleTeamMemberAvatar(member.id, e)} />
+                              </div>
+                              <button onClick={() => setEditingPage({...editingPage, equipa: editingPage.equipa?.filter(m => m.id !== member.id)})} className="text-red-500 font-black text-[9px] uppercase hover:underline">Remover</button>
+                           </div>
+                           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1">
+                                 <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Nome Completo</label>
+                                 <input className="admin-input-cms text-sm py-3" value={member.name} onChange={e => {
+                                   const next = [...(editingPage.equipa || [])];
+                                   next[idx] = { ...next[idx], name: e.target.value };
+                                   setEditingPage({...editingPage, equipa: next});
+                                 }} />
+                              </div>
+                              <div className="space-y-1">
+                                 <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Cargo / Função</label>
+                                 <input className="admin-input-cms text-sm py-3" value={member.role} onChange={e => {
+                                   const next = [...(editingPage.equipa || [])];
+                                   next[idx] = { ...next[idx], role: e.target.value };
+                                   setEditingPage({...editingPage, equipa: next});
+                                 }} />
+                              </div>
+                              <div className="space-y-1">
+                                 <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Email</label>
+                                 <input className="admin-input-cms text-sm py-3" value={member.email} onChange={e => {
+                                   const next = [...(editingPage.equipa || [])];
+                                   next[idx] = { ...next[idx], email: e.target.value };
+                                   setEditingPage({...editingPage, equipa: next});
+                                 }} />
+                              </div>
+                              <div className="space-y-1">
+                                 <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Telemóvel</label>
+                                 <input className="admin-input-cms text-sm py-3" value={member.phone} onChange={e => {
+                                   const next = [...(editingPage.equipa || [])];
+                                   next[idx] = { ...next[idx], phone: e.target.value };
+                                   setEditingPage({...editingPage, equipa: next});
+                                 }} />
+                              </div>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {/* TAB 4: GALERIA */}
+              {pageModalTab === 'media' && (
+                <div className="space-y-8 animate-in fade-in">
+                   <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                      <div>
+                        <h4 className="font-black text-[#1c2d51] text-sm uppercase">Galeria de Fotos</h4>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase">Imagens de ambiente, escritório ou lifestyle</p>
+                      </div>
+                      <label className="bg-[#1c2d51] text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg cursor-pointer hover:-translate-y-0.5 transition-all">
+                        <ImagePlus size={14}/> Carregar Fotos
+                        <input type="file" multiple className="hidden" accept="image/*" onChange={handlePageGalleryUpload} />
+                      </label>
+                   </div>
+
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {editingPage.galeria_fotos?.map((photo, i) => (
+                        <div key={i} className="relative aspect-video rounded-2xl overflow-hidden group shadow-sm border border-slate-100">
+                           <img src={photo} className="w-full h-full object-cover" alt={`Galeria ${i}`} />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button onClick={() => setEditingPage({...editingPage, galeria_fotos: editingPage.galeria_fotos?.filter((_, idx) => idx !== i)})} className="p-2 bg-white text-red-500 rounded-xl hover:scale-110 transition-all shadow-lg">
+                                 <Trash size={18}/>
+                              </button>
+                           </div>
+                        </div>
+                      ))}
+                      {(!editingPage.galeria_fotos || editingPage.galeria_fotos.length === 0) && (
+                        <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest italic border-2 border-dashed border-slate-100 rounded-[2rem]">A galeria está vazia.</div>
+                      )}
+                   </div>
+                </div>
+              )}
             </div>
 
-            <div className="p-8 border-t bg-slate-50/50 flex justify-end gap-4 shrink-0">
-              <button onClick={() => setIsPageModalOpen(false)} className="px-8 py-3 text-[#1c2d51] font-black text-xs uppercase tracking-widest hover:text-red-500 transition-colors">Cancelar</button>
+            <div className="p-8 border-t bg-white flex justify-end gap-4 shrink-0">
+              <button onClick={() => setIsPageModalOpen(false)} className="px-8 py-3 text-slate-400 font-black text-xs uppercase tracking-widest hover:text-red-500 transition-colors">Cancelar</button>
               <button onClick={handleSavePage} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl hover:-translate-y-1 transition-all">
                 <Check size={18}/> Aplicar Alterações
               </button>
@@ -435,9 +556,37 @@ const AdminCMS: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL LINK MENU - MANTIDO IGUAL */}
+      {/* MODAL LINK MENU */}
+      {isMenuModalOpen && editingMenuItem && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b flex items-center justify-between">
+              <h3 className="text-xl font-black text-[#1c2d51]">Novo Link de Menu</h3>
+              <button onClick={() => setIsMenuModalOpen(false)}><X size={24}/></button>
+            </div>
+            <div className="p-10 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Etiqueta do Link</label>
+                <input className="admin-input-cms" value={editingMenuItem.label} onChange={e => setEditingMenuItem({...editingMenuItem, label: e.target.value})} placeholder="Ex: Blog" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Caminho / URL</label>
+                <input className="admin-input-cms" value={editingMenuItem.path} onChange={e => setEditingMenuItem({...editingMenuItem, path: e.target.value})} placeholder="Ex: /p/blog ou https://..." />
+              </div>
+              <button onClick={() => {
+                setCms(prev => ({
+                  ...prev,
+                  menus: { ...prev.menus, [menuTarget]: [...prev.menus[menuTarget], editingMenuItem] }
+                }));
+                setIsMenuModalOpen(false);
+              }} className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl">Adicionar Link</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
+        .admin-label { display: block; font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-left: 0.5rem; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
         .admin-input-cms { width: 100%; padding: 1rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
         .admin-input-cms:focus { background: #fff; border-color: #357fb2; }
       `}</style>

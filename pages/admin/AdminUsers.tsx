@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where, doc, setDoc, serverTimestamp } from "@firebase/firestore";
+import { collection, getDocs, query, where, addDoc, serverTimestamp } from "@firebase/firestore";
 import { db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -54,27 +54,38 @@ const AdminUsers: React.FC = () => {
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.tenantId || reachedLimit) return;
+    
+    // Verificações de segurança antes de tentar gravar
+    if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default-tenant-uuid') {
+      setInviteError("Erro de sessão: Agência não identificada. Recarregue a página.");
+      return;
+    }
+
+    if (reachedLimit) {
+      setInviteError("Limite de utilizadores atingido para o seu plano.");
+      return;
+    }
 
     setIsSendingInvite(true);
     setInviteError(null);
 
     try {
-      const tempId = `inv_${Math.random().toString(36).substr(2, 9)}`;
       const inviteData = {
-        displayName: inviteForm.name,
-        email: inviteForm.email.toLowerCase(),
+        displayName: inviteForm.name.trim(),
+        email: inviteForm.email.toLowerCase().trim(),
         role: inviteForm.role,
         tenantId: profile.tenantId,
         status: 'pending',
         invited_at: serverTimestamp(),
-        created_at: serverTimestamp()
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
       };
 
-      await setDoc(doc(db, 'users', tempId), inviteData);
+      // Alterado de setDoc para addDoc para evitar erros de permissão com IDs personalizados (inv_...)
+      await addDoc(collection(db, 'users'), inviteData);
       
       setInviteSuccess(true);
-      await fetchTeam(); // Atualiza a lista
+      await fetchTeam(); // Atualiza a lista imediatamente
       
       setTimeout(() => {
         setIsInviteModalOpen(false);
@@ -83,8 +94,13 @@ const AdminUsers: React.FC = () => {
       }, 2000);
 
     } catch (err: any) {
-      console.error(err);
-      setInviteError("Erro ao processar o convite. Verifique os dados.");
+      console.error("Erro detalhado do convite:", err);
+      // Se o erro for permissão, pode ser necessário ajustar as regras no Firebase Console
+      if (err.code === 'permission-denied') {
+        setInviteError("Sem permissão para criar utilizadores nesta agência.");
+      } else {
+        setInviteError("Falha na ligação ao servidor. Verifique os dados e tente novamente.");
+      }
     } finally {
       setIsSendingInvite(false);
     }
@@ -121,7 +137,7 @@ const AdminUsers: React.FC = () => {
           </Link>
         ) : (
           <button 
-            onClick={() => setIsInviteModalOpen(true)}
+            onClick={() => { setInviteError(null); setIsInviteModalOpen(true); }}
             className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-xl active:scale-95"
           >
             <UserPlus size={20} /> Convidar Consultor
@@ -286,7 +302,7 @@ const AdminUsers: React.FC = () => {
                     disabled={isSendingInvite || reachedLimit}
                     className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-[#1c2d51]/20 flex items-center justify-center gap-3 transition-all hover:-translate-y-1 disabled:opacity-50"
                   >
-                    {isSendingInvite ? <Loader2 size={18} className="animate-spin" /> : <><Check size={18}/> Enviar Convite</>}
+                    {isSendingInvite ? <Loader2 className="animate-spin" /> : <><Check size={18}/> Enviar Convite</>}
                   </button>
                 </form>
               )}
