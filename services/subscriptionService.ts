@@ -10,13 +10,13 @@ import { Tenant } from "../types";
 const STRIPE_ROOT_COLLECTION = "customers"; 
 
 /**
- * IDs DE PREÇO (STRIPE PRICE IDs)
- * Substitua os valores abaixo pelos IDs reais obtidos no Dashboard do Stripe.
- * Devem começar por 'price_'.
+ * IDs DE PREÇO REAIS (STRIPE LIVE PRICE IDs)
+ * IMPORTANTE: Substitua os IDs abaixo pelos IDs que criou no Dashboard do Stripe em MODO REAL.
+ * O erro "No such price" acontece quando usa um ID de teste numa conta live ou vice-versa.
  */
 export const StripePlans = {
-  starter: "price_1SobVF9YE7qSVg1quKIHx0qM", // COLOQUE O ID STARTER AQUI
-  business: "price_1SocAG9YE7qSVg1qMZW1jjcE" // COLOQUE O ID BUSINESS AQUI
+  starter: "price_1StarterRealID_Aqui",  // <-- COLOQUE O ID REAL AQUI
+  business: "price_1BusinessRealID_Aqui" // <-- COLOQUE O ID REAL AQUI
 };
 
 export const SubscriptionService = {
@@ -24,7 +24,7 @@ export const SubscriptionService = {
    * Verifica se o tenant tem acesso às funcionalidades administrativas
    */
   checkAccess: (tenant: Tenant, userEmail?: string | null): { hasAccess: boolean; isTrial: boolean; daysLeft: number } => {
-    // Bypass para conta mestre
+    // Bypass para conta mestre de suporte
     if (userEmail === 'snapimoveis@gmail.com') {
       return { hasAccess: true, isTrial: true, daysLeft: 999 };
     }
@@ -40,7 +40,7 @@ export const SubscriptionService = {
       createdAt = new Date();
     }
 
-    // Janela de cortesia de 1 hora para novos registos
+    // Janela de cortesia de 1 hora para novos registos (evita bloqueio imediato)
     const diffCreationMs = now.getTime() - createdAt.getTime();
     if (diffCreationMs < 1000 * 60 * 60) {
       return { hasAccess: true, isTrial: true, daysLeft: 14 };
@@ -64,7 +64,7 @@ export const SubscriptionService = {
     const isTrial = tenant.subscription.status === 'trialing';
     const isActive = ['active', 'past_due'].includes(tenant.subscription.status);
     
-    // Fallback de segurança para trial
+    // Fallback para trial inicial se os dados da subscrição ainda não sincronizaram
     if (isTrial && (!trialEnd || isNaN(trialEnd.getTime()))) {
       trialEnd = new Date(createdAt);
       trialEnd.setDate(trialEnd.getDate() + 14);
@@ -90,9 +90,15 @@ export const SubscriptionService = {
   createCheckoutSession: async (userId: string, priceId: string) => {
     if (!userId) throw new Error("Utilizador não autenticado.");
     
+    // Verificação de segurança para garantir que o ID é válido
+    if (!priceId || priceId.includes('Aqui') || priceId.includes('ReplaceMe')) {
+      throw new Error("Configuração de Preços incompleta. Por favor, configure os Price IDs de produção.");
+    }
+
     const checkoutSessionsRef = collection(db, STRIPE_ROOT_COLLECTION, userId, "checkout_sessions");
     
     try {
+      // Criar o documento que a extensão do Stripe vai ler
       const docRef = await addDoc(checkoutSessionsRef, {
         price: priceId,
         success_url: window.location.origin + "/#/admin?session=success",
@@ -105,11 +111,11 @@ export const SubscriptionService = {
         }
       });
 
+      // Aguardar que a extensão processe e adicione o campo 'url'
       return new Promise((resolve, reject) => {
-        // Timeout de segurança aumentado para 30s para produção
         const timeout = setTimeout(() => {
           unsubscribe();
-          reject(new Error("O gateway de pagamento está a demorar mais do que o esperado. Por favor, atualize a página e tente novamente."));
+          reject(new Error("O gateway de pagamento demorou demasiado a responder. Verifique os logs da extensão no Firebase."));
         }, 30000);
 
         const unsubscribe = onSnapshot(docRef, (snap) => {
@@ -119,11 +125,14 @@ export const SubscriptionService = {
           if (data.error) {
             clearTimeout(timeout);
             unsubscribe();
-            reject(new Error(`Stripe: ${data.error.message}`));
+            console.error("[STRIPE ERROR]", data.error);
+            reject(new Error(`Erro Stripe: ${data.error.message}`));
           }
+          
           if (data.url) {
             clearTimeout(timeout);
             unsubscribe();
+            // Redirecionar para o Checkout do Stripe
             window.location.assign(data.url);
             resolve(true);
           }
@@ -134,7 +143,7 @@ export const SubscriptionService = {
         });
       });
     } catch (err: any) {
-      console.error("Erro no processamento do Checkout:", err);
+      console.error("Erro ao iniciar sessão de pagamento:", err);
       throw err;
     }
   }
