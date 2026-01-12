@@ -14,12 +14,39 @@ import { formatCurrency, generateSlug, compressImage } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
 
 const DISTRICTS_DATA: Record<string, string[]> = {
-  "Lisboa": ["Lisboa", "Cascais", "Sintra", "Loures", "Oeiras", "Amadora", "Odivelas", "Vila Franca de Xira", "Torres Vedras", "Mafra"],
-  "Porto": ["Porto", "Vila Nova de Gaia", "Matosinhos", "Maia", "Gondomar", "Valongo", "Paredes", "Vila do Conde", "Póvoa de Varzim"],
-  "Faro": ["Faro", "Loulé", "Albufeira", "Portimão", "Olhão", "Tavira", "Lagos", "Silves", "Quarteira"],
-  "Setúbal": ["Setúbal", "Almada", "Seixal", "Barreiro", "Palmela", "Montijo", "Sesimbra"],
-  "Braga": ["Braga", "Guimarães", "Vila Nova de Famalicão", "Barcelos", "Fafe", "Esposende"]
+  "Aveiro": ["Aveiro", "Águeda", "Albergaria-a-Velha", "Anadia", "Arouca", "Castelo de Paiva", "Espinho", "Estarreja", "Ílhavo", "Mealhada", "Murtosa", "Oliveira de Azeméis", "Oliveira do Bairro", "Ovar", "Santa Maria da Feira", "São João da Madeira", "Sever do Vouga", "Vagos", "Vale de Cambra"],
+  "Beja": ["Beja", "Aljustrel", "Almodôvar", "Alvito", "Barrancos", "Castro Verde", "Cuba", "Ferreira do Alentejo", "Mértola", "Moura", "Odemira", "Ourique", "Serpa", "Vidigueira"],
+  "Braga": ["Braga", "Barcelos", "Esposende", "Fafe", "Guimarães", "Póvoa de Lanhoso", "Terras de Bouro", "Vieira do Minho", "Vila Nova de Famalicão", "Vila Verde", "Vizela", "Amares", "Cabeceiras de Basto", "Celorico de Basto"],
+  "Bragança": ["Bragança", "Alfândega da Fé", "Carrazeda de Ansiães", "Fregenal", "Macedo de Cavaleiros", "Miranda do Douro", "Mirandela", "Mogadouro", "Torre de Moncorvo", "Vila Flor", "Vimioso", "Vinhais"],
+  "Castelo Branco": ["Castelo Branco", "Belmonte", "Covilhã", "Fundão", "Idanha-a-Nova", "Oleiros", "Penamacor", "Proença-a-Nova", "Sertã", "Vila de Rei", "Vila Velha de Ródão"],
+  "Coimbra": ["Coimbra", "Arganil", "Cantanhede", "Figueira da Foz", "Góis", "Lousã", "Mira", "Miranda do Corvo", "Montemor-o-Velho", "Oliveira do Hospital", "Pampilhosa da Serra", "Penacova", "Penela", "Soure", "Tábua", "Vila Nova de Poiares"],
+  "Évora": ["Évora", "Alandroal", "Arraiolos", "Borba", "Estremoz", "Montemor-o-Novo", "Mora", "Mourão", "Portel", "Redondo", "Reguengos de Monsaraz", "Vendas Novas", "Viana do Alentejo", "Vila Viçosa"],
+  "Faro": ["Faro", "Albufeira", "Alcoutim", "Aljezur", "Castro Marim", "Lagoa", "Lagos", "Loulé", "Monchique", "Olhão", "Portimão", "São Brás de Alportel", "Silves", "Tavira", "Vila do Bispo", "Vila Real de Santo António"],
+  "Guarda": ["Guarda", "Aguiar da Beira", "Almeida", "Celorico da Beira", "Figueira de Castelo Rodrigo", "Fornos de Algodres", "Gouveia", "Manteigas", "Mêda", "Pinhel", "Sabugal", "Seia", "Trancoso", "Vila Nova de Foz Côa"],
+  "Leiria": ["Leiria", "Alcobaça", "Alvaiázere", "Ansião", "Batalha", "Bombarral", "Caldas da Rainha", "Castanheira de Pêra", "Figueiró dos Vinhos", "Marinha Grande", "Nazaré", "Óbidos", "Pedrógão Grande", "Peniche", "Pombal", "Porto de Mós"],
+  "Lisboa": ["Lisboa", "Alenquer", "Arruda dos Vinhos", "Azambuja", "Cadaval", "Cascais", "Loures", "Lourinhã", "Mafra", "Odivelas", "Oeiras", "Sintra", "Sobral de Monte Agraço", "Torres Vedras", "Vila Franca de Xira", "Amadora"],
+  "Portalegre": ["Portalegre", "Alter do Chão", "Arronches", "Avis", "Campo Maior", "Castelo de Vide", "Crato", "Elvas", "Fronteira", "Gavião", "Maranhão", "Monforte", "Nisa", "Ponte de Sor", "Sousel"],
+  "Porto": ["Porto", "Amarante", "Baião", "Felgueiras", "Gondomar", "Lousada", "Maia", "Marco de Canaveses", "Matosinhos", "Paços de Ferreira", "Paredes", "Penafiel", "Póvoa de Varzim", "Santo Tirso", "Trofa", "Valongo", "Vila do Conde", "Vila Nova de Gaia"],
+  "Santarém": ["Santarém", "Abrantes", "Alcanena", "Almeirim", "Alpiarça", "Benavente", "Cartaxo", "Chamusca", "Constância", "Coruche", "Entroncamento", "Ferreira do Zêzere", "Golegã", "Mação", "Ourém", "Rio Maior", "Salvaterra de Magos", "Sardoal", "Tomar", "Torres Novas", "Vila Nova da Barquinha"],
+  "Setúbal": ["Setúbal", "Alcácer do Sal", "Alcochete", "Almada", "Barreiro", "Grândola", "Moita", "Montijo", "Palmela", "Santiago do Cacém", "Seixal", "Sesimbra", "Sines"],
+  "Viana do Castelo": ["Viana do Castelo", "Arcos de Valdevez", "Caminha", "Melgaço", "Monção", "Paredes de Coura", "Ponte da Barca", "Ponte de Lima", "Valença", "Vila Nova de Cerveira"],
+  "Vila Real": ["Vila Real", "Alijó", "Boticas", "Chaves", "Mesão Frio", "Mondim de Basto", "Montalegre", "Murça", "Peso da Régua", "Ribeira de Pena", "Sabrosa", "Santa Marta de Penaguião", "Valpaços", "Vila Pouca de Aguiar"],
+  "Viseu": ["Viseu", "Armamar", "Carregal do Sal", "Castro Daire", "Cinfães", "Lamego", "Mangualde", "Moimenta da Beira", "Mortágua", "Nelas", "Oliveira de Frades", "Penalva do Castelo", "Penedono", "Resende", "Santa Comba Dão", "São João da Pesqueira", "São Pedro do Sul", "Sátão", "Sernancelhe", "Tabuaço", "Tarouca", "Tondela", "Vila Nova de Paiva", "Vouzela"],
+  "Açores": ["Angra do Heroísmo", "Calheta", "Corvo", "Horta", "Lagoa", "Lajes das Flores", "Lajes do Pico", "Madalena", "Nordeste", "Ponta Delgada", "Povoação", "Praia da Vitória", "Ribeira Grande", "Santa Cruz da Graciosa", "Santa Cruz das Flores", "São Roque do Pico", "Velas", "Vila do Porto", "Vila Franca do Campo"],
+  "Madeira": ["Funchal", "Calheta", "Câmara de Lobos", "Machico", "Ponta do Sol", "Porto Moniz", "Porto Santo", "Ribeira Brava", "Santa Cruz", "Santana", "São Vicente"]
 };
+
+const DivBox = ({ label, val, icon, onInc, onDec }: any) => (
+  <div className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm">
+     <div className="text-blue-500">{icon}</div>
+     <p className="text-[9px] font-black uppercase text-slate-400 leading-tight">{label}</p>
+     <div className="flex items-center gap-4">
+        <button onClick={onDec} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-black text-[#1c2d51] hover:bg-slate-100">-</button>
+        <span className="font-black text-xl text-[#1c2d51]">{val}</span>
+        <button onClick={onInc} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-black text-[#1c2d51] hover:bg-slate-100">+</button>
+     </div>
+  </div>
+);
 
 const AdminImoveis: React.FC = () => {
   const { profile } = useAuth();
@@ -57,8 +84,7 @@ const AdminImoveis: React.FC = () => {
   }, [loadProperties]);
 
   const openModal = async (imovel: Imovel | null) => {
-    if (!imovel && reachedLimit) return; // Bloqueio manual
-    
+    if (!imovel && reachedLimit) return;
     setCurrentStep(1);
     if (imovel) {
       setEditingImovel({ 
@@ -161,6 +187,28 @@ const AdminImoveis: React.FC = () => {
     setMediaItems(prev => [...prev, ...newMedia]);
   };
 
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+      e.dataTransfer.clearData();
+    }
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) processFiles(e.target.files);
   };
@@ -252,11 +300,9 @@ const AdminImoveis: React.FC = () => {
         )}
       </div>
 
-      {/* MODAL 10 PASSOS */}
       {isModalOpen && editingImovel && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-            {/* Header Modal */}
             <div className="p-8 border-b flex items-center justify-between shrink-0 bg-white z-10">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-[#1c2d51]"><Building2 size={24}/></div>
@@ -272,9 +318,7 @@ const AdminImoveis: React.FC = () => {
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-colors"><X size={28}/></button>
             </div>
 
-            {/* Body Modal */}
             <div className="flex-1 overflow-y-auto p-10">
-               {/* PASSO 1: INFORMAÇÃO BASE */}
                {currentStep === 1 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Info size={16} className="text-blue-500"/> Passo 1: Informação Base</h4>
@@ -307,7 +351,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 2: PREÇO */}
                {currentStep === 2 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Euro size={16} className="text-blue-500"/> Passo 2: Condições Financeiras</h4>
@@ -328,7 +371,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 3: LOCALIZAÇÃO */}
                {currentStep === 3 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin size={16} className="text-blue-500"/> Passo 3: Localização</h4>
@@ -336,13 +378,13 @@ const AdminImoveis: React.FC = () => {
                        <div className="space-y-2">
                           <label className="admin-label">Distrito</label>
                           <select className="admin-input-v3" value={editingImovel.localizacao?.distrito} onChange={e => setEditingImovel({...editingImovel, localizacao: {...editingImovel.localizacao!, distrito: e.target.value, concelho: DISTRICTS_DATA[e.target.value]?.[0] || ''}})}>
-                             {Object.keys(DISTRICTS_DATA).map(d => <option key={d} value={d}>{d}</option>)}
+                             {Object.keys(DISTRICTS_DATA).sort().map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
                        </div>
                        <div className="space-y-2">
                           <label className="admin-label">Concelho</label>
                           <select className="admin-input-v3" value={editingImovel.localizacao?.concelho} onChange={e => setEditingImovel({...editingImovel, localizacao: {...editingImovel.localizacao!, concelho: e.target.value}})}>
-                             {DISTRICTS_DATA[editingImovel.localizacao?.distrito || 'Lisboa']?.map(c => <option key={c} value={c}>{c}</option>)}
+                             {DISTRICTS_DATA[editingImovel.localizacao?.distrito || 'Lisboa']?.sort().map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                        </div>
                        <div className="md:col-span-2 space-y-2">
@@ -353,7 +395,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 4: ÁREAS */}
                {currentStep === 4 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Square size={16} className="text-blue-500"/> Passo 4: Áreas e Pisos</h4>
@@ -374,7 +415,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 5: DIVISÕES */}
                {currentStep === 5 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Home size={16} className="text-blue-500"/> Passo 5: Divisões</h4>
@@ -385,14 +425,11 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 6: DESCRIÇÃO E IA */}
                {currentStep === 6 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <div className="flex justify-between items-center">
                        <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><FileText size={16} className="text-blue-500"/> Passo 6: Descrição</h4>
                        <div className="flex items-center gap-2">
-                          {!isBusiness && <span className="text-[7px] font-black bg-slate-100 px-1.5 py-0.5 rounded text-slate-400 uppercase">AI Basic</span>}
-                          {isBusiness && <span className="text-[7px] font-black bg-blue-500 px-1.5 py-0.5 rounded text-white uppercase flex items-center gap-1"><Sparkles size={8} fill="currentColor"/> AI Business Unlim.</span>}
                           <button onClick={handleGenerateAI} disabled={isGenerating} className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-blue-100 disabled:opacity-50">
                              {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14}/>} Gerar com Gemini IA
                           </button>
@@ -402,7 +439,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 7: CARACTERÍSTICAS */}
                {currentStep === 7 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><LayoutList size={16} className="text-blue-500"/> Passo 7: Características</h4>
@@ -420,7 +456,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 8: CERTIFICAÇÃO */}
                {currentStep === 8 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Shield size={16} className="text-blue-500"/> Passo 8: Certificação Energética</h4>
@@ -434,7 +469,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 9: GALERIA COM DRAG AND DROP */}
                {currentStep === 9 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Camera size={16} className="text-blue-500"/> Passo 9: Galeria de Fotos</h4>
@@ -449,13 +483,9 @@ const AdminImoveis: React.FC = () => {
                          </div>
                        ))}
                        <label 
-                          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                          onDragLeave={() => setIsDragging(false)}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            setIsDragging(false);
-                            if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
-                          }}
+                          onDragOver={onDragOver}
+                          onDragLeave={onDragLeave}
+                          onDrop={onDrop}
                           className={`aspect-video border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                             isDragging 
                               ? 'bg-blue-50 border-blue-500 text-blue-500 scale-105 shadow-xl' 
@@ -470,7 +500,6 @@ const AdminImoveis: React.FC = () => {
                  </div>
                )}
 
-               {/* PASSO 10: PUBLICAÇÃO */}
                {currentStep === 10 && (
                  <div className="space-y-8 animate-in slide-in-from-right-4">
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Globe size={16} className="text-blue-500"/> Passo 10: Publicação</h4>
@@ -488,7 +517,6 @@ const AdminImoveis: React.FC = () => {
                )}
             </div>
 
-            {/* Footer Modal */}
             <div className="p-8 border-t bg-slate-50/50 flex justify-between shrink-0">
                <button onClick={prevStep} disabled={currentStep === 1} className="px-6 py-3 text-slate-400 font-black text-xs uppercase tracking-widest hover:text-[#1c2d51] disabled:opacity-0 transition-all flex items-center gap-2">
                   <ChevronLeft size={18}/> Anterior
@@ -515,17 +543,5 @@ const AdminImoveis: React.FC = () => {
     </div>
   );
 };
-
-const DivBox = ({ label, val, icon, onInc, onDec }: any) => (
-  <div className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm">
-     <div className="text-blue-500">{icon}</div>
-     <p className="text-[9px] font-black uppercase text-slate-400 leading-tight">{label}</p>
-     <div className="flex items-center gap-4">
-        <button onClick={onDec} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-black text-[#1c2d51] hover:bg-slate-100">-</button>
-        <span className="font-black text-xl text-[#1c2d51]">{val}</span>
-        <button onClick={onInc} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-black text-[#1c2d51] hover:bg-slate-100">+</button>
-     </div>
-  </div>
-);
 
 export default AdminImoveis;

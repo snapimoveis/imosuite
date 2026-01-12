@@ -1,6 +1,8 @@
+
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
 export const generatePropertyDescription = async (property: any, tone: string = 'formal'): Promise<{ curta: string; completa: string }> => {
+  // Inicialização conforme diretrizes: named parameter apiKey
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const toneInstructions = {
@@ -46,9 +48,10 @@ export const generatePropertyDescription = async (property: any, tone: string = 
       },
     });
     
+    // Acesso direto à propriedade .text conforme diretrizes
     const text = response.text || "";
     
-    // Extração robusta de JSON (encontra a primeira { e a última })
+    // Extração robusta de JSON
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
     
@@ -57,7 +60,7 @@ export const generatePropertyDescription = async (property: any, tone: string = 
       return JSON.parse(jsonString);
     }
     
-    throw new Error("Formato de resposta da IA inválido.");
+    throw new Error("Formato de resposta inválido.");
   } catch (error) {
     console.error("Erro Gemini:", error);
     return {
@@ -72,9 +75,9 @@ export const generateAgencySlogan = async (agencyName: string): Promise<string> 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Gera um slogan curto e memorável em PT-PT para a imobiliária "${agencyName}". Retorna apenas o texto do slogan.`,
+      contents: `Gera um slogan curto e memorável em PT-PT para a imobiliária "${agencyName}". Retorna apenas o texto do slogan sem aspas.`,
     });
-    return response.text?.trim() || "A sua agência de confiança.";
+    return response.text?.trim().replace(/^"|"$/g, '') || "A sua agência de confiança.";
   } catch { 
     return "Excelência no mercado imobiliário."; 
   }

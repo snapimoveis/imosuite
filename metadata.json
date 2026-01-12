@@ -1,6 +1,6 @@
 {
   "name": "ImoSuite SaaS",
-  "description": "A professional white-label real estate SaaS platform with multi-tenant support, property management, lead tracking, and AI-powered description generation.",
+  "description": "Uma plataforma SaaS imobiliária profissional white-label com suporte multi-tenant, gestão de imóveis, rastreio de leads e geração de descrições por IA.",
   "requestFramePermissions": [
     "camera",
     "geolocation"

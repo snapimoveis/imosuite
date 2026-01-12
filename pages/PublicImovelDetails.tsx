@@ -9,12 +9,21 @@ import { PropertyService } from '../services/propertyService';
 import { 
   MapPin, Bed, Bath, Square, Loader2, ChevronLeft, ChevronRight,
   Send, Check, Menu, X, MessageCircle, Instagram, Facebook, Linkedin, Building2, Info, Camera,
-  Maximize2
+  Mail, Phone
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import SEO from '../components/SEO';
 import { DEFAULT_TENANT, DEFAULT_TENANT_CMS } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
+
+// Definido fora para evitar erro de inicialização 'U'
+const SpecBox = ({ icon, label, val, tid }: any) => (
+  <div className={`p-8 border shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md ${tid === 'prestige' ? 'bg-neutral-900 border-white/5 text-white' : 'bg-white border-slate-100 text-slate-900'} ${tid === 'luxe' ? 'rounded-[2.5rem]' : tid === 'canvas' ? 'rounded-[2rem]' : 'rounded-none'}`}>
+    <div className="text-blue-500 mb-4">{icon}</div>
+    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
+    <p className={`text-base font-black ${tid === 'prestige' ? 'italic' : ''}`}>{val}</p>
+  </div>
+);
 
 const PublicImovelDetails: React.FC = () => {
   const { slug: agencySlug, imovelSlug } = useParams<{ slug: string; imovelSlug: string }>();
@@ -27,7 +36,6 @@ const PublicImovelDetails: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [formData, setFormData] = useState({ nome: '', email: '', telefone: '', mensagem: '' });
-  const [gdprConsent, setGdprConsent] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   useEffect(() => {
@@ -74,30 +82,27 @@ const PublicImovelDetails: React.FC = () => {
     fetchData();
   }, [agencySlug, imovelSlug]);
 
+  const displayImages = media.length > 0 
+    ? media 
+    : (imovel?.media as any)?.cover_url 
+      ? [{ url: (imovel?.media as any).cover_url, id: 'cover' }] 
+      : [{ url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200', id: 'placeholder' }];
+
   const nextPhoto = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
+    if (displayImages.length === 0) return;
     setActiveImage(prev => (prev + 1) % displayImages.length);
-  }, []);
+  }, [displayImages.length]);
 
   const prevPhoto = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
+    if (displayImages.length === 0) return;
     setActiveImage(prev => (prev - 1 + displayImages.length) % displayImages.length);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isLightboxOpen) return;
-      if (e.key === 'Escape') setIsLightboxOpen(false);
-      if (e.key === 'ArrowRight') nextPhoto();
-      if (e.key === 'ArrowLeft') prevPhoto();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen, nextPhoto, prevPhoto]);
+  }, [displayImages.length]);
 
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tenant || !imovel || !gdprConsent) return;
+    if (!tenant || !imovel) return;
     setIsSending(true);
     try {
       await LeadService.createLead(tenant.id, { 
@@ -105,7 +110,7 @@ const PublicImovelDetails: React.FC = () => {
         property_id: imovel.id, 
         property_ref: imovel.ref, 
         tipo: 'contacto', 
-        gdpr_consent: gdprConsent,
+        gdpr_consent: true,
         mensagem: formData.mensagem || `Olá, gostaria de obter mais informações sobre o imóvel "${imovel.titulo}" (Ref: ${imovel.ref}).`
       });
       setSent(true);
@@ -121,55 +126,60 @@ const PublicImovelDetails: React.FC = () => {
 
   const cms = tenant.cms || DEFAULT_TENANT_CMS;
   const tid = tenant.template_id || 'heritage';
-  const displayImages = media.length > 0 
-    ? media 
-    : (imovel.media as any)?.cover_url 
-      ? [{ url: (imovel.media as any).cover_url, id: 'cover' }] 
-      : [{ url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200', id: 'placeholder' }];
 
-  // Estilos de Template (Reutilizados da Home)
   const styles: Record<string, any> = {
     heritage: {
       wrapper: "font-brand bg-white",
       nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-white border-b border-slate-100",
       navText: "font-heritage italic text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-none font-black uppercase text-xs",
-      heading: "font-heritage italic text-[#1c2d51]"
+      heading: "font-heritage italic text-[#1c2d51]",
+      footer: "py-24 px-10 border-t border-slate-100 bg-slate-50",
+      footerText: "text-[#1c2d51] font-heritage italic"
     },
     canvas: {
       wrapper: "font-brand bg-white",
       nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50",
       navText: "font-black tracking-tight text-[#1c2d51]",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-2xl font-black uppercase text-xs shadow-lg",
-      heading: "font-black text-[#1c2d51] tracking-tight"
+      heading: "font-black text-[#1c2d51] tracking-tight",
+      footer: "py-24 px-12 border-t border-slate-50 bg-white",
+      footerText: "text-[#1c2d51] font-black"
     },
     prestige: {
       wrapper: "font-brand bg-black text-white",
-      nav: "h-20 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white uppercase border-b border-white/5",
+      nav: "h-20 px-10 flex items-center justify-between sticky top-0 z-50 bg-black text-white border-b border-white/5 uppercase tracking-widest",
       navText: "font-black italic",
       button: "bg-white text-black px-10 py-4 rounded-none font-black uppercase text-[10px]",
-      heading: "font-black italic uppercase text-white"
+      heading: "font-black italic uppercase text-white",
+      footer: "py-24 px-10 border-t border-white/5 bg-black text-white",
+      footerText: "text-white font-black italic"
     },
     skyline: {
       wrapper: "font-brand bg-white",
       nav: "h-20 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white",
       navText: "font-black uppercase",
       button: "bg-[var(--primary)] text-white px-8 py-4 rounded-xl font-black uppercase text-xs shadow-xl",
-      heading: "font-black uppercase text-[#1c2d51]"
+      heading: "font-black uppercase text-[#1c2d51]",
+      footer: "py-24 px-10 bg-slate-900 text-white",
+      footerText: "text-white font-black uppercase"
     },
     luxe: {
       wrapper: "font-brand bg-[#FDFBF7] text-[#2D2926]",
       nav: "h-24 px-12 flex items-center justify-between sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm",
       navText: "font-black text-[#2D2926]",
       button: "bg-[#2D2926] text-white px-10 py-5 rounded-[2.5rem] font-bold text-xs uppercase shadow-2xl",
-      heading: "font-black text-[#2D2926] tracking-widest"
+      heading: "font-black text-[#2D2926] tracking-widest",
+      footer: "py-24 px-12 border-t border-[#EAE3D9] bg-[#FDFBF7] text-[#2D2926]",
+      footerText: "text-[#2D2926] font-black tracking-widest"
     }
   };
 
   const s = styles[tid] || styles.heritage;
+  const isBusiness = tenant.subscription?.plan_id === 'business';
 
   return (
-    <div className={`${s.wrapper} min-h-screen flex flex-col selection:bg-[var(--primary)] selection:text-white ${isLightboxOpen ? 'overflow-hidden' : ''}`}>
+    <div className={`${s.wrapper} min-h-screen flex flex-col selection:bg-[var(--primary)] selection:text-white`}>
       <SEO title={`${imovel.titulo} - ${tenant.nome}`} overrideFullTitle={true} />
       
       <nav className={s.nav}>
@@ -194,14 +204,13 @@ const PublicImovelDetails: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           <div className="lg:col-span-8 space-y-6">
-            {/* CARROSSEL PRINCIPAL */}
             <div onClick={() => setIsLightboxOpen(true)} className={`relative aspect-[16/9] overflow-hidden shadow-2xl group cursor-zoom-in ${tid === 'luxe' ? 'rounded-[4rem]' : tid === 'canvas' ? 'rounded-[3rem]' : 'rounded-none'}`}>
                <img src={displayImages[activeImage]?.url} className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${tid === 'prestige' ? 'grayscale contrast-125' : ''}`} alt={imovel.titulo} />
                
                {displayImages.length > 1 && (
                  <>
-                   <button onClick={(e) => prevPhoto(e)} className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"><ChevronLeft size={28} /></button>
-                   <button onClick={(e) => nextPhoto(e)} className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"><ChevronRight size={28} /></button>
+                   <button onClick={(e) => prevPhoto(e)} className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full group-hover:opacity-100 transition-all z-10"><ChevronLeft size={28} /></button>
+                   <button onClick={(e) => nextPhoto(e)} className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full group-hover:opacity-100 transition-all z-10"><ChevronRight size={28} /></button>
                  </>
                )}
 
@@ -214,7 +223,6 @@ const PublicImovelDetails: React.FC = () => {
                )}
             </div>
             
-            {/* MINIATURAS */}
             {displayImages.length > 1 && (
               <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                 {displayImages.map((img, idx) => (
@@ -269,21 +277,76 @@ const PublicImovelDetails: React.FC = () => {
                    <form onSubmit={handleContact} className="space-y-4">
                       <input required placeholder="O seu nome" className={`detail-input-v2 ${tid === 'prestige' ? 'bg-white/5 text-white border-white/10' : ''}`} value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} />
                       <input required type="email" placeholder="O seu email" className={`detail-input-v2 ${tid === 'prestige' ? 'bg-white/5 text-white border-white/10' : ''}`} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                      <textarea required rows={5} placeholder="Mensagem" className={`detail-input-v2 resize-none ${tid === 'prestige' ? 'bg-white/5 text-white border-white/10' : ''}`} value={formData.mensagem || `Olá, gostaria de obter mais informações sobre o imóvel "${imovel.titulo}" (Ref: ${imovel.ref}).`} onChange={e => setFormData({...formData, mensagem: e.target.value})} />
+                      <textarea required rows={4} placeholder="Mensagem" className={`detail-input-v2 resize-none ${tid === 'prestige' ? 'bg-white/5 text-white border-white/10' : ''}`} value={formData.mensagem || `Olá, gostaria de obter mais informações sobre o imóvel "${imovel.titulo}" (Ref: ${imovel.ref}).`} onChange={e => setFormData({...formData, mensagem: e.target.value})} />
                       
                       <button type="submit" disabled={isSending} className={s.button + " w-full flex items-center justify-center gap-3 transition-all hover:-translate-y-1 disabled:opacity-50"}>
                          {isSending ? <Loader2 className="animate-spin" size={20}/> : <Send size={20}/>} Enviar Pedido
                       </button>
                    </form>
                  )}
+
+                 {/* Contactos da Agência Adicionados */}
+                 <div className={`pt-8 border-t space-y-4 ${tid === 'prestige' ? 'border-white/5' : 'border-slate-50'}`}>
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Contactos da Agência</p>
+                    <div className="space-y-3">
+                       <div className="flex items-center gap-3 text-xs font-bold opacity-80">
+                          <Phone size={14} className="text-blue-500" /> {tenant.telefone || 'Contactar via Email'}
+                       </div>
+                       <div className="flex items-center gap-3 text-xs font-bold opacity-80">
+                          <Mail size={14} className="text-blue-500" /> {tenant.email}
+                       </div>
+                       {tenant.morada && (
+                         <div className="flex items-start gap-3 text-xs font-bold opacity-80">
+                            <MapPin size={14} className="text-blue-500 shrink-0 mt-0.5" /> {tenant.morada}
+                         </div>
+                       )}
+                    </div>
+                 </div>
               </div>
             </div>
           </div>
         </div>
       </main>
+
+      {/* FOOTER DINÂMICO ADICIONADO */}
+      <footer className={s.footer}>
+         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
+            <div className="space-y-6">
+               <h4 className={`text-xl font-black uppercase tracking-tighter ${s.footerText}`}>{tenant.nome}</h4>
+               <p className="text-sm font-medium leading-relaxed opacity-50">{tenant.slogan}</p>
+               
+               {cms.social?.complaints_book_link && (
+                 <a href={cms.social.complaints_book_link} target="_blank" rel="noopener noreferrer" className="block w-fit mt-8 transition-opacity hover:opacity-80">
+                   <img 
+                     src={tid === 'prestige' || tid === 'skyline' ? "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes_white.png" : "https://www.livroreclamacoes.pt/assets/img/logo_reclamacoes.png"} 
+                     alt="Livro de Reclamações Online" 
+                     className="h-10 w-auto grayscale contrast-125"
+                   />
+                 </a>
+               )}
+            </div>
+            <div className="space-y-6">
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-30">Navegação</p>
+               <div className="flex flex-col gap-3">
+                  {cms.menus.main.map(m => <Link key={m.id} to={m.path} className="text-sm font-bold opacity-60 hover:opacity-100 transition-all">{m.label}</Link>)}
+               </div>
+            </div>
+            <div className="space-y-6 md:text-right">
+               <div className="flex md:justify-end gap-6 mb-8">
+                  {cms.social?.instagram && <a href={cms.social.instagram} className="opacity-60 hover:opacity-100"><Instagram size={20}/></a>}
+                  {cms.social?.facebook && <a href={cms.social.facebook} className="opacity-60 hover:opacity-100"><Facebook size={20}/></a>}
+                  {cms.social?.whatsapp && <a href={cms.social.whatsapp} className="opacity-60 hover:opacity-100"><MessageCircle size={20}/></a>}
+               </div>
+               <p className="text-xs font-bold opacity-40">{tenant.email}</p>
+               <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20 block pt-10">
+                 © {new Date().getFullYear()} {tenant.nome} • {isBusiness ? 'Real Estate' : 'Powered by ImoSuite'}
+               </span>
+            </div>
+         </div>
+      </footer>
       
       <style>{`
-        .detail-input-v2 { width: 100%; padding: 1.25rem 1.5rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.5rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
+        .detail-input-v2 { width: 100%; padding: 1.15rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
         .detail-input-v2:focus { background: #fff; border-color: var(--primary); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -291,13 +354,5 @@ const PublicImovelDetails: React.FC = () => {
     </div>
   );
 };
-
-const SpecBox = ({ icon, label, val, tid }: any) => (
-  <div className={`p-8 border shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md ${tid === 'prestige' ? 'bg-neutral-900 border-white/5 text-white' : 'bg-white border-slate-100 text-slate-900'} ${tid === 'luxe' ? 'rounded-[2.5rem]' : tid === 'canvas' ? 'rounded-[2rem]' : 'rounded-none'}`}>
-    <div className="text-blue-500 mb-4">{icon}</div>
-    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-    <p className={`text-base font-black ${tid === 'prestige' ? 'italic' : ''}`}>{val}</p>
-  </div>
-);
 
 export default PublicImovelDetails;
