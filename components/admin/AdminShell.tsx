@@ -6,8 +6,9 @@ import { useAuth } from '../../contexts/AuthContext.tsx';
 import { ADMIN_NAV_ITEMS } from '../../constants.tsx';
 import { 
   LogOut, Bell, ChevronLeft, ChevronRight, User as UserIcon, 
-  Settings, Building2, BellRing, ChevronDown, CheckCircle2, 
-  X, AlertTriangle, CreditCard, Lock, Sparkles, Zap, User
+  Settings, Building2, ChevronDown, CheckCircle2, 
+  X, AlertTriangle, CreditCard, Lock, Sparkles, Zap, User,
+  LayoutGrid, MessageSquare, Users, Globe, BarChart3
 } from 'lucide-react';
 import { collection, query, where, onSnapshot } from '@firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -32,7 +33,6 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [profile?.tenantId]);
 
-  // Fechar menu ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -48,19 +48,27 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     navigate('/login');
   };
 
+  const navItems = [
+    { name: 'DASHBOARD', path: '/admin', icon: <BarChart3 size={18} /> },
+    { name: 'IMÓVEIS', path: '/admin/imoveis', icon: <Building2 size={18} /> },
+    { name: 'WEBSITE & CMS', path: '/admin/cms', icon: <Globe size={18} /> },
+    { name: 'LEADS', path: '/admin/leads', icon: <MessageSquare size={18} /> },
+    { name: 'UTILIZADORES', path: '/admin/users', icon: <Users size={18} /> },
+    { name: 'CONFIGURAÇÕES', path: '/admin/settings', icon: <Settings size={18} /> },
+  ];
+
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-brand overflow-hidden">
       {/* Sidebar */}
       <aside className={`bg-white border-r border-slate-100 transition-all duration-500 flex flex-col z-40 ${isCollapsed ? 'w-24' : 'w-80'}`}>
-        <div className="p-8 border-b border-slate-50 flex items-center justify-between h-24 shrink-0">
+        <div className="p-8 flex items-center justify-between h-24 shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-3 truncate">
               {tenant.logo_url ? (
-                <img src={tenant.logo_url} alt="Logo" className="h-10 w-auto object-contain drop-shadow-sm" />
+                <img src={tenant.logo_url} alt="Logo" className="h-10 w-auto object-contain" />
               ) : (
-                <div className="w-10 h-10 bg-[var(--primary)] rounded-2xl flex items-center justify-center text-white text-[10px] font-black">IS</div>
+                <div className="w-10 h-10 bg-[#1c2d51] rounded-2xl flex items-center justify-center text-white text-[10px] font-black">IS</div>
               )}
-              <span className="font-black text-xl text-[#1c2d51] tracking-tighter truncate">{tenant.nome}</span>
             </div>
           )}
           <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-2 hover:bg-slate-50 rounded-xl text-slate-300">
@@ -68,44 +76,40 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           </button>
         </div>
 
-        <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
-          {ADMIN_NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
-            const isDisabled = !hasAccess && item.path !== '/admin/settings';
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path || (item.path === '/admin/settings' && location.pathname.includes('/admin/settings'));
             
             return (
               <Link 
                 key={item.path} 
-                to={isDisabled ? '#' : item.path} 
-                className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all relative group ${
+                to={item.path} 
+                className={`flex items-center gap-4 px-6 py-5 rounded-[2rem] transition-all relative group ${
                   isActive 
-                    ? 'bg-[#1c2d51] text-white shadow-2xl shadow-[#1c2d51]/20 scale-[1.02]' 
-                    : 'text-slate-400 hover:text-[#1c2d51] hover:bg-slate-50'
-                } ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
+                    ? 'bg-[#1c2d51] text-white shadow-2xl shadow-[#1c2d51]/20' 
+                    : 'text-slate-400 hover:text-[#1c2d51]'
+                }`}
               >
                 <span className={isActive ? 'text-white' : 'text-slate-300 group-hover:text-[#1c2d51]'}>{item.icon}</span>
-                {!isCollapsed && <span className="font-black text-xs uppercase tracking-widest">{item.name}</span>}
-                {isActive && !isCollapsed && <div className="absolute right-4 w-1.5 h-1.5 bg-white rounded-full"></div>}
+                {!isCollapsed && <span className="font-black text-[11px] uppercase tracking-[0.15em]">{item.name}</span>}
+                {isActive && !isCollapsed && <div className="absolute right-6 w-2 h-2 bg-white rounded-full"></div>}
               </Link>
             );
           })}
         </nav>
 
-        {!isCollapsed && isTrial && (
+        {!isCollapsed && (
           <div className="mx-6 mb-8 p-8 bg-[#1c2d51] rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)] rounded-full blur-[80px] opacity-40 -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-1000"></div>
+            <div className="absolute top-4 right-4"><Sparkles size={16} className="text-blue-300 opacity-50" /></div>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-white/10 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/10">PERÍODO TRIAL</div>
-                <Sparkles size={16} className="text-blue-300 animate-pulse" />
+              <div className="bg-white/10 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/10 w-fit mb-4">PERÍODO TRIAL</div>
+              <div className="mb-6">
+                <p className="text-5xl font-black tracking-tighter leading-none">{user?.email === 'snapimoveis@gmail.com' ? 'Full' : '14 dias'}</p>
+                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-tight mt-2">Aproveite todas as funções grátis.</p>
               </div>
-              <div className="space-y-1 mb-6">
-                <p className="text-4xl font-black tracking-tighter leading-none">{user?.email === 'snapimoveis@gmail.com' ? 'Vitalício' : `${daysLeft} dias`}</p>
-                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-tight">Aproveite todas as funções grátis.</p>
-              </div>
-              {user?.email !== 'snapimoveis@gmail.com' && (
-                <Link to="/planos" className="w-full bg-blue-500 hover:bg-blue-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl"><Zap size={14} fill="currentColor" /> Assinar Agora</Link>
-              )}
+              <Link to="/planos" className="w-full bg-[#4081ff] hover:bg-blue-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl">
+                <Zap size={14} fill="currentColor" /> Assinar Agora
+              </Link>
             </div>
           </div>
         )}
@@ -113,79 +117,20 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         <div className="p-6 border-t border-slate-50 shrink-0">
           <button onClick={handleLogout} className="w-full flex items-center gap-4 px-6 py-4 text-slate-300 hover:text-red-500 transition-colors">
             <LogOut size={22} />
-            {!isCollapsed && <span className="font-black text-xs uppercase tracking-widest">Sair do Painel</span>}
+            {!isCollapsed && <span className="font-black text-[11px] uppercase tracking-widest">Sair do Painel</span>}
           </button>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col relative overflow-hidden">
-        <header className="h-24 bg-white border-b border-slate-50 flex items-center justify-between px-10 sticky top-0 z-30 shrink-0">
-          <div className="flex items-center gap-4">
-             <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
-                Backoffice / <span className="text-[#1c2d51]">{ADMIN_NAV_ITEMS.find(i => i.path === location.pathname)?.name || 'Painel'}</span>
-             </div>
-          </div>
-
-          <div className="flex items-center gap-8">
-            <Link to="/admin/leads" className="relative p-3 text-slate-300 hover:text-[#1c2d51] transition-all hover:scale-110">
-              <Bell size={24} />
-              {unreadCount > 0 && <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full border-4 border-white font-black">{unreadCount}</span>}
-            </Link>
-
-            {/* WIDGET DE PERFIL - DESIGN CONFORME SCREENSHOT */}
-            <div className="relative" ref={menuRef}>
-              <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                className="flex items-center gap-6 p-3 pr-6 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shadow-inner">
-                  {tenant.logo_url ? (
-                    <img src={tenant.logo_url} className="w-full h-full object-contain p-2" alt="Agency Logo" />
-                  ) : (
-                    <Building2 className="text-slate-300" size={24} />
-                  )}
-                </div>
-                <div className="text-left hidden md:block leading-tight">
-                   <p className="font-black text-lg text-[#1c2d51] tracking-tight">{tenant.nome.split(' ')[0]}</p>
-                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-0.5">Administrador</p>
-                </div>
-                <ChevronDown size={18} className={`text-slate-200 transition-transform duration-300 ${isMenuOpen ? 'rotate-180 text-[#1c2d51]' : ''}`} />
-              </button>
-
-              {/* DROPDOWN MENU */}
-              {isMenuOpen && (
-                <div className="absolute right-0 mt-4 w-64 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-4 animate-in slide-in-from-top-2 duration-200 z-50">
-                   <div className="p-4 border-b border-slate-50 mb-2">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ligado como</p>
-                      <p className="font-bold text-[#1c2d51] truncate text-sm">{user?.email}</p>
-                   </div>
-                   <Link to="/admin/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-4 hover:bg-slate-50 rounded-2xl transition-colors group">
-                      <User size={18} className="text-slate-300 group-hover:text-[#1c2d51]" />
-                      <span className="font-black text-xs uppercase tracking-widest text-[#1c2d51]">O Meu Perfil</span>
-                   </Link>
-                   <Link to="/admin/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-4 hover:bg-slate-50 rounded-2xl transition-colors group">
-                      <Settings size={18} className="text-slate-300 group-hover:text-[#1c2d51]" />
-                      <span className="font-black text-xs uppercase tracking-widest text-[#1c2d51]">Configurações</span>
-                   </Link>
-                   <div className="h-px bg-slate-50 my-2"></div>
-                   <button onClick={handleLogout} className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-2xl transition-colors group text-left">
-                      <LogOut size={18} className="text-slate-300 group-hover:text-red-500" />
-                      <span className="font-black text-xs uppercase tracking-widest text-[#1c2d51] group-hover:text-red-600">Terminar Sessão</span>
-                   </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
         <main className="flex-1 p-12 overflow-y-auto relative scrollbar-hide">
           {hasAccess ? children : (
             <div className="absolute inset-0 z-50 bg-[#F8FAFC]/90 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-700">
                <div className="max-w-md w-full bg-white p-14 rounded-[4rem] shadow-2xl text-center space-y-10 border border-slate-100">
                   <div className="w-24 h-24 bg-red-50 text-red-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner"><Lock size={48} /></div>
                   <div>
-                    <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter">Período de Teste Terminou</h2>
-                    <p className="text-slate-500 font-medium mt-4 text-lg">Ative um plano para retomar a gestão.</p>
+                    <h2 className="text-4xl font-black text-[#1c2d51] tracking-tighter">Acesso Restrito</h2>
+                    <p className="text-slate-500 font-medium mt-4 text-lg">Ative a sua subscrição para continuar.</p>
                   </div>
                   <Link to="/planos" className="w-full bg-[#1c2d51] text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-1 transition-all"><CreditCard size={20} /> Escolher Plano</Link>
                </div>
