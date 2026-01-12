@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Shield, Zap, TrendingUp, Globe, Smartphone, ArrowRight, Star, Building2, Users, MessageSquare, ShieldCheck } from 'lucide-react';
@@ -18,7 +17,7 @@ const Marketing: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-600 text-xs font-black mb-8 uppercase tracking-wider">
-              <Star size={14} fill="currentColor" /> Software #1 em Portugal
+              <Star size={14} fill="currentColor" /> Mais controlo, mais vendas, menos complexidade
             </div>
             
             <h1 className="text-5xl md:text-7xl font-black text-[#1c2d51] leading-[1.05] mb-8 tracking-tighter">

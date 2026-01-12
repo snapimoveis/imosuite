@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
@@ -36,9 +35,30 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 pt-16 mt-16 border-t border-slate-50 text-xs font-bold flex flex-col md:flex-row justify-between items-center gap-6">
         <span>&copy; {new Date().getFullYear()} ImoSuite SaaS. Todos os direitos reservados.</span>
         <div className="flex gap-8">
-          <span className="cursor-pointer hover:text-[#1c2d51] transition-colors">LinkedIn</span>
-          <span className="cursor-pointer hover:text-[#1c2d51] transition-colors">Instagram</span>
-          <span className="cursor-pointer hover:text-[#1c2d51] transition-colors">Facebook</span>
+          <a 
+            href="https://www.linkedin.com/company/imosuite" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:text-[#1c2d51] transition-colors"
+          >
+            LinkedIn
+          </a>
+          <a 
+            href="https://www.instagram.com/imosuite.pt/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:text-[#1c2d51] transition-colors"
+          >
+            Instagram
+          </a>
+          <a 
+            href="https://www.facebook.com/profile.php?id=61586140689774" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:text-[#1c2d51] transition-colors"
+          >
+            Facebook
+          </a>
         </div>
       </div>
     </footer>
