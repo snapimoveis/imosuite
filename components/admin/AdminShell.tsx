@@ -46,7 +46,7 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-brand overflow-hidden">
-      {/* Sidebar - Visual Refinado e Padrão */}
+      {/* Sidebar */}
       <aside className={`bg-white border-r border-slate-200 transition-all duration-300 flex flex-col z-40 ${isCollapsed ? 'w-20' : 'w-72'}`}>
         <div className="p-6 flex items-center justify-between h-20 shrink-0 border-b border-slate-50">
           {!isCollapsed && (
@@ -80,7 +80,7 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               >
                 <span className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#1c2d51]'}>{item.icon}</span>
                 {!isCollapsed && <span className="font-bold text-sm">{item.name}</span>}
-                {item.badge > 0 && !isCollapsed && (
+                {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
                   <span className="ml-auto bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
                     {item.badge}
                   </span>
@@ -113,7 +113,31 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 p-8 lg:p-10 overflow-y-auto relative scrollbar-hide">
+        {/* Header com Área de Perfil restaurada conforme imagem */}
+        <header className="h-24 flex items-center justify-end px-10 shrink-0">
+          <Link to="/admin/profile" className="flex items-center gap-5 bg-white pl-4 pr-6 py-3.5 rounded-[2.2rem] shadow-xl shadow-slate-200/50 border border-slate-50/50 group hover:translate-y-[-2px] transition-all">
+            <div className="w-14 h-14 bg-slate-50 rounded-[1.2rem] overflow-hidden border border-slate-100 flex items-center justify-center">
+              {profile?.avatar_url || tenant.logo_url ? (
+                <img src={profile?.avatar_url || tenant.logo_url} alt="User" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-[#1c2d51] text-white flex items-center justify-center font-black text-xs">
+                  {profile?.displayName?.charAt(0) || 'U'}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-black text-[#1c2d51] tracking-tighter leading-none mb-1">
+                {profile?.displayName?.split(' ')[0] || 'Grupo'}
+              </span>
+              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">
+                {profile?.role === 'admin' ? 'ADMINISTRADOR' : 'CONSULTOR'}
+              </span>
+            </div>
+            <ChevronDown size={18} className="text-slate-200 ml-4 group-hover:text-[#1c2d51] transition-colors" />
+          </Link>
+        </header>
+
+        <main className="flex-1 p-8 lg:p-10 pt-2 overflow-y-auto relative scrollbar-hide">
           {hasAccess ? children : (
             <div className="absolute inset-0 z-50 bg-slate-50/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-500">
                <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-xl text-center border border-slate-200">
