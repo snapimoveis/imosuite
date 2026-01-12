@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ArrowRight, HelpCircle, Star, ShieldCheck, Zap, Globe, Loader2, AlertCircle } from 'lucide-react';
+import { Check, ArrowRight, Star, Zap, Loader2 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import { SubscriptionService, StripePlans } from '../services/subscriptionService';
@@ -17,25 +17,12 @@ const PricingPage: React.FC = () => {
       return;
     }
 
-    if (StripePlans[planKey].includes('ReplaceMe')) {
-      alert("Aviso: Os IDs de preço do Stripe ainda são os exemplos. Substitua-os no ficheiro 'services/subscriptionService.ts' pelos seus IDs reais (price_...).");
-      return;
-    }
-
     setLoadingPlan(planKey);
     try {
       await SubscriptionService.createCheckoutSession(user.uid, StripePlans[planKey]);
     } catch (err: any) {
       console.error("Erro no checkout:", err);
-      
-      let errorMsg = "Erro ao iniciar o pagamento.";
-      if (err.code === 'permission-denied') {
-        errorMsg = "Erro de Permissão (Firestore): Vá ao console do Firebase e adicione as regras de escrita para a coleção 'users/{userId}/checkout_sessions'.";
-      } else if (err.message) {
-        errorMsg = `Erro: ${err.message}`;
-      }
-      
-      alert(errorMsg);
+      alert(err.message || "Ocorreu um erro ao iniciar o processo de pagamento. Por favor, tente novamente.");
       setLoadingPlan(null);
     }
   };
@@ -78,11 +65,11 @@ const PricingPage: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32 pb-20 font-brand">
-      <SEO title="Planos e Preços" description="14 dias grátis. Escolha entre Starter 29€ ou Business 49€." />
+      <SEO title="Planos e Preços" description="14 dias grátis. Escolha o plano ideal para a sua imobiliária." />
       <main className="px-6">
         <div className="max-w-5xl mx-auto text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-black text-[#1c2d51] mb-6 tracking-tighter">Escolha o seu <span className="text-[#357fb2]">Plano</span></h1>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">14 dias de teste grátis em qualquer conta nova. Sem fidelização.</p>
+          <h1 className="text-4xl md:text-6xl font-black text-[#1c2d51] mb-6 tracking-tighter">O plano ideal para a sua <span className="text-[#357fb2]">Agência</span></h1>
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">Experimente grátis por 14 dias. Sem compromisso, cancele quando quiser.</p>
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -118,8 +105,8 @@ const PricingPage: React.FC = () => {
                 onClick={() => handleSubscribe(plan.id as any)}
                 disabled={!!loadingPlan}
                 className={`w-full py-6 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all ${
-                  plan.highlight ? 'bg-white text-[#1c2d51]' : 'bg-[#1c2d51] text-white'
-                }`}
+                  plan.highlight ? 'bg-white text-[#1c2d51] hover:bg-slate-50' : 'bg-[#1c2d51] text-white hover:bg-[#253a66]'
+                } active:scale-95 shadow-xl`}
               >
                 {loadingPlan === plan.id ? <Loader2 className="animate-spin" /> : <>{plan.cta} <ArrowRight /></>}
               </button>
