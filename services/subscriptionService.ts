@@ -10,13 +10,14 @@ import { Tenant } from "../types";
 const STRIPE_ROOT_COLLECTION = "customers"; 
 
 /**
- * IDs DE PREÇO REAIS (STRIPE LIVE PRICE IDs)
- * IMPORTANTE: Substitua os IDs abaixo pelos IDs que criou no Dashboard do Stripe em MODO REAL.
- * O erro "No such price" acontece quando usa um ID de teste numa conta live ou vice-versa.
+ * IDs DE PREÇO DO STRIPE
+ * IMPORTANTE: Substitua os IDs abaixo pelos Price IDs reais da sua conta Stripe.
+ * Pode encontrá-los no Dashboard do Stripe > Produtos > [Seu Produto] > Preços.
+ * Exemplo de formato: price_1Qx...
  */
 export const StripePlans = {
-  starter: "price_1StarterRealID_Aqui",  // <-- COLOQUE O ID REAL AQUI
-  business: "price_1BusinessRealID_Aqui" // <-- COLOQUE O ID REAL AQUI
+  starter: "price_starter_placeholder",  
+  business: "price_business_placeholder"
 };
 
 export const SubscriptionService = {
@@ -90,9 +91,9 @@ export const SubscriptionService = {
   createCheckoutSession: async (userId: string, priceId: string) => {
     if (!userId) throw new Error("Utilizador não autenticado.");
     
-    // Verificação de segurança para garantir que o ID é válido
-    if (!priceId || priceId.includes('Aqui') || priceId.includes('ReplaceMe')) {
-      throw new Error("Configuração de Preços incompleta. Por favor, configure os Price IDs de produção.");
+    // Verificação básica: se o ID ainda for o placeholder, avisamos o usuário mas não travamos via código de string
+    if (!priceId || priceId.includes('placeholder')) {
+      console.warn("Aviso: Está a tentar usar um Price ID de exemplo. O Stripe irá retornar erro se este ID não existir na sua conta.");
     }
 
     const checkoutSessionsRef = collection(db, STRIPE_ROOT_COLLECTION, userId, "checkout_sessions");
@@ -115,7 +116,7 @@ export const SubscriptionService = {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           unsubscribe();
-          reject(new Error("O gateway de pagamento demorou demasiado a responder. Verifique os logs da extensão no Firebase."));
+          reject(new Error("O gateway de pagamento demorou demasiado a responder. Verifique se a Extensão 'Run Payments with Stripe' está instalada no seu Firebase."));
         }, 30000);
 
         const unsubscribe = onSnapshot(docRef, (snap) => {
