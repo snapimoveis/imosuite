@@ -16,8 +16,8 @@ const STRIPE_ROOT_COLLECTION = "customers";
  * Exemplo de formato: price_1Qx...
  */
 export const StripePlans = {
-  starter: "price_starter_placeholder",  
-  business: "price_business_placeholder"
+  starter: "price_1SobVF9YE7qSVg1quKIHx0qM",  
+  business: "price_1SocAG9YE7qSVg1qMZW1jjcE"
 };
 
 export const SubscriptionService = {
