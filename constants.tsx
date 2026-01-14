@@ -71,21 +71,7 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       title: 'Resolução Alternativa de Litígios',
       slug: 'resolucao-de-litigios',
       enabled: true,
-      content_md: `Em caso de litígio o consumidor pode recorrer a uma Entidade de Resolução Alternativa de Litígios de consumo:
-
-Centro de Arbitragem de Conflitos de Consumo de Lisboa
-http://www.centroarbitragemlisboa.pt
-
-Centro de Arbitragem de Conflitos de Consumo do Vale do Ave
-http://www.triave.pt
-
-CIAB – Centro de Informação, Mediação e Arbitragem de Consumo
-http://www.ciab.pt/pt
-
-CNIACC – Centro Nacional de Informação e Arbitragem
-https://www.cniacc.pt/pt/
-
-Mais informações em Portal do Consumidor: www.consumidor.pt`
+      content_md: 'O conteúdo desta página é gerado automaticamente com as entidades oficiais RAL.'
     },
     {
       id: 'p4',

@@ -33,7 +33,6 @@ const PublicImovelDetails: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [formData, setFormData] = useState({ nome: '', email: '', telefone: '', mensagem: '' });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
@@ -110,6 +109,11 @@ const PublicImovelDetails: React.FC = () => {
     if (cleanPath === '' || cleanPath === '/') return `/agencia/${tenant.slug}`;
     if (cleanPath === 'imoveis') return `/agencia/${tenant.slug}/imoveis`;
     return `/agencia/${tenant.slug}/p/${cleanPath}`;
+  };
+
+  const renderLink = (item: any, className: string) => {
+    if (item.path.startsWith('http')) return <a key={item.id} href={item.path} target="_blank" rel="noopener noreferrer" className={className}>{item.label}</a>;
+    return <Link key={item.id} to={getMenuLink(item.path)} className={className}>{item.label}</Link>;
   };
 
   const styles: Record<string, any> = {
@@ -220,8 +224,8 @@ const PublicImovelDetails: React.FC = () => {
         </div>
       </main>
 
-      <footer className="py-20 px-8 bg-[#1c2d51] text-white/40 text-center text-[10px] font-black uppercase tracking-[0.4em]">
-         © {new Date().getFullYear()} {tenant.nome}
+      <footer className="py-20 px-8 text-white/40 text-center text-[10px] font-black uppercase tracking-[0.4em]" style={{ backgroundColor: tenant.cor_primaria }}>
+         © {new Date().getFullYear()} {tenant.nome} • Software por ImoSuite
       </footer>
       <style>{`
         .detail-input-resp { width: 100%; padding: 1.15rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
