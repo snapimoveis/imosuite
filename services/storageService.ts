@@ -3,7 +3,8 @@ import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 export const StorageService = {
   /**
-   * Faz o upload de uma imagem Base64 para o Firebase Storage usando o formato data_url.
+   * Faz o upload de uma imagem Base64 para o Firebase Storage.
+   * Lança erro se falhar para evitar que o Firestore guarde strings gigantes.
    */
   async uploadBase64(path: string, base64: string): Promise<string> {
     if (!base64 || !base64.startsWith('data:image')) {
@@ -12,23 +13,18 @@ export const StorageService = {
     
     try {
       const storageRef = ref(storage, path);
-      
-      // uploadString com 'data_url' é o método recomendado para strings base64 que incluem o prefixo data:image/...
+      // 'data_url' é o formato correto para strings que começam com "data:image/..."
       await uploadString(storageRef, base64, 'data_url');
-      
       const url = await getDownloadURL(storageRef);
       return url;
     } catch (error: any) {
-      console.error("Erro no upload para Storage:", error);
+      console.error("ERRO CRÍTICO NO STORAGE:", error);
       
-      // Log específico para ajudar o utilizador a identificar problemas de configuração
       if (error.code === 'storage/unauthorized') {
-        console.error("ERRO: Verifique as Regras de Segurança (Rules) do seu bucket no Firebase Console.");
-      } else if (error.message?.includes('CORS')) {
-        console.error("ERRO DE CORS: O seu bucket não permite uploads do domínio atual. Siga o Passo 2 abaixo.");
+        throw new Error("PERMISSÃO NEGADA: Por favor, atualize as 'Rules' do Storage no Firebase Console para permitir escrita a utilizadores autenticados.");
       }
       
-      return base64; // Fallback para manter funcionalidade (Firestore guardará base64 se o storage falhar)
+      throw error;
     }
   }
 };

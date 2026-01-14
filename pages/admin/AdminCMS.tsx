@@ -113,7 +113,14 @@ const AdminCMS: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error(err);
-      alert("Erro ao guardar CMS. O documento pode ser demasiado grande se tiver demasiadas imagens Base64.");
+      // Erro amigável baseado na falha técnica detetada
+      if (err.message?.includes("PERMISSÃO NEGADA") || err.code === 'storage/unauthorized') {
+         alert("ERRO DE CONFIGURAÇÃO: O seu Firebase Storage está a bloquear os uploads. Por favor, verifique se as 'Rules' no console do Firebase permitem escrita.");
+      } else if (err.message?.includes("exceeds the maximum allowed size")) {
+         alert("ERRO: O documento é demasiado grande. Isto acontece porque o upload para o Storage falhou e a imagem ficou guardada no banco de dados. Resolva primeiro as permissões do Storage.");
+      } else {
+         alert("Erro ao guardar CMS: " + (err.message || "Erro desconhecido"));
+      }
     } finally {
       setIsSaving(false);
     }
