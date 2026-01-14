@@ -67,6 +67,21 @@ const PublicPortal: React.FC = () => {
     return `/agencia/${tenant.slug}/p/${cleanPath}`;
   };
 
+  const renderFooterLink = (item: any) => {
+    if (item.path.startsWith('http')) {
+      return (
+        <a key={item.id} href={item.path} target="_blank" rel="noopener noreferrer" className="text-sm font-bold hover:opacity-100 opacity-70 transition-opacity">
+          {item.label}
+        </a>
+      );
+    }
+    return (
+      <Link key={item.id} to={getMenuLink(item.path)} className="text-sm font-bold hover:opacity-100 opacity-70 transition-opacity">
+        {item.label}
+      </Link>
+    );
+  };
+
   const styles: Record<string, any> = {
     heritage: { nav: "h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-white border-b border-slate-100 flex items-center justify-between", navText: "font-heritage italic text-[#1c2d51]", heading: "font-heritage italic text-[#1c2d51]", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
     canvas: { nav: "h-20 md:h-32 px-6 md:px-12 sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50 flex items-center justify-between", navText: "font-black tracking-tight text-[#1c2d51]", heading: "font-black text-[#1c2d51] tracking-tight", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
@@ -162,9 +177,9 @@ const PublicPortal: React.FC = () => {
                </div>
             </div>
             <div className="space-y-4">
-               <p className="text-[10px] font-black uppercase opacity-50 tracking-widest">Legal</p>
+               <p className="text-[10px] font-black uppercase opacity-50 tracking-widest">Conformidade</p>
                <div className="flex flex-col gap-2">
-                  {cms.menus.footer.map(m => <Link key={m.id} to={getMenuLink(m.path)} className="text-sm font-bold hover:opacity-100 opacity-70 transition-opacity">{m.label}</Link>)}
+                  {cms.menus.footer.map(m => renderFooterLink(m))}
                </div>
             </div>
          </div>

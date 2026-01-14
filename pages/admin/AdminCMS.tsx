@@ -244,6 +244,7 @@ const AdminCMS: React.FC = () => {
                             <GripVertical size={16} className="text-slate-300"/>
                             <div>
                               <p className="font-black text-sm text-[#1c2d51] uppercase tracking-tight">{item.label}</p>
+                              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">{item.path}</p>
                             </div>
                          </div>
                          <button onClick={() => setCms({...cms, menus: {...cms.menus, footer: cms.menus.footer.filter(m => m.id !== item.id)}})} className="p-2 text-slate-200 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
@@ -283,7 +284,7 @@ const AdminCMS: React.FC = () => {
           {activeTab === 'social' && (
              <div className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-16 animate-in fade-in">
                 <div className="space-y-10">
-                  <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-[0.3em] border-b border-slate-50 pb-6 flex items-center gap-3"><Globe size={18} className="text-blue-500"/> Canais de Contacto Direto</h3>
+                  <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-[0.3em] border-b border-slate-50 pb-6 flex items-center gap-3"><Globe size={18} className="text-blue-500"/> Redes Sociais e Contacto Direto</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <SocialInput icon={<Facebook size={18}/>} label="Facebook Page" value={cms.social.facebook} onChange={(val: string) => setCms({...cms, social: {...cms.social, facebook: val}})} />
                     <SocialInput icon={<Instagram size={18}/>} label="Instagram Profile" value={cms.social.instagram} onChange={(val: string) => setCms({...cms, social: {...cms.social, instagram: val}})} />
@@ -291,16 +292,11 @@ const AdminCMS: React.FC = () => {
                     <SocialInput icon={<MessageCircle size={18}/>} label="Número WhatsApp" value={cms.social.whatsapp} onChange={(val: string) => setCms({...cms, social: {...cms.social, whatsapp: val}})} />
                   </div>
                 </div>
-                <div className="space-y-10">
-                  <h3 className="font-black text-[#1c2d51] uppercase text-xs tracking-[0.3em] border-b border-slate-50 pb-6 flex items-center gap-3"><FileWarning size={18} className="text-amber-500"/> Conformidade e Links Legais</h3>
-                  <div className="grid grid-cols-1 gap-8">
-                     <SocialInput icon={<Link2 size={18}/>} label="Link Livro de Reclamações Digital" value={cms.social.complaints_book_link} onChange={(val: string) => setCms({...cms, social: {...cms.social, complaints_book_link: val}})} />
-                  </div>
-                </div>
              </div>
           )}
       </div>
 
+      {/* Modais de Menu e Página permanecem iguais */}
       {isMenuModalOpen && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">

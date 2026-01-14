@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Home, Building2, Landmark, LayoutGrid, Users, MessageSquare, Settings, BarChart3, Search, Globe } from 'lucide-react';
 import { Tenant, TenantCMS } from './types';
@@ -68,13 +67,14 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
   menus: {
     main: [
       { id: 'm1', label: 'Início', path: '/', order: 0, is_external: false },
-      { id: 'm2', label: 'Propriedades', path: '/imoveis', order: 1, is_external: false },
-      { id: 'm3', label: 'Agência', path: '/quem-somos', order: 2, is_external: false },
-      { id: 'm4', label: 'Contactos', path: '/contactos', order: 3, is_external: false }
+      { id: 'm2', label: 'Propriedades', path: 'imoveis', order: 1, is_external: false },
+      { id: 'm3', label: 'Agência', path: 'quem-somos', order: 2, is_external: false },
+      { id: 'm4', label: 'Contactos', path: 'contactos', order: 3, is_external: false }
     ],
     footer: [
-      { id: 'f1', label: 'Política de Privacidade', path: '/privacidade', order: 0, is_external: false },
-      { id: 'f2', label: 'Termos de Serviço', path: '/termos', order: 1, is_external: false }
+      { id: 'f1', label: 'Política de Privacidade', path: 'privacidade', order: 0, is_external: false },
+      { id: 'f2', label: 'Resolução de Litígios', path: 'resolucao-de-litigios', order: 1, is_external: false },
+      { id: 'f3', label: 'Livro de Reclamações', path: 'https://www.livroreclamacoes.pt/Inicio/', order: 2, is_external: true }
     ]
   },
   pages: [
@@ -92,17 +92,49 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
         'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800',
         'https://images.unsplash.com/photo-1522071823991-b518ee7f1d98?w=800'
       ],
-      equipa: [
-        { id: 't1', name: 'Ricardo Santos', role: 'CEO & Founder', email: 'ricardo@exemplo.pt', phone: '+351 910 000 000', avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400' },
-        { id: 't2', name: 'Ana Oliveira', role: 'Diretora Comercial', email: 'ana@exemplo.pt', phone: '+351 920 000 000', avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400' }
-      ]
+      equipa: []
     },
-    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber para um café e uma conversa sobre o seu próximo investimento.', enabled: true }
+    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber para um café e uma conversa sobre o seu próximo investimento.', enabled: true },
+    {
+      id: 'p3',
+      title: 'Resolução Alternativa de Litígios',
+      slug: 'resolucao-de-litigios',
+      enabled: true,
+      content_md: `Em caso de litígio o consumidor pode recorrer a uma Entidade de Resolução Alternativa de Litígios de consumo:
+
+Centro de Arbitragem de Conflitos de Consumo de Lisboa
+http://www.centroarbitragemlisboa.pt
+
+Centro de Arbitragem de Conflitos de Consumo do Vale do Ave/Tribunal Arbitral
+http://www.triave.pt
+
+CIAB – Centro de Informação, Mediação e Arbitragem de Consumo (Tribunal Arbitral de Consumo)
+http://www.ciab.pt/pt
+
+CNIACC – Centro Nacional de Informação e Arbitragem de Conflitos de Consumo
+https://www.cniacc.pt/pt/
+
+Centro de Arbitragem de Conflitos de Consumo do Distrito de Coimbra
+http://www.centrodearbitragemdecoimbra.com
+
+Centro de Informação, Mediação e Arbitragem de Consumo do Algarve
+http://www.consumoalgarve.pt
+
+Centro de Informação de Consumo e Arbitragem do Porto
+http://www.cicap.pt
+
+Centro de Arbitragem de Conflitos de Consumo da Madeira
+https://www.madeira.gov.pt/cacc
+
+Mais informações em Portal do Consumidor
+www.consumidor.pt`
+    }
   ],
   social: {
-    facebook: 'https://facebook.com',
-    instagram: 'https://instagram.com',
-    linkedin: 'https://linkedin.com'
+    facebook: '',
+    instagram: '',
+    linkedin: '',
+    whatsapp: ''
   }
 };
 
