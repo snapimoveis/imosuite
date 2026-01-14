@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Tenant } from '../../types';
 import { compressImage, formatCurrency } from '../../lib/utils';
+import { StorageService } from '../../services/storageService';
 
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
@@ -44,7 +45,8 @@ const AdminSettings: React.FC = () => {
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const compressed = await compressImage(reader.result as string, 1200, 1200, 0.9);
+      // Compressão mais agressiva para o logo (max 400px, 0.6 quality)
+      const compressed = await compressImage(reader.result as string, 400, 400, 0.6);
       setLocalTenant(prev => ({ ...prev, logo_url: compressed }));
     };
     reader.readAsDataURL(file);
@@ -54,9 +56,18 @@ const AdminSettings: React.FC = () => {
     if (!user || !localTenant.id) return;
     setIsSaving(true);
     try {
+      let finalLogoUrl = localTenant.logo_url;
+      
+      // Upload para Storage se for Base64
+      if (finalLogoUrl && finalLogoUrl.startsWith('data:image')) {
+        finalLogoUrl = await StorageService.uploadBase64(`tenants/${localTenant.id}/branding/logo.png`, finalLogoUrl);
+      }
+
       const { id, ...dataToSave } = localTenant;
-      await setDoc(doc(db, 'tenants', localTenant.id), { ...dataToSave, updated_at: serverTimestamp() }, { merge: true });
-      setTenant({ ...localTenant });
+      const updatedData = { ...dataToSave, logo_url: finalLogoUrl, updated_at: serverTimestamp() };
+      
+      await setDoc(doc(db, 'tenants', localTenant.id), updatedData, { merge: true });
+      setTenant({ ...localTenant, logo_url: finalLogoUrl });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

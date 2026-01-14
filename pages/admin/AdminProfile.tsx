@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -6,6 +5,7 @@ import { updateProfile } from 'firebase/auth';
 import { db } from '../../lib/firebase';
 import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Camera, Smartphone, Globe } from 'lucide-react';
 import { compressImage } from '../../lib/utils';
+import { StorageService } from '../../services/storageService';
 
 const AdminProfile: React.FC = () => {
   const { profile, user } = useAuth();
@@ -45,17 +45,8 @@ const AdminProfile: React.FC = () => {
     reader.onloadend = async () => {
       const base64String = reader.result as string;
       const compressed = await compressImage(base64String, 400, 400, 0.8);
+      // Mantemos o Base64 apenas localmente no estado para feedback imediato
       setFormData(prev => ({ ...prev, avatar_url: compressed }));
-      
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        await setDoc(userRef, { 
-          avatar_url: compressed,
-          updated_at: serverTimestamp() 
-        }, { merge: true });
-      } catch (err) {
-        console.error("Erro ao guardar avatar:", err);
-      }
     };
     reader.readAsDataURL(file);
   };
@@ -68,6 +59,13 @@ const AdminProfile: React.FC = () => {
     setSuccess(false);
 
     try {
+      let finalAvatarUrl = formData.avatar_url;
+
+      // Upload para Storage se for novo avatar (Base64)
+      if (finalAvatarUrl && finalAvatarUrl.startsWith('data:image')) {
+        finalAvatarUrl = await StorageService.uploadBase64(`users/${user.uid}/avatar.jpg`, finalAvatarUrl);
+      }
+
       await updateProfile(user, { displayName: formData.displayName });
 
       // Atualiza documento do Utilizador
@@ -78,6 +76,7 @@ const AdminProfile: React.FC = () => {
         displayName: formData.displayName,
         professionalEmail: formData.professionalEmail,
         phone: formData.phone,
+        avatar_url: finalAvatarUrl,
         role: profile.role || 'admin',
         tenantId: profile.tenantId || 'pending',
         updated_at: serverTimestamp(),
@@ -93,15 +92,12 @@ const AdminProfile: React.FC = () => {
         }, { merge: true });
       }
 
+      setFormData(prev => ({ ...prev, avatar_url: finalAvatarUrl }));
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error: any) {
       console.error("Erro ao atualizar perfil:", error);
-      if (error.message?.includes('exceeds the maximum allowed size')) {
-        alert("Erro: O seu perfil excedeu o limite de tamanho. Tente usar uma foto de perfil mais pequena.");
-      } else {
-        alert("Erro ao guardar alterações. Verifique os dados e tente novamente.");
-      }
+      alert("Erro ao guardar alterações. Verifique os dados e tente novamente.");
     } finally {
       setIsSaving(false);
     }

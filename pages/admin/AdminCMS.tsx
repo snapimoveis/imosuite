@@ -15,6 +15,7 @@ import {
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { CMSSection, TenantCMS, MenuItem, CMSPage, TeamMember } from '../../types';
 import { compressImage, generateSlug } from '../../lib/utils';
+import { StorageService } from '../../services/storageService';
 
 const AdminCMS: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
@@ -54,17 +55,65 @@ const AdminCMS: React.FC = () => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
     setIsSaving(true);
     try {
+      // 1. Processar Imagens das Secções da Homepage
+      const processedSections = await Promise.all(cms.homepage_sections.map(async (section) => {
+        if (section.content.image_url?.startsWith('data:image')) {
+          const downloadUrl = await StorageService.uploadBase64(
+            `tenants/${profile.tenantId}/cms/sections/${section.id}.jpg`, 
+            section.content.image_url
+          );
+          return { ...section, content: { ...section.content, image_url: downloadUrl } };
+        }
+        return section;
+      }));
+
+      // 2. Processar Imagens das Páginas (Galeria e Equipa)
+      const processedPages = await Promise.all(cms.pages.map(async (page) => {
+        // Galeria
+        const processedGallery = page.galeria_fotos ? await Promise.all(page.galeria_fotos.map(async (img, idx) => {
+          if (img.startsWith('data:image')) {
+            return await StorageService.uploadBase64(
+              `tenants/${profile.tenantId}/cms/pages/${page.id}/gallery/${idx}.jpg`,
+              img
+            );
+          }
+          return img;
+        })) : [];
+
+        // Equipa
+        const processedTeam = page.equipa ? await Promise.all(page.equipa.map(async (member) => {
+          if (member.avatar_url?.startsWith('data:image')) {
+            const downloadUrl = await StorageService.uploadBase64(
+              `tenants/${profile.tenantId}/cms/pages/${page.id}/team/${member.id}.jpg`,
+              member.avatar_url
+            );
+            return { ...member, avatar_url: downloadUrl };
+          }
+          return member;
+        })) : [];
+
+        return { ...page, galeria_fotos: processedGallery, equipa: processedTeam };
+      }));
+
+      const finalCMS = {
+        ...cms,
+        homepage_sections: processedSections,
+        pages: processedPages
+      };
+
       const tenantRef = doc(db, 'tenants', profile.tenantId);
       await updateDoc(tenantRef, {
-        cms: cms,
+        cms: finalCMS,
         updated_at: serverTimestamp()
       });
-      setTenant({ ...tenant, cms });
+
+      setTenant({ ...tenant, cms: finalCMS });
+      setCms(finalCMS);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       console.error(err);
-      alert("Erro ao guardar CMS.");
+      alert("Erro ao guardar CMS. O documento pode ser demasiado grande se tiver demasiadas imagens Base64.");
     } finally {
       setIsSaving(false);
     }
@@ -89,7 +138,8 @@ const AdminCMS: React.FC = () => {
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const compressed = await compressImage(reader.result as string, 1200, 800, 0.7);
+      // Compressão optimizada para Web (max 1000px, 0.5 quality) para manter o doc < 1MB
+      const compressed = await compressImage(reader.result as string, 1000, 700, 0.5);
       updateSectionContent(id, { image_url: compressed });
     };
     reader.readAsDataURL(file);
@@ -158,7 +208,7 @@ const AdminCMS: React.FC = () => {
     if (!file || !editingPage) return;
     const reader = new FileReader();
     reader.onloadend = async () => {
-      const compressed = await compressImage(reader.result as string, 400, 400, 0.8);
+      const compressed = await compressImage(reader.result as string, 300, 300, 0.5);
       setEditingPage({
         ...editingPage,
         equipa: editingPage.equipa?.map(m => m.id === memberId ? { ...m, avatar_url: compressed } : m)
@@ -175,7 +225,8 @@ const AdminCMS: React.FC = () => {
       const reader = new FileReader();
       const promise = new Promise<void>((resolve) => {
         reader.onloadend = async () => {
-          const compressed = await compressImage(reader.result as string, 1200, 800, 0.7);
+          // Galeria de páginas com resolução reduzida para evitar erro de 1MB doc size
+          const compressed = await compressImage(reader.result as string, 800, 600, 0.5);
           newPhotos.push(compressed);
           resolve();
         };
@@ -185,8 +236,6 @@ const AdminCMS: React.FC = () => {
     }
     setEditingPage({ ...editingPage, galeria_fotos: [...(editingPage.galeria_fotos || []), ...newPhotos] });
   };
-
-  if (tenantLoading) return <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-slate-200" size={40} /></div>;
 
   return (
     <div className="max-w-6xl space-y-8 font-brand animate-in fade-in duration-500 pb-20">
@@ -432,7 +481,6 @@ const AdminCMS: React.FC = () => {
                                 next[idx] = e.target.value;
                                 setEditingPage({...editingPage, valores: next});
                               }} placeholder="Ex: Transparência" />
-                              {/* Fix: Changed Trash to Trash2 */}
                               <button onClick={() => setEditingPage({...editingPage, valores: editingPage.valores?.filter((_, i) => i !== idx)})} className="p-3 text-slate-300 hover:text-red-500"><Trash2 size={18}/></button>
                            </div>
                          ))}
@@ -539,7 +587,7 @@ const AdminCMS: React.FC = () => {
 
             <div className="p-8 border-t bg-white flex justify-end gap-4 shrink-0">
               <button onClick={() => setIsPageModalOpen(false)} className="px-8 py-3 text-slate-400 font-black text-xs uppercase tracking-widest hover:text-red-500 transition-colors">Cancelar</button>
-              <button onClick={handleSavePage} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl hover:-translate-y-1 transition-all">
+              <button onClick={handleSavePage} className="bg-[#1c2d51] text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl hover:-translate-y-1 transition-all">
                 <Check size={18}/> Aplicar Alterações
               </button>
             </div>

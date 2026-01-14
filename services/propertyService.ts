@@ -1,7 +1,7 @@
-
 import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";
+import { StorageService } from "./storageService";
 
 const prepareData = (obj: any, isUpdate: boolean = false): any => {
   if (obj === null || obj === undefined) return null;
@@ -56,9 +56,9 @@ export const PropertyService = {
     if (!tenantId || tenantId === 'pending') throw new Error("Sessão expirada ou agência inválida.");
     
     const propertiesRef = collection(db, "tenants", tenantId, "properties");
-    const coverImage = mediaItems.find(m => m.is_cover) || mediaItems[0];
 
-    const finalData = prepareData({
+    // 1. Criar o documento primeiro para ter o ID da propriedade
+    const tempPropertyData = {
       ...propertyData,
       tipologia: propertyData.tipologia || propertyData.tipology || 'T0',
       tenant_id: tenantId,
@@ -66,29 +66,46 @@ export const PropertyService = {
       updated_at: serverTimestamp(),
       tracking: { views: 0, favorites: 0 },
       caracteristicas: propertyData.caracteristicas || [],
-      media: {
-        cover_media_id: coverImage?.id || null,
-        cover_url: coverImage?.url || null,
-        total: mediaItems.length
+      media: { total: mediaItems.length, cover_media_id: null, cover_url: null }
+    };
+    
+    const docRef = await addDoc(propertiesRef, prepareData(tempPropertyData, false));
+    const propertyId = docRef.id;
+
+    // 2. Processar e fazer upload das imagens
+    const processedMedia = await Promise.all(mediaItems.map(async (item, index) => {
+      if (item.url.startsWith('data:image')) {
+        const fileName = `${crypto.randomUUID()}.jpg`;
+        const storagePath = `tenants/${tenantId}/properties/${propertyId}/photos/${fileName}`;
+        const downloadUrl = await StorageService.uploadBase64(storagePath, item.url);
+        return { ...item, url: downloadUrl, storage_path: storagePath, order: index };
       }
-    }, false);
+      return { ...item, order: index };
+    }));
 
-    const docRef = await addDoc(propertiesRef, finalData);
+    const coverImage = processedMedia.find(m => m.is_cover) || processedMedia[0];
 
-    if (mediaItems.length > 0) {
-      const mediaColRef = collection(db, "tenants", tenantId, "properties", docRef.id, "media");
+    // 3. Atualizar o documento principal com a capa correta
+    await updateDoc(docRef, {
+      "media.cover_media_id": coverImage?.id || null,
+      "media.cover_url": coverImage?.url || null
+    });
+
+    // 4. Salvar subcoleção de media
+    if (processedMedia.length > 0) {
+      const mediaColRef = collection(db, "tenants", tenantId, "properties", propertyId, "media");
       const batch = writeBatch(db);
-      mediaItems.forEach((item, index) => {
+      processedMedia.forEach((item) => {
         const newMediaRef = doc(mediaColRef);
         const { id: mId, ...itemData } = item as any;
         batch.set(newMediaRef, prepareData({
           ...itemData,
-          order: index,
           created_at: serverTimestamp()
         }));
       });
       await batch.commit();
     }
+
     return docRef;
   },
 
@@ -96,38 +113,51 @@ export const PropertyService = {
     if (!tenantId || !propertyId) return;
     
     const propertyRef = doc(db, "tenants", tenantId, "properties", propertyId);
-    const coverImage = mediaItems?.find(m => m.is_cover) || mediaItems?.[0];
-    
-    const cleanUpdates = prepareData({
-      ...updates,
-      tipologia: updates.tipologia || updates.tipology || 'T0',
-      ...(mediaItems && {
-        media: {
-          cover_media_id: coverImage?.id || null,
-          cover_url: coverImage?.url || null,
-          total: mediaItems.length
-        }
-      })
-    }, true);
-    
-    await updateDoc(propertyRef, { ...cleanUpdates, updated_at: serverTimestamp() });
+    let finalMediaData = updates.media;
 
     if (mediaItems) {
+      // Processar uploads das imagens novas (Base64)
+      const processedMedia = await Promise.all(mediaItems.map(async (item, index) => {
+        if (item.url.startsWith('data:image')) {
+          const fileName = `${crypto.randomUUID()}.jpg`;
+          const storagePath = `tenants/${tenantId}/properties/${propertyId}/photos/${fileName}`;
+          const downloadUrl = await StorageService.uploadBase64(storagePath, item.url);
+          return { ...item, url: downloadUrl, storage_path: storagePath, order: index };
+        }
+        return { ...item, order: index };
+      }));
+
+      const coverImage = processedMedia.find(m => m.is_cover) || processedMedia[0];
+      
+      finalMediaData = {
+        cover_media_id: coverImage?.id || null,
+        cover_url: coverImage?.url || null,
+        total: processedMedia.length
+      };
+
+      // Atualizar subcoleção de media
       const mediaColRef = collection(db, "tenants", tenantId, "properties", propertyId, "media");
       const existingMedia = await getDocs(mediaColRef);
       const batch = writeBatch(db);
       existingMedia.docs.forEach(d => batch.delete(d.ref));
-      mediaItems.forEach((item, index) => {
+      processedMedia.forEach((item) => {
         const newMediaRef = doc(mediaColRef);
         const { id: mId, ...itemData } = item as any;
         batch.set(newMediaRef, prepareData({
           ...itemData,
-          order: index,
           created_at: item.created_at || serverTimestamp()
         }));
       });
       await batch.commit();
     }
+    
+    const cleanUpdates = prepareData({
+      ...updates,
+      tipologia: updates.tipologia || updates.tipology || 'T0',
+      media: finalMediaData
+    }, true);
+    
+    await updateDoc(propertyRef, { ...cleanUpdates, updated_at: serverTimestamp() });
   },
 
   async deleteProperty(tenantId: string, propertyId: string) {
