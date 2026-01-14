@@ -12,6 +12,8 @@ import {
   Facebook, Instagram, Linkedin, MessageCircle, FileText, Check,
   Users, Target, Eye, ImagePlus, UserPlus, Phone, Mail, FileWarning, Zap, Lock, Link2
 } from 'lucide-react';
+// Added missing Logo component import
+import { Logo } from '../../components/Logo';
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { CMSSection, TenantCMS, MenuItem, CMSPage, TeamMember } from '../../types';
 import { compressImage, generateSlug } from '../../lib/utils';
