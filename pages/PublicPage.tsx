@@ -129,19 +129,19 @@ const PublicPage: React.FC = () => {
             </div>
          </div>
 
-         {/* Seção Contactos injetada se o slug for 'contactos' */}
+         {/* Seção Contactos injetada automaticamente */}
          {pageSlug === 'contactos' && (
            <div className="bg-slate-50">
              <ContactSection 
                tenantId={tenant.id} 
                isWhiteLabel={true} 
-               title="Estamos ao seu dispor" 
-               subtitle="Preencha o formulário abaixo e entraremos em contacto brevemente."
+               title="Fale Connosco" 
+               subtitle="Estamos disponíveis para o ajudar a encontrar o seu próximo investimento."
              />
            </div>
          )}
 
-         {/* Restantes blocos (Missão, Equipa, etc) */}
+         {/* Restantes blocos mantidos intactos */}
          {(page.missao || page.visao || (page.valores && page.valores.length > 0)) && (
             <div className={`py-20 md:py-32 ${tid === 'prestige' ? 'bg-neutral-900/50' : 'bg-slate-50'}`}>
                <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -171,40 +171,10 @@ const PublicPage: React.FC = () => {
                </div>
             </div>
          )}
-
-         {page.equipa && page.equipa.length > 0 && (
-           <div className="py-24 md:py-32 max-w-7xl mx-auto px-6">
-              <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-12 md:mb-16">Nossa Equipa</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                 {page.equipa.map((member) => (
-                   <div key={member.id} className={`${s.card} overflow-hidden group shadow-sm`}>
-                      <div className="aspect-[4/5] bg-slate-100 overflow-hidden relative">
-                         {member.avatar_url && <img src={member.avatar_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={member.name} />}
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6 gap-3">
-                            {member.email && <a href={`mailto:${member.email}`} className="bg-white text-[#1c2d51] p-3 rounded-xl flex items-center justify-center"><Mail size={18}/></a>}
-                         </div>
-                      </div>
-                      <div className="p-8">
-                         <h4 className="text-xl font-black">{member.name}</h4>
-                         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">{member.role}</p>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-           </div>
-         )}
       </main>
 
-      <footer className={s.footer}>
-         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-20 text-center md:text-left">
-            <div className="space-y-6">
-               <h4 className="text-xl font-black uppercase tracking-tighter">{tenant.nome}</h4>
-               <p className="text-sm opacity-70 max-w-xs mx-auto md:mx-0">{tenant.slogan}</p>
-            </div>
-            <div className="md:col-span-2 flex items-end justify-center md:justify-end">
-               <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">© {new Date().getFullYear()} {tenant.nome}</span>
-            </div>
-         </div>
+      <footer className="py-20 px-8 bg-slate-900 text-white/40 text-center text-[10px] font-black uppercase tracking-[0.4em]">
+         © {new Date().getFullYear()} {tenant.nome}
       </footer>
     </div>
   );

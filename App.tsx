@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 
@@ -28,6 +27,7 @@ import AdminShell from './components/admin/AdminShell';
 import PublicPortal from './pages/PublicPortal';
 import PublicImovelDetails from './pages/PublicImovelDetails';
 import PublicPage from './pages/PublicPage';
+import PublicImoveis from './pages/PublicImoveis';
 
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -68,6 +68,7 @@ const App: React.FC = () => {
 
             {/* Portais das Agências */}
             <Route path="/agencia/:slug" element={<PublicPortal />} />
+            <Route path="/agencia/:slug/imoveis" element={<PublicImoveis />} />
             <Route path="/agencia/:slug/imovel/:imovelSlug" element={<PublicImovelDetails />} />
             <Route path="/agencia/:slug/p/:pageSlug" element={<PublicPage />} />
             <Route path="/demo" element={<Navigate to="/agencia/demo-imosuite" replace />} />

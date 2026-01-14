@@ -64,16 +64,13 @@ const PublicPortal: React.FC = () => {
     const cleanPath = path.replace(/^\//, '');
     if (cleanPath === '' || cleanPath === '/') return `/agencia/${tenant.slug}`;
     if (cleanPath === 'imoveis') return `/agencia/${tenant.slug}/imoveis`;
-    // Se for um slug de página, usa o prefixo /p/
     return `/agencia/${tenant.slug}/p/${cleanPath}`;
   };
 
   const styles: Record<string, any> = {
     heritage: { nav: "h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-white border-b border-slate-100 flex items-center justify-between", navText: "font-heritage italic text-[#1c2d51]", heading: "font-heritage italic text-[#1c2d51]", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
     canvas: { nav: "h-20 md:h-32 px-6 md:px-12 sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50 flex items-center justify-between", navText: "font-black tracking-tight text-[#1c2d51]", heading: "font-black text-[#1c2d51] tracking-tight", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
-    prestige: { nav: "h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-black text-white border-b border-white/5 flex items-center justify-between", navText: "font-black italic", heading: "font-black italic uppercase text-white", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
-    skyline: { nav: "h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-[var(--primary)] text-white flex items-center justify-between", navText: "font-black uppercase", heading: "font-black uppercase text-[#1c2d51]", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
-    luxe: { nav: "h-24 md:h-32 px-6 md:px-12 sticky top-0 z-50 bg-[#FDFBF7]/90 backdrop-blur-sm flex items-center justify-between", navText: "font-black text-[#2D2926]", heading: "font-black text-[#2D2926] tracking-widest", footer: "py-20 px-8 bg-[var(--primary)] text-white" }
+    prestige: { nav: "h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-black text-white border-b border-white/5 flex items-center justify-between", navText: "font-black italic", heading: "font-black italic uppercase text-white", footer: "py-20 px-8 bg-[var(--primary)] text-white" }
   };
   const s = styles[tid] || styles.heritage;
 
