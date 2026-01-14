@@ -119,6 +119,16 @@ const PublicPortal: React.FC = () => {
                </div>
             </section>
           );
+          if (section.type === 'about_mini') return (
+            <section key={section.id} className="py-24 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+               <div className="aspect-square bg-slate-100 rounded-3xl overflow-hidden"><img src={section.content.image_url} className="w-full h-full object-cover" /></div>
+               <div className="space-y-6">
+                  <h2 className={`text-3xl md:text-4xl ${s.heading}`}>{section.content.title}</h2>
+                  <p className="text-lg text-slate-500 leading-relaxed">{section.content.text}</p>
+                  <Link to={`/agencia/${tenant.slug}/p/quem-somos`} className="text-xs font-black uppercase tracking-widest text-[var(--primary)] border-b-2 border-current pb-1">Saber Mais</Link>
+               </div>
+            </section>
+          );
           return null;
         })}
         <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
@@ -131,7 +141,7 @@ const PublicPortal: React.FC = () => {
                <p className="text-sm opacity-60 leading-relaxed">{tenant.slogan}</p>
             </div>
             <div className="space-y-4">
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Navegação</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Menu</p>
                <div className="flex flex-col gap-2">
                   {cms.menus.main.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"))}
                </div>

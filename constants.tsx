@@ -38,7 +38,7 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       order: 2, 
       content: { 
         title: 'Sobre a nossa Agência', 
-        text: 'Líderes no mercado local com mais de uma década de experiência a transformar sonhos em moradas reais. A nossa equipa combina tecnologia de ponta com um atendimento profundamente humano.',
+        text: 'Líderes no mercado local com mais de uma década de experiência a transformar sonhos em moradas reais.',
         image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'
       } 
     }
@@ -51,9 +51,10 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       { id: 'm4', label: 'Contactos', path: 'contactos', order: 3, is_external: false }
     ],
     footer: [
-      { id: 'f1', label: 'Privacidade', path: 'privacidade', order: 0, is_external: false },
-      { id: 'f2', label: 'RAL - Litígios', path: 'resolucao-de-litigios', order: 1, is_external: false },
-      { id: 'f3', label: 'Livro Reclamações', path: 'https://www.livroreclamacoes.pt/Inicio/', order: 2, is_external: true }
+      { id: 'f1', label: 'Política de Privacidade', path: 'privacidade', order: 0, is_external: false },
+      { id: 'f2', label: 'Termos de Serviço', path: 'termos', order: 1, is_external: false },
+      { id: 'f3', label: 'RAL - Litígios', path: 'resolucao-de-litigios', order: 2, is_external: false },
+      { id: 'f4', label: 'Livro de Reclamações', path: 'https://www.livroreclamacoes.pt/Inicio/', order: 3, is_external: true }
     ]
   },
   pages: [
@@ -62,12 +63,9 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       title: 'A Nossa Agência', 
       slug: 'quem-somos', 
       content_md: 'Fundada com o propósito de simplificar o mercado imobiliário em Portugal, a nossa agência destaca-se pela transparência e eficácia.', 
-      enabled: true,
-      missao: 'Proporcionar um serviço de excelência na mediação imobiliária.',
-      visao: 'Ser a agência de referência em Portugal.',
-      valores: ['Transparência', 'Integridade', 'Foco no Cliente']
+      enabled: true
     },
-    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber.', enabled: true },
+    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa.', enabled: true },
     {
       id: 'p3',
       title: 'Resolução Alternativa de Litígios',
@@ -78,29 +76,30 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
 Centro de Arbitragem de Conflitos de Consumo de Lisboa
 http://www.centroarbitragemlisboa.pt
 
-Centro de Arbitragem de Conflitos de Consumo do Vale do Ave/Tribunal Arbitral
+Centro de Arbitragem de Conflitos de Consumo do Vale do Ave
 http://www.triave.pt
 
-CIAB – Centro de Informação, Mediação e Arbitragem de Consumo (Tribunal Arbitral de Consumo)
+CIAB – Centro de Informação, Mediação e Arbitragem de Consumo
 http://www.ciab.pt/pt
 
-CNIACC – Centro Nacional de Informação e Arbitragem de Conflitos de Consumo
+CNIACC – Centro Nacional de Informação e Arbitragem
 https://www.cniacc.pt/pt/
 
-Centro de Arbitragem de Conflitos de Consumo do Distrito de Coimbra
-http://www.centrodearbitragemdecoimbra.com
-
-Centro de Informação, Mediação e Arbitragem de Conflitos de Consumo do Algarve
-http://www.consumoalgarve.pt
-
-Centro de Informação de Consumo e Arbitragem do Porto
-http://www.cicap.pt
-
-Centro de Arbitragem de Conflitos de Consumo da Madeira
-https://www.madeira.gov.pt/cacc
-
-Mais informações em Portal do Consumidor
-www.consumidor.pt`
+Mais informações em Portal do Consumidor: www.consumidor.pt`
+    },
+    {
+      id: 'p4',
+      title: 'Política de Privacidade',
+      slug: 'privacidade',
+      enabled: true,
+      content_md: 'Os seus dados são tratados com a máxima segurança e confidencialidade, de acordo com o RGPD.'
+    },
+    {
+      id: 'p5',
+      title: 'Termos de Serviço',
+      slug: 'termos',
+      enabled: true,
+      content_md: 'Ao utilizar este website, concorda com as nossas condições de utilização.'
     }
   ],
   social: { facebook: '', instagram: '', linkedin: '', whatsapp: '' }
@@ -111,6 +110,7 @@ export const DEFAULT_TENANT: Tenant = {
   slug: 'demo-imosuite',
   nome: 'Heritage Real Estate',
   email: 'geral@heritage-demo.pt',
+  telefone: '+351 210 000 000',
   cor_primaria: '#1c2d51',
   cor_secundaria: '#357fb2',
   template_id: 'heritage',
