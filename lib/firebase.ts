@@ -7,7 +7,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAv_79arQMs-2v5RU2pzdaTvYHT4XJ5_lU",
   authDomain: "imosuite-350d6.firebaseapp.com",
   projectId: "imosuite-350d6",
-  storageBucket: "imosuite-350d6.appspot.com",
+  storageBucket: "imosuite-350d6.firebasestorage.app",
   messagingSenderId: "788478642020",
   appId: "1:788478642020:web:4ad28b0dc4fcd71f5c1c71",
 };
