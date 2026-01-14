@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../lib/firebase';
@@ -9,16 +9,14 @@ import { PropertyService } from '../services/propertyService';
 import { 
   MapPin, Bed, Bath, Square, Loader2, ChevronLeft, ChevronRight,
   Send, Check, Menu, X, MessageCircle, Instagram, Facebook, Linkedin, Building2, Info, Camera,
-  Mail, Phone
+  Mail, Phone, Maximize2
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import SEO from '../components/SEO';
-// Added missing import for ContactSection
 import ContactSection from '../components/ContactSection';
 import { DEFAULT_TENANT, DEFAULT_TENANT_CMS } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
 
-// Definido fora para evitar erro de inicialização 'U'
 const SpecBox = ({ icon, label, val, tid }: any) => (
   <div className={`p-8 border shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md ${tid === 'prestige' ? 'bg-neutral-900 border-white/5 text-white' : 'bg-white border-slate-100 text-slate-900'} ${tid === 'luxe' ? 'rounded-[2.5rem]' : tid === 'canvas' ? 'rounded-[2rem]' : 'rounded-none'}`}>
     <div className="text-blue-500 mb-4">{icon}</div>
@@ -44,6 +42,7 @@ const PublicImovelDetails: React.FC = () => {
     const fetchData = async () => {
       if (!agencySlug || !imovelSlug) return;
       setLoading(true);
+      setActiveImage(0); // Resetar índice ao trocar de imóvel
 
       if (agencySlug === 'demo-imosuite') {
         const found = MOCK_IMOVEIS.find(m => m.slug === imovelSlug);
@@ -85,21 +84,21 @@ const PublicImovelDetails: React.FC = () => {
     fetchData();
   }, [agencySlug, imovelSlug]);
 
-  const displayImages = media.length > 0 
-    ? media 
-    : (imovel?.media as any)?.cover_url 
-      ? [{ url: (imovel?.media as any).cover_url, id: 'cover' }] 
-      : [{ url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200', id: 'placeholder' }];
+  const displayImages = useMemo(() => {
+    if (media.length > 0) return media;
+    if (imovel?.media?.cover_url) return [{ url: imovel.media.cover_url, id: 'cover' }];
+    return [{ url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200', id: 'placeholder' }];
+  }, [media, imovel?.media?.cover_url]);
 
   const nextPhoto = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (displayImages.length === 0) return;
+    if (displayImages.length <= 1) return;
     setActiveImage(prev => (prev + 1) % displayImages.length);
   }, [displayImages.length]);
 
   const prevPhoto = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (displayImages.length === 0) return;
+    if (displayImages.length <= 1) return;
     setActiveImage(prev => (prev - 1 + displayImages.length) % displayImages.length);
   }, [displayImages.length]);
 
@@ -207,19 +206,30 @@ const PublicImovelDetails: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           <div className="lg:col-span-8 space-y-6">
-            <div onClick={() => setIsLightboxOpen(true)} className={`relative aspect-[16/9] overflow-hidden shadow-2xl group cursor-zoom-in ${tid === 'luxe' ? 'rounded-[4rem]' : tid === 'canvas' ? 'rounded-[3rem]' : 'rounded-none'}`}>
-               <img src={displayImages[activeImage]?.url} className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${tid === 'prestige' ? 'grayscale contrast-125' : ''}`} alt={imovel.titulo} />
+            <div className={`relative aspect-[16/9] overflow-hidden shadow-2xl group ${tid === 'luxe' ? 'rounded-[4rem]' : tid === 'canvas' ? 'rounded-[3rem]' : 'rounded-none'}`}>
+               <img 
+                 src={displayImages[activeImage]?.url} 
+                 className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${tid === 'prestige' ? 'grayscale contrast-125' : ''}`} 
+                 alt={imovel.titulo} 
+               />
                
                {displayImages.length > 1 && (
                  <>
-                   <button onClick={(e) => prevPhoto(e)} className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full group-hover:opacity-100 transition-all z-10"><ChevronLeft size={28} /></button>
-                   <button onClick={(e) => nextPhoto(e)} className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/90 hover:text-[#1c2d51] text-white p-4 rounded-full group-hover:opacity-100 transition-all z-10"><ChevronRight size={28} /></button>
+                   <button onClick={(e) => prevPhoto(e)} className="absolute left-6 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md hover:bg-white text-white hover:text-[#1c2d51] p-4 rounded-full transition-all z-10"><ChevronLeft size={28} /></button>
+                   <button onClick={(e) => nextPhoto(e)} className="absolute right-6 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md hover:bg-white text-white hover:text-[#1c2d51] p-4 rounded-full transition-all z-10"><ChevronRight size={28} /></button>
                  </>
                )}
 
-               <div className="absolute top-8 left-8">
+               <div className="absolute top-8 left-8 flex gap-2">
                   <span className="bg-white/90 backdrop-blur px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#1c2d51] shadow-lg">{imovel.operacao}</span>
                </div>
+
+               <button 
+                  onClick={() => setIsLightboxOpen(true)}
+                  className="absolute top-8 right-8 bg-black/40 backdrop-blur-md text-white p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-[#1c2d51]"
+               >
+                  <Maximize2 size={20} />
+               </button>
                
                {displayImages.length > 1 && (
                  <div className="absolute bottom-8 right-8 bg-black/40 backdrop-blur text-white px-4 py-2 rounded-full text-[10px] font-black flex items-center gap-2"><Camera size={14}/> {activeImage + 1} / {displayImages.length}</div>
@@ -229,7 +239,13 @@ const PublicImovelDetails: React.FC = () => {
             {displayImages.length > 1 && (
               <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                 {displayImages.map((img, idx) => (
-                  <button key={img.id} onClick={() => setActiveImage(idx)} className={`w-32 aspect-video overflow-hidden flex-shrink-0 border-4 transition-all duration-300 ${activeImage === idx ? 'border-[var(--primary)] scale-95 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'} ${tid === 'luxe' ? 'rounded-2xl' : 'rounded-none'}`}><img src={img.url} className={`w-full h-full object-cover ${tid === 'prestige' ? 'grayscale' : ''}`} alt={`Miniatura ${idx + 1}`} /></button>
+                  <button 
+                    key={img.id || idx} 
+                    onClick={() => setActiveImage(idx)} 
+                    className={`w-32 aspect-video overflow-hidden flex-shrink-0 border-4 transition-all duration-300 ${activeImage === idx ? 'border-[var(--primary)] scale-95 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'} ${tid === 'luxe' ? 'rounded-2xl' : 'rounded-none'}`}
+                  >
+                    <img src={img.url} className={`w-full h-full object-cover ${tid === 'prestige' ? 'grayscale' : ''}`} alt={`Miniatura ${idx + 1}`} />
+                  </button>
                 ))}
               </div>
             )}
@@ -295,7 +311,7 @@ const PublicImovelDetails: React.FC = () => {
                           <Phone size={14} className="text-blue-500" /> {tenant.telefone || 'Contactar via Email'}
                        </div>
                        <div className="flex items-center gap-3 text-xs font-bold opacity-80">
-                          <Mail size={14} className="text-blue-500" /> {tenant.email}
+                          <Mail size={14} className="text-blue-500" /> {tenant.professional_email || tenant.email}
                        </div>
                     </div>
                  </div>
@@ -304,6 +320,32 @@ const PublicImovelDetails: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* LIGHTBOX MODAL */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center animate-in fade-in duration-300">
+           <button onClick={() => setIsLightboxOpen(false)} className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors"><X size={48}/></button>
+           
+           <div className="relative w-full max-w-6xl px-10 flex items-center justify-center">
+              <img src={displayImages[activeImage]?.url} className="max-w-full max-h-[80vh] object-contain shadow-2xl" alt="Zoom Imóvel" />
+              
+              {displayImages.length > 1 && (
+                <>
+                  <button onClick={prevPhoto} className="absolute left-0 p-6 text-white/20 hover:text-white transition-colors"><ChevronLeft size={64}/></button>
+                  <button onClick={nextPhoto} className="absolute right-0 p-6 text-white/20 hover:text-white transition-colors"><ChevronRight size={64}/></button>
+                </>
+              )}
+           </div>
+
+           <div className="mt-10 flex gap-2 px-10 overflow-x-auto max-w-full scrollbar-hide">
+              {displayImages.map((img, idx) => (
+                <button key={img.id || idx} onClick={() => setActiveImage(idx)} className={`w-20 aspect-video rounded-lg overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-white' : 'border-transparent opacity-40'}`}>
+                  <img src={img.url} className="w-full h-full object-cover" alt="Thumb" />
+                </button>
+              ))}
+           </div>
+        </div>
+      )}
 
       {/* ÁREA DE CONTACTO COM COR SECUNDÁRIA */}
       <div className="bg-[var(--secondary)] text-white">
@@ -334,7 +376,7 @@ const PublicImovelDetails: React.FC = () => {
                </div>
             </div>
             <div className="space-y-6 md:text-right">
-               <p className="text-xs font-bold opacity-60">{tenant.email}</p>
+               <p className="text-xs font-bold opacity-60">{tenant.professional_email || tenant.email}</p>
                <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 block pt-10">
                  © {new Date().getFullYear()} {tenant.nome} • {isBusiness ? 'Real Estate' : 'Powered by ImoSuite'}
                </span>

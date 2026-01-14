@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
@@ -172,7 +173,7 @@ const PublicPortal: React.FC = () => {
                   {cms.social?.facebook && <a href={cms.social.facebook} className="opacity-80 hover:opacity-100"><Facebook size={20}/></a>}
                   {cms.social?.whatsapp && <a href={cms.social.whatsapp} className="opacity-80 hover:opacity-100"><MessageCircle size={20}/></a>}
                </div>
-               <p className="text-xs font-bold opacity-60">{tenant.email}</p>
+               <p className="text-xs font-bold opacity-60">{tenant.professional_email || tenant.email}</p>
                <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 block pt-10">
                  © {new Date().getFullYear()} {tenant.nome} • {isBusiness ? 'Real Estate' : 'Powered by ImoSuite'}
                </span>

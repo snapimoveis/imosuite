@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { updateProfile } from 'firebase/auth';
 import { db } from '../../lib/firebase';
-import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Camera, Smartphone } from 'lucide-react';
+import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Camera, Smartphone, Globe } from 'lucide-react';
 import { compressImage } from '../../lib/utils';
 
 const AdminProfile: React.FC = () => {
@@ -15,6 +16,7 @@ const AdminProfile: React.FC = () => {
   const [formData, setFormData] = useState({
     displayName: '',
     email: '',
+    professionalEmail: '',
     phone: '',
     avatar_url: '',
   });
@@ -24,6 +26,7 @@ const AdminProfile: React.FC = () => {
       setFormData({
         displayName: profile.displayName || '',
         email: profile.email || '',
+        professionalEmail: profile.professionalEmail || profile.email || '',
         phone: (profile as any).phone || '',
         avatar_url: profile.avatar_url || '',
       });
@@ -67,16 +70,28 @@ const AdminProfile: React.FC = () => {
     try {
       await updateProfile(user, { displayName: formData.displayName });
 
+      // Atualiza documento do Utilizador
       const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
+      const userUpdates: any = {
         id: user.uid,
         email: user.email,
         displayName: formData.displayName,
+        professionalEmail: formData.professionalEmail,
         phone: formData.phone,
         role: profile.role || 'admin',
         tenantId: profile.tenantId || 'pending',
         updated_at: serverTimestamp(),
-      }, { merge: true });
+      };
+      await setDoc(userRef, userUpdates, { merge: true });
+
+      // Se for Admin, sincroniza o email profissional com o Tenant para exibição no frontend
+      if (profile.role === 'admin' && profile.tenantId && profile.tenantId !== 'pending') {
+        const tenantRef = doc(db, 'tenants', profile.tenantId);
+        await setDoc(tenantRef, {
+          professional_email: formData.professionalEmail,
+          updated_at: serverTimestamp()
+        }, { merge: true });
+      }
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -185,14 +200,17 @@ const AdminProfile: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="user_email_static" className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Mail size={12}/> Email (Login)</label>
+                <label htmlFor="user_professional_email" className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2">
+                  <Globe size={12}/> Email Profissional (Exibido no Site)
+                </label>
                 <input 
-                  id="user_email_static"
-                  name="user_email_static"
+                  id="user_professional_email"
+                  name="user_professional_email"
                   type="email" 
-                  readOnly 
-                  value={formData.email} 
-                  className="w-full px-6 py-4 bg-slate-100 border-none rounded-2xl outline-none font-bold text-slate-400 cursor-not-allowed" 
+                  value={formData.professionalEmail} 
+                  onChange={e => setFormData({...formData, professionalEmail: e.target.value})} 
+                  className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/10 transition-all" 
+                  placeholder="email@profissional.com"
                 />
               </div>
               <div>
@@ -205,6 +223,17 @@ const AdminProfile: React.FC = () => {
                   onChange={e => setFormData({...formData, phone: e.target.value})} 
                   className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#1c2d51] focus:ring-2 focus:ring-[#1c2d51]/10 transition-all" 
                   placeholder="+351 900 000 000"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="user_email_static" className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-2 flex items-center gap-2"><Mail size={12}/> Email de Acesso (Cadastro)</label>
+                <input 
+                  id="user_email_static"
+                  name="user_email_static"
+                  type="email" 
+                  readOnly 
+                  value={formData.email} 
+                  className="w-full px-6 py-4 bg-slate-100 border-none rounded-2xl outline-none font-bold text-slate-400 cursor-not-allowed" 
                 />
               </div>
             </div>

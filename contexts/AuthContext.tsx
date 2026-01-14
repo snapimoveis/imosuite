@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 // Fix: Using standard modular exports
@@ -10,6 +11,7 @@ interface UserProfile {
   tenantId: string;
   displayName: string;
   email: string;
+  professionalEmail?: string;
   avatar_url?: string;
 }
 

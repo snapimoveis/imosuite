@@ -79,6 +79,7 @@ export interface Tenant {
   slug: string;
   nome: string;
   email: string;
+  professional_email?: string;
   telefone?: string;
   morada?: string;
   nif?: string;
