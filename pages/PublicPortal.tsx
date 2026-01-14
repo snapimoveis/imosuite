@@ -66,11 +66,11 @@ const PublicPortal: React.FC = () => {
   };
 
   const styles: Record<string, any> = {
-    heritage: { nav: "h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#1c2d51] text-white py-20 px-10", heading: "font-heritage italic text-[#1c2d51]" },
-    canvas: { nav: "h-24 bg-white/80 backdrop-blur-md border-b border-slate-50 flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-slate-50 text-[#1c2d51] py-20 px-10 border-t border-slate-100", heading: "font-black tracking-tight" },
-    prestige: { nav: "h-20 bg-black text-white flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-neutral-950 text-white/60 py-20 px-10", heading: "font-black italic uppercase" },
-    skyline: { nav: "h-20 bg-[#2563eb] text-white flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#1c2d51] text-white py-20 px-10", heading: "font-black uppercase" },
-    luxe: { nav: "h-28 bg-[#FDFBF7] flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#2D2926] text-[#EAE3D9] py-20 px-10", heading: "font-serif italic" }
+    heritage: { nav: "h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-50", heading: "font-heritage italic text-[#1c2d51]" },
+    canvas: { nav: "h-24 bg-white/80 backdrop-blur-md border-b border-slate-50 flex items-center justify-between px-10 sticky top-0 z-50", heading: "font-black tracking-tight" },
+    prestige: { nav: "h-20 bg-black text-white flex items-center justify-between px-10 sticky top-0 z-50", heading: "font-black italic uppercase" },
+    skyline: { nav: "h-20 bg-[#2563eb] text-white flex items-center justify-between px-10 sticky top-0 z-50", heading: "font-black uppercase" },
+    luxe: { nav: "h-28 bg-[#FDFBF7] flex items-center justify-between px-10 sticky top-0 z-50", heading: "font-serif italic" }
   };
   const s = styles[tid] || styles.heritage;
 
@@ -124,7 +124,7 @@ const PublicPortal: React.FC = () => {
         <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
       </main>
 
-      <footer className={s.footer}>
+      <footer className="py-20 px-10 text-white" style={{ backgroundColor: tenant.cor_primaria }}>
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
             <div className="space-y-6">
                <h4 className="text-xl font-black uppercase tracking-tight">{tenant.nome}</h4>
@@ -133,17 +133,17 @@ const PublicPortal: React.FC = () => {
             <div className="space-y-4">
                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Navegação</p>
                <div className="flex flex-col gap-2">
-                  {cms.menus.main.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100"))}
+                  {cms.menus.main.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"))}
                </div>
             </div>
             <div className="space-y-4">
                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Conformidade Legal</p>
                <div className="flex flex-col gap-2">
-                  {cms.menus.footer.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100"))}
+                  {cms.menus.footer.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"))}
                </div>
             </div>
          </div>
-         <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/5 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">
+         <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/10 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">
             © {new Date().getFullYear()} {tenant.nome} • Software por ImoSuite
          </div>
       </footer>
