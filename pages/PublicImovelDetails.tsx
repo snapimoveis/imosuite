@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
@@ -8,8 +7,8 @@ import { LeadService } from '../services/leadService';
 import { PropertyService } from '../services/propertyService';
 import { 
   MapPin, Bed, Bath, Square, Loader2, ChevronLeft, ChevronRight,
-  Send, Check, Menu, X, MessageCircle, Instagram, Facebook, Linkedin, Building2, Info, Camera,
-  Mail, Phone, Maximize2
+  Send, Check, Menu, X, Building2, Info, Camera,
+  Mail, Phone, Maximize2, ArrowUpRight
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import SEO from '../components/SEO';
@@ -17,11 +16,7 @@ import ContactSection from '../components/ContactSection';
 import { DEFAULT_TENANT, DEFAULT_TENANT_CMS } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
 
-const ComplaintsBookSVG = ({ variant = 'light' }: { variant?: 'light' | 'dark' }) => (
-  <svg id="Camada_1" data-name="Camada 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 140 58" className={`h-12 w-auto ${variant === 'light' ? 'brightness-0 invert' : ''}`}>
-    <image width="140" height="58" xlink:href="data:image/png;base64,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"/>
-  </svg>
-);
+const COMPLAINTS_BOOK_BASE64 = "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";
 
 const SpecBox = ({ icon, label, val, tid }: any) => (
   <div className={`p-8 border shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md ${tid === 'prestige' ? 'bg-neutral-900 border-white/5 text-white' : 'bg-white border-slate-100 text-slate-900'} ${tid === 'luxe' ? 'rounded-[2.5rem]' : tid === 'canvas' ? 'rounded-[2rem]' : 'rounded-none'}`}>
@@ -48,7 +43,7 @@ const PublicImovelDetails: React.FC = () => {
     const fetchData = async () => {
       if (!agencySlug || !imovelSlug) return;
       setLoading(true);
-      setActiveImage(0); // Resetar índice ao trocar de imóvel
+      setActiveImage(0);
 
       if (agencySlug === 'demo-imosuite') {
         const found = MOCK_IMOVEIS.find(m => m.slug === imovelSlug);
@@ -167,7 +162,7 @@ const PublicImovelDetails: React.FC = () => {
       wrapper: "font-brand bg-white",
       nav: "h-28 px-8 flex items-center justify-between sticky top-0 z-50 bg-[var(--primary)] text-white",
       navText: "font-black uppercase",
-      button: "bg-[var(--primary)] text-white px-8 py-4 rounded-xl font-black uppercase text-xs shadow-xl",
+      button: "bg-white text-[var(--primary)] px-8 py-3 rounded-xl font-black uppercase text-xs shadow-xl",
       heading: "font-black uppercase text-[#1c2d51]",
       footer: "py-24 px-10 bg-[var(--primary)] text-white",
       footerText: "text-white font-black uppercase"
@@ -327,7 +322,6 @@ const PublicImovelDetails: React.FC = () => {
         </div>
       </main>
 
-      {/* LIGHTBOX MODAL */}
       {isLightboxOpen && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center animate-in fade-in duration-300">
            <button onClick={() => setIsLightboxOpen(false)} className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors"><X size={48}/></button>
@@ -353,12 +347,10 @@ const PublicImovelDetails: React.FC = () => {
         </div>
       )}
 
-      {/* ÁREA DE CONTACTO COM COR SECUNDÁRIA */}
       <div className="bg-[var(--secondary)] text-white">
         <ContactSection tenantId={tenant.id} isWhiteLabel={true} />
       </div>
 
-      {/* FOOTER DINÂMICO COM COR PRIMÁRIA */}
       <footer className={s.footer}>
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-20">
             <div className="space-y-6">
@@ -367,18 +359,11 @@ const PublicImovelDetails: React.FC = () => {
                
                {cms.social?.complaints_book_link && (
                  <a href={cms.social.complaints_book_link} target="_blank" rel="noopener noreferrer" className="block w-fit mt-8 transition-opacity hover:opacity-80">
-                   <ComplaintsBookSVG variant="light" />
+                   <img src={`data:image/png;base64,${COMPLAINTS_BOOK_BASE64}`} alt="Livro de Reclamações" className="h-12 w-auto brightness-0 invert" />
                  </a>
                )}
             </div>
-            <div className="space-y-6">
-               <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Navegação</p>
-               <div className="flex flex-col gap-3">
-                  {cms.menus.main.map(m => <Link key={m.id} to={m.path} className="text-sm font-bold opacity-80 hover:opacity-100 transition-all">{m.label}</Link>)}
-               </div>
-            </div>
             <div className="space-y-6 md:text-right">
-               <p className="text-xs font-bold opacity-60">{tenant.professional_email || tenant.email}</p>
                <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40 block pt-10">
                  © {new Date().getFullYear()} {tenant.nome} • {isBusiness ? 'Real Estate' : 'Powered by ImoSuite'}
                </span>

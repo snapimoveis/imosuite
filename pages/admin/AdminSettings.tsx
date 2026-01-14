@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
@@ -128,14 +129,15 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="space-y-4">
                   <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Logótipo da Empresa</label>
-                  <div onClick={() => logoInputRef.current?.click()} className="aspect-video bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all p-6 overflow-hidden relative group">
+                  <div onClick={() => logoInputRef.current?.click()} className="aspect-video bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100 transition-all p-6 overflow-hidden relative group">
                     {localTenant.logo_url ? (
                       <>
                         <img src={localTenant.logo_url} className="h-full object-contain" alt="Logo" />
                         <div className="absolute inset-0 bg-[#1c2d51]/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[9px] uppercase tracking-widest">Alterar Imagem</div>
                       </>
                     ) : <Camera className="text-slate-300" size={32} />}
-                    <input type="file" logoInputRef={logoInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                    {/* Fix: Changed logoInputRef to ref */}
+                    <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                   </div>
                 </div>
               </div>
