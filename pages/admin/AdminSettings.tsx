@@ -145,6 +145,13 @@ const AdminSettings: React.FC = () => {
                       <span className="font-mono font-black text-xs uppercase tracking-tighter">{localTenant.cor_primaria}</span>
                     </div>
                   </div>
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Cor Secundária</label>
+                    <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <input type="color" className="w-10 h-10 border-none bg-transparent cursor-pointer rounded-lg" value={localTenant.cor_secundaria} onChange={e => setLocalTenant({...localTenant, cor_secundaria: e.target.value})} />
+                      <span className="font-mono font-black text-xs uppercase tracking-tighter">{localTenant.cor_secundaria}</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-4">
                   <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Logótipo da Empresa</label>
