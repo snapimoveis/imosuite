@@ -15,6 +15,7 @@ import PrivacyPolicySaaS from './pages/PrivacyPolicySaaS';
 import DPA from './pages/DPA';
 import TermsOfUse from './pages/TermsOfUse';
 import TermsOfUseSaaS from './pages/TermsOfUseSaaS';
+import RAL from './pages/RAL';
 import OnboardingFlow from './pages/onboarding/OnboardingFlow';
 import Dashboard from './pages/admin/Dashboard';
 import AdminImoveis from './pages/admin/AdminImoveis';
@@ -64,6 +65,7 @@ const App: React.FC = () => {
               <Route path="/dpa" element={<DPA />} />
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/termos-saas" element={<TermsOfUseSaaS />} />
+              <Route path="/resolucao-de-litigios" element={<RAL />} />
             </Route>
 
             {/* Portais das Agências */}

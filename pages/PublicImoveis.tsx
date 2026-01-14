@@ -103,9 +103,18 @@ const PublicImoveis: React.FC = () => {
 
       <footer className="py-20 px-10 text-white" style={{ backgroundColor: tenant.cor_primaria }}>
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
-            <div className="space-y-6"><h4 className="text-xl font-black uppercase">{tenant.nome}</h4><p className="text-sm opacity-60 leading-relaxed">{tenant.slogan}</p></div>
-            <div className="space-y-4"><p className="text-[10px] font-black uppercase tracking-widest opacity-40">Navegação</p><div className="flex flex-col gap-2">{cms.menus.main.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"))}</div></div>
-            <div className="space-y-4"><p className="text-[10px] font-black uppercase tracking-widest opacity-40">Conformidade</p><div className="flex flex-col gap-2">{cms.menus.footer.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"))}</div></div>
+            <div className="space-y-6"><h4 className="text-xl font-black uppercase tracking-tight">{tenant.nome}</h4><p className="text-sm opacity-60 leading-relaxed">{tenant.slogan}</p></div>
+            <div className="space-y-4">
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Navegação</p>
+               <div className="flex flex-col gap-2">{cms.menus.main.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"))}</div>
+            </div>
+            <div className="space-y-4">
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Conformidade Legal</p>
+               <div className="flex flex-col gap-2">{cms.menus.footer.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"))}</div>
+            </div>
+         </div>
+         <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/10 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">
+            © {new Date().getFullYear()} {tenant.nome} • Software por ImoSuite
          </div>
       </footer>
     </div>

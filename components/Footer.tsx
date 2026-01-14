@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
           <ul className="space-y-4 text-sm font-bold">
             <li><Link to="/privacidade" className="hover:text-[#1c2d51] transition-colors">Privacidade</Link></li>
             <li><Link to="/termos" className="hover:text-[#1c2d51] transition-colors">Termos de Uso</Link></li>
-            <li><Link to="/agencia/demo-imosuite/p/resolucao-de-litigios" className="hover:text-[#1c2d51] transition-colors">Resolução de Litígios</Link></li>
+            <li><Link to="/resolucao-de-litigios" className="hover:text-[#1c2d51] transition-colors">Resolução de Litígios</Link></li>
             <li><a href="https://www.livroreclamacoes.pt/Inicio/" target="_blank" rel="noopener noreferrer" className="hover:text-[#1c2d51] transition-colors">Livro de Reclamações</a></li>
           </ul>
         </div>
