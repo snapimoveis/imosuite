@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
@@ -6,10 +5,20 @@ import { useAuth } from '../../contexts/AuthContext';
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
-  Building2, Brush, Globe, CreditCard, Save, Loader2, Camera, Clock, ArrowRight, CheckCircle2
+  Building2, Brush, Globe, CreditCard, Save, Loader2, Camera, Clock, 
+  ArrowRight, CheckCircle2, Layout, Star, Zap, Eye, ChevronLeft, Building,
+  Smartphone, Monitor, MousePointer2, Check
 } from 'lucide-react';
 import { Tenant } from '../../types';
-import { compressImage } from '../../lib/utils';
+import { compressImage, formatCurrency } from '../../lib/utils';
+
+const TEMPLATE_OPTIONS = [
+  { id: 'heritage', name: 'Heritage', icon: <Building size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
+  { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Design Moderno e Limpo', color: '#357fb2' },
+  { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo', color: '#000000' },
+  { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico', color: '#2563eb' },
+  { id: 'luxe', name: 'Luxe', icon: <Brush size={20}/>, desc: 'Artístico e Lifestyle', color: '#2D2926' },
+] as const;
 
 const AdminSettings: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
@@ -18,6 +27,7 @@ const AdminSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
   const [success, setSuccess] = useState(false);
+  const [previewingTemplate, setPreviewingTemplate] = useState<Tenant['template_id'] | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
   const queryParams = new URLSearchParams(location.search);
@@ -66,7 +76,7 @@ const AdminSettings: React.FC = () => {
   if (tenantLoading) return <div className="h-40 flex items-center justify-center"><Loader2 className="animate-spin text-slate-200" /></div>;
 
   return (
-    <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
+    <div className="max-w-6xl mx-auto animate-in fade-in duration-500 pb-10">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-black text-[#1c2d51] tracking-tighter uppercase">Configurações</h1>
@@ -79,7 +89,6 @@ const AdminSettings: React.FC = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar Tabs */}
         <aside className="lg:w-60 shrink-0">
           <nav className="flex lg:flex-col gap-1 overflow-x-auto pb-4 lg:pb-0">
             {tabs.map(tab => (
@@ -96,7 +105,6 @@ const AdminSettings: React.FC = () => {
           </nav>
         </aside>
 
-        {/* Content Area */}
         <div className="flex-1 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm min-h-[500px]">
           {activeTab === 'general' && (
             <div className="space-y-8 animate-in fade-in duration-300">
@@ -136,10 +144,60 @@ const AdminSettings: React.FC = () => {
                         <div className="absolute inset-0 bg-[#1c2d51]/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[9px] uppercase tracking-widest">Alterar Imagem</div>
                       </>
                     ) : <Camera className="text-slate-300" size={32} />}
-                    {/* Fix: Changed logoInputRef to ref */}
                     <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'website' && (
+            <div className="space-y-10 animate-in fade-in duration-300">
+              <h3 className="text-sm font-black text-[#1c2d51] uppercase tracking-widest border-b pb-4">Templates de Website</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {TEMPLATE_OPTIONS.map((tmpl) => (
+                  <div 
+                    key={tmpl.id} 
+                    className={`group relative p-8 rounded-[2.5rem] border-2 transition-all ${
+                      localTenant.template_id === tmpl.id 
+                        ? 'border-[#1c2d51] bg-[#1c2d51]/5' 
+                        : 'border-slate-50 hover:border-slate-200 bg-white'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-6">
+                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${localTenant.template_id === tmpl.id ? 'bg-[#1c2d51] text-white' : 'bg-slate-50 text-slate-400'}`}>
+                         {tmpl.icon}
+                       </div>
+                       {localTenant.template_id === tmpl.id && (
+                         <div className="bg-[#1c2d51] text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                           <Check size={10}/> Ativo
+                         </div>
+                       )}
+                    </div>
+                    <h4 className="font-black text-lg text-[#1c2d51] tracking-tight">{tmpl.name}</h4>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-8">{tmpl.desc}</p>
+                    
+                    <div className="flex gap-2">
+                       <button 
+                         onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id })}
+                         className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                           localTenant.template_id === tmpl.id 
+                             ? 'bg-[#1c2d51] text-white cursor-default' 
+                             : 'bg-white border border-slate-200 text-[#1c2d51] hover:bg-slate-50'
+                         }`}
+                       >
+                         Selecionar
+                       </button>
+                       <button 
+                         onClick={() => setPreviewingTemplate(tmpl.id)}
+                         className="px-4 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-[#1c2d51] transition-colors flex items-center justify-center"
+                         title="Pré-visualizar"
+                       >
+                         <Eye size={16}/>
+                       </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -169,6 +227,18 @@ const AdminSettings: React.FC = () => {
           )}
         </div>
       </div>
+
+      {previewingTemplate && (
+        <TemplatePreviewModal 
+          templateId={previewingTemplate} 
+          onClose={() => setPreviewingTemplate(null)} 
+          onSelect={() => { 
+            setLocalTenant({ ...localTenant, template_id: previewingTemplate }); 
+            setPreviewingTemplate(null); 
+          }} 
+          tenantData={localTenant}
+        />
+      )}
       
       <style>{`
         .admin-input-sober { 
@@ -188,6 +258,135 @@ const AdminSettings: React.FC = () => {
           box-shadow: 0 4px 20px -10px rgba(28, 45, 81, 0.1); 
         }
       `}</style>
+    </div>
+  );
+};
+
+const TemplatePreviewModal = ({ templateId, onClose, onSelect, tenantData }: any) => {
+  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const template = TEMPLATE_OPTIONS.find(t => t.id === templateId);
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col animate-in fade-in duration-300">
+      <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0">
+        <button onClick={onClose} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#1c2d51] transition-colors">
+          <ChevronLeft size={16}/> Voltar
+        </button>
+        
+        <div className="hidden sm:flex bg-slate-50 p-1 rounded-xl gap-1">
+           <button 
+             onClick={() => setDevice('desktop')} 
+             className={`p-2 rounded-lg transition-all ${device === 'desktop' ? 'bg-white text-[#1c2d51] shadow-sm' : 'text-slate-400'}`}
+           >
+             <Monitor size={16}/>
+           </button>
+           <button 
+             onClick={() => setDevice('mobile')} 
+             className={`p-2 rounded-lg transition-all ${device === 'mobile' ? 'bg-white text-[#1c2d51] shadow-sm' : 'text-slate-400'}`}
+           >
+             <Smartphone size={16}/>
+           </button>
+        </div>
+
+        <div className="flex items-center gap-4">
+           <div className="text-right hidden md:block">
+              <p className="text-[10px] font-black text-[#1c2d51] uppercase leading-none mb-1">{template?.name}</p>
+              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Live Preview</p>
+           </div>
+           <button 
+             onClick={onSelect} 
+             className="bg-[#1c2d51] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-0.5 transition-all"
+           >
+             Usar este Template
+           </button>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-hidden bg-slate-100 p-4 sm:p-10 flex items-center justify-center">
+        <div 
+          className={`bg-white shadow-2xl rounded-[3rem] overflow-hidden transition-all duration-500 ${
+            device === 'desktop' ? 'w-full max-w-6xl h-full' : 'w-[375px] h-[667px]'
+          }`}
+        >
+          <div className="h-full w-full overflow-y-auto">
+            <PreviewEngine templateId={templateId} tenant={tenantData} />
+          </div>
+        </div>
+      </div>
+      
+      <div className="h-12 bg-white/5 border-t border-white/5 flex items-center justify-center">
+         <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] flex items-center gap-2">
+           <MousePointer2 size={10}/> Modo de Pré-visualização Interactiva
+         </p>
+      </div>
+    </div>
+  );
+};
+
+const PreviewEngine = ({ templateId, tenant }: any) => {
+  const dummyProps = [
+    { id: 1, title: 'Apartamento T3 com Vista Mar', price: 385000, loc: 'Cascais', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },
+    { id: 2, title: 'Moradia V4 com Jardim', price: 750000, loc: 'Vila Nova de Gaia', img: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800' },
+    { id: 3, title: 'Estúdio Moderno no Centro', price: 185000, loc: 'Lisboa', img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800' }
+  ];
+
+  // Estilos rápidos baseados nos templates reais
+  const styles: Record<string, any> = {
+    heritage: { font: 'font-heritage italic', primary: tenant.cor_primaria, bg: 'bg-white' },
+    canvas: { font: 'font-brand font-black', primary: tenant.cor_primaria, bg: 'bg-white' },
+    prestige: { font: 'font-brand font-black italic', primary: '#000', bg: 'bg-black', text: 'text-white' },
+    skyline: { font: 'font-brand font-black uppercase', primary: tenant.cor_primaria, bg: 'bg-slate-50' },
+    luxe: { font: 'font-brand font-black tracking-widest', primary: '#2D2926', bg: 'bg-[#FDFBF7]' }
+  };
+
+  const s = styles[templateId] || styles.heritage;
+
+  return (
+    <div className={`min-h-full ${s.bg} ${s.text || 'text-slate-900'} selection:bg-blue-500 selection:text-white`}>
+       <nav className="h-20 border-b border-black/5 px-10 flex items-center justify-between sticky top-0 bg-inherit z-10">
+          <span className={`${s.font} text-xl tracking-tight`}>{tenant.nome || 'Heritage Agency'}</span>
+          <div className="flex gap-6 text-[9px] font-black uppercase tracking-widest opacity-60">
+             <span>Início</span>
+             <span>Imóveis</span>
+             <span>Agência</span>
+          </div>
+       </nav>
+
+       <header className={`py-32 px-10 text-center ${templateId === 'prestige' ? 'bg-neutral-900' : 'bg-slate-50/50'}`}>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <h1 className={`${s.font} text-5xl md:text-7xl leading-tight`}>
+               {templateId === 'skyline' ? 'O Teu Destino.' : 'Tradição & Confiança.'}
+            </h1>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">{tenant.slogan || 'O seu próximo capítulo começa aqui.'}</p>
+          </div>
+       </header>
+
+       <main className="p-10 lg:p-20">
+          <div className="mb-12 flex justify-between items-end">
+             <h2 className={`${s.font} text-3xl`}>Destaques</h2>
+             <span className="text-[9px] font-black uppercase border-b-2 border-current pb-1">Ver Todos</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+             {dummyProps.map(p => (
+               <div key={p.id} className="group cursor-pointer">
+                  <div className={`aspect-[4/5] bg-slate-200 overflow-hidden mb-6 transition-all duration-700 ${
+                    templateId === 'luxe' ? 'rounded-[3rem]' : templateId === 'canvas' ? 'rounded-[2.5rem]' : 'rounded-none'
+                  } ${templateId === 'prestige' ? 'grayscale group-hover:grayscale-0' : ''}`}>
+                     <img src={p.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={p.title} />
+                  </div>
+                  <h4 className={`${s.font} text-lg mb-1`}>{p.title}</h4>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{p.loc}</p>
+                    <p className="font-black text-blue-500">{formatCurrency(p.price)}</p>
+                  </div>
+               </div>
+             ))}
+          </div>
+       </main>
+       
+       <footer className="py-20 border-t border-black/5 px-10 text-center opacity-40">
+          <p className="text-[8px] font-black uppercase tracking-[0.5em]">© {new Date().getFullYear()} {tenant.nome || 'ImoSuite'}</p>
+       </footer>
     </div>
   );
 };
