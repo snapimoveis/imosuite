@@ -3,12 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../lib/firebase';
 import { Tenant, Imovel } from '../types';
-import { 
-  Loader2, ChevronRight, ArrowRight, Menu, X, 
-  Instagram, Facebook, Linkedin, MessageCircle,
-  LayoutGrid, Building2, ArrowUpRight
-} from 'lucide-react';
-import { Logo } from '../components/Logo';
+import { Loader2, Menu, X, Building2 } from 'lucide-react';
 import ImovelCard from '../components/ImovelCard';
 import ContactSection from '../components/ContactSection';
 import SEO from '../components/SEO';
@@ -29,7 +24,6 @@ const PublicPortal: React.FC = () => {
       try {
         let tData: Tenant | null = null;
         let pData: Imovel[] = [];
-
         if (slug === 'demo-imosuite') {
           tData = DEFAULT_TENANT;
           pData = MOCK_IMOVEIS;
@@ -41,7 +35,6 @@ const PublicPortal: React.FC = () => {
             pData = pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel));
           }
         }
-
         if (tData) {
           setTenant(tData);
           setImoveis(pData);
@@ -54,7 +47,7 @@ const PublicPortal: React.FC = () => {
   }, [slug]);
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[var(--primary)]" size={48} /></div>;
-  if (!tenant) return <div className="h-screen flex flex-col items-center justify-center p-10 font-brand"><Building2 size={48} className="text-slate-100 mb-4"/><h2 className="text-xl font-black text-slate-800 tracking-tighter">Agência não encontrada.</h2><Link to="/" className="text-blue-500 mt-4 font-bold underline">Voltar</Link></div>;
+  if (!tenant) return <div className="h-screen flex flex-col items-center justify-center p-10 font-brand"><Building2 size={48} className="text-slate-100 mb-4"/><h2 className="text-xl font-black">Agência não encontrada.</h2><Link to="/" className="text-blue-500 mt-4 underline">Voltar</Link></div>;
 
   const cms = tenant.cms || DEFAULT_TENANT_CMS;
   const tid = tenant.template_id || 'heritage';
@@ -67,95 +60,62 @@ const PublicPortal: React.FC = () => {
     return `/agencia/${tenant.slug}/p/${cleanPath}`;
   };
 
-  const renderFooterLink = (item: any) => {
-    if (item.path.startsWith('http')) {
-      return (
-        <a key={item.id} href={item.path} target="_blank" rel="noopener noreferrer" className="text-sm font-bold hover:opacity-100 opacity-70 transition-opacity">
-          {item.label}
-        </a>
-      );
-    }
-    return (
-      <Link key={item.id} to={getMenuLink(item.path)} className="text-sm font-bold hover:opacity-100 opacity-70 transition-opacity">
-        {item.label}
-      </Link>
-    );
+  const renderLink = (item: any, className: string) => {
+    if (item.path.startsWith('http')) return <a key={item.id} href={item.path} target="_blank" rel="noopener noreferrer" className={className}>{item.label}</a>;
+    return <Link key={item.id} to={getMenuLink(item.path)} className={className}>{item.label}</Link>;
   };
 
   const styles: Record<string, any> = {
-    heritage: { nav: "h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-white border-b border-slate-100 flex items-center justify-between", navText: "font-heritage italic text-[#1c2d51]", heading: "font-heritage italic text-[#1c2d51]", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
-    canvas: { nav: "h-20 md:h-32 px-6 md:px-12 sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-50 flex items-center justify-between", navText: "font-black tracking-tight text-[#1c2d51]", heading: "font-black text-[#1c2d51] tracking-tight", footer: "py-20 px-8 bg-[var(--primary)] text-white" },
-    prestige: { nav: "h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-black text-white border-b border-white/5 flex items-center justify-between", navText: "font-black italic", heading: "font-black italic uppercase text-white", footer: "py-20 px-8 bg-[var(--primary)] text-white" }
+    heritage: { nav: "h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#1c2d51] text-white py-20 px-10", heading: "font-heritage italic text-[#1c2d51]" },
+    canvas: { nav: "h-24 bg-white/80 backdrop-blur-md border-b border-slate-50 flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-slate-50 text-[#1c2d51] py-20 px-10 border-t border-slate-100", heading: "font-black tracking-tight" },
+    prestige: { nav: "h-20 bg-black text-white flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-neutral-950 text-white/60 py-20 px-10", heading: "font-black italic uppercase" },
+    skyline: { nav: "h-20 bg-[#2563eb] text-white flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#1c2d51] text-white py-20 px-10", heading: "font-black uppercase" },
+    luxe: { nav: "h-28 bg-[#FDFBF7] flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#2D2926] text-[#EAE3D9] py-20 px-10", heading: "font-serif italic" }
   };
   const s = styles[tid] || styles.heritage;
 
   return (
-    <div className={`font-brand min-h-screen flex flex-col bg-white selection:bg-[var(--primary)] selection:text-white`}>
+    <div className="font-brand min-h-screen flex flex-col bg-white selection:bg-[var(--primary)] selection:text-white">
       <SEO title={tenant.nome} description={tenant.slogan} overrideFullTitle={true} />
-      
       <nav className={s.nav}>
          <Link to={`/agencia/${tenant.slug}`}>
-            {tenant.logo_url ? <img src={tenant.logo_url} className="h-12 md:h-20 w-auto object-contain" alt={tenant.nome} /> : <span className={`text-xl md:text-2xl ${s.navText}`}>{tenant.nome}</span>}
+            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 md:h-14 w-auto object-contain" alt={tenant.nome} /> : <span className="text-xl font-black">{tenant.nome}</span>}
          </Link>
-         
-         <div className="hidden lg:flex gap-10">
-            {cms.menus.main.map(m => (
-              <Link key={m.id} to={getMenuLink(m.path)} className={`text-[10px] font-black uppercase tracking-widest transition-all ${tid === 'prestige' ? 'text-white hover:text-blue-400' : 'text-slate-400 hover:text-[var(--primary)]'}`}>{m.label}</Link>
-            ))}
+         <div className="hidden lg:flex gap-8">
+            {cms.menus.main.map(m => renderLink(m, "text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition-all"))}
          </div>
-
-         <button onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2 text-slate-400">
-            <Menu size={28} />
-         </button>
+         <button onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2"><Menu size={28} /></button>
       </nav>
 
-      {/* Mobile Nav Overlay */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-white p-8 flex flex-col animate-in slide-in-from-top duration-300">
+        <div className="fixed inset-0 z-[100] bg-white p-8 flex flex-col animate-in slide-in-from-top">
            <div className="flex justify-between items-center mb-16">
-              <Logo size="sm" />
-              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#1c2d51]"><X size={32}/></button>
+              <span className="font-black">{tenant.nome}</span>
+              <button onClick={() => setIsMenuOpen(false)}><X size={32}/></button>
            </div>
            <div className="flex flex-col gap-8">
-              {cms.menus.main.map(m => (
-                <Link key={m.id} to={getMenuLink(m.path)} onClick={() => setIsMenuOpen(false)} className="text-3xl font-black text-[#1c2d51] tracking-tighter uppercase">{m.label}</Link>
-              ))}
+              {cms.menus.main.map(m => renderLink(m, "text-3xl font-black uppercase tracking-tighter"))}
            </div>
         </div>
       )}
 
-      <main className="flex-1 animate-in fade-in duration-700 overflow-x-hidden">
+      <main className="flex-1 animate-in fade-in duration-700">
         {cms.homepage_sections.filter(sec => sec.enabled).sort((a,b) => a.order - b.order).map((section) => {
           if (section.type === 'hero') return (
-            <section key={section.id} className="relative h-[70vh] md:h-[85vh] flex items-center overflow-hidden">
-               <div className="absolute inset-0">
-                  <img src={section.content.image_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600'} className="w-full h-full object-cover" alt="Hero" />
-                  <div className="absolute inset-0 bg-black/40" />
-               </div>
-               <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 w-full text-white text-center">
-                  <h1 className="text-4xl md:text-8xl font-black mb-4 md:mb-6 tracking-tighter leading-none">{section.content.title}</h1>
-                  <p className="text-base md:text-xl opacity-80 mb-10 max-w-2xl mx-auto font-medium">{section.content.subtitle}</p>
-                  <Link to={`/agencia/${tenant.slug}/imoveis`} className="bg-white text-[#1c2d51] px-10 py-5 md:px-14 md:py-6 rounded-2xl font-black text-xs md:text-base uppercase shadow-2xl inline-block hover:-translate-y-1 transition-all">Ver Propriedades</Link>
+            <section key={section.id} className="relative h-[80vh] flex items-center justify-center text-center px-6 overflow-hidden">
+               <div className="absolute inset-0 z-0"><img src={section.content.image_url} className="w-full h-full object-cover" alt="Hero"/><div className="absolute inset-0 bg-black/40"/></div>
+               <div className="relative z-10 text-white max-w-4xl">
+                  <h1 className="text-4xl md:text-8xl font-black mb-6 leading-tight tracking-tighter">{section.content.title}</h1>
+                  <p className="text-lg md:text-xl opacity-80 mb-10">{section.content.subtitle}</p>
+                  <Link to={`/agencia/${tenant.slug}/imoveis`} className="bg-white text-black px-12 py-5 rounded-2xl font-black uppercase text-xs shadow-2xl">Ver Imóveis</Link>
                </div>
             </section>
           );
           if (section.type === 'featured') return (
-            <section key={section.id} className="py-20 md:py-24 max-w-7xl mx-auto px-6">
-               <h2 className={`text-3xl md:text-4xl mb-10 md:mb-12 ${s.heading}`}>{section.content.title}</h2>
+            <section key={section.id} className="py-24 max-w-7xl mx-auto px-6">
+               <h2 className={`text-3xl md:text-4xl mb-12 ${s.heading}`}>{section.content.title}</h2>
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {imoveis.filter(i => i.publicacao.destaque).slice(0, 3).map(i => <ImovelCard key={i.id} imovel={i} />)}
-               </div>
-            </section>
-          );
-          if (section.type === 'about_mini') return (
-            <section key={section.id} className="py-20 md:py-24 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-20 items-center">
-               <div className={`aspect-square overflow-hidden shadow-2xl ${tid === 'luxe' ? 'rounded-[3rem] md:rounded-[4rem]' : tid === 'canvas' ? 'rounded-[2rem] md:rounded-[3rem]' : 'rounded-none'}`}>
-                  <img src={section.content.image_url || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'} className="w-full h-full object-cover" alt="About" />
-               </div>
-               <div className="space-y-6">
-                  <h2 className={`text-3xl md:text-4xl ${s.heading}`}>{section.content.title}</h2>
-                  <p className="text-base md:text-lg text-slate-500 leading-relaxed">{section.content.text}</p>
-                  <Link to={`/agencia/${tenant.slug}/p/quem-somos`} className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[var(--primary)] border-b-2 border-current pb-1 hover:opacity-70 transition-all">Saber Mais</Link>
                </div>
             </section>
           );
@@ -165,23 +125,26 @@ const PublicPortal: React.FC = () => {
       </main>
 
       <footer className={s.footer}>
-         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-20 text-center md:text-left">
+         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
             <div className="space-y-6">
-               <h4 className="text-xl font-black uppercase">{tenant.nome}</h4>
-               <p className="text-sm opacity-70 max-w-xs mx-auto md:mx-0">{tenant.slogan}</p>
+               <h4 className="text-xl font-black uppercase tracking-tight">{tenant.nome}</h4>
+               <p className="text-sm opacity-60 leading-relaxed">{tenant.slogan}</p>
             </div>
             <div className="space-y-4">
-               <p className="text-[10px] font-black uppercase opacity-50 tracking-widest">Menu</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Navegação</p>
                <div className="flex flex-col gap-2">
-                  {cms.menus.main.map(m => <Link key={m.id} to={getMenuLink(m.path)} className="text-sm font-bold hover:opacity-100 opacity-70 transition-opacity">{m.label}</Link>)}
+                  {cms.menus.main.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100"))}
                </div>
             </div>
             <div className="space-y-4">
-               <p className="text-[10px] font-black uppercase opacity-50 tracking-widest">Conformidade</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Conformidade Legal</p>
                <div className="flex flex-col gap-2">
-                  {cms.menus.footer.map(m => renderFooterLink(m))}
+                  {cms.menus.footer.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100"))}
                </div>
             </div>
+         </div>
+         <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/5 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">
+            © {new Date().getFullYear()} {tenant.nome} • Software por ImoSuite
          </div>
       </footer>
     </div>

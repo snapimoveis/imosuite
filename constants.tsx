@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building2, Landmark, LayoutGrid, Users, MessageSquare, Settings, BarChart3, Search, Globe } from 'lucide-react';
+import { BarChart3, Building2, Globe, MessageSquare, Users, Settings } from 'lucide-react';
 import { Tenant, TenantCMS } from './types';
 
 export const ADMIN_NAV_ITEMS = [
@@ -41,27 +41,6 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
         text: 'Líderes no mercado local com mais de uma década de experiência a transformar sonhos em moradas reais. A nossa equipa combina tecnologia de ponta com um atendimento profundamente humano.',
         image_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800'
       } 
-    },
-    { 
-      id: 'h4', 
-      type: 'services', 
-      enabled: true, 
-      order: 3, 
-      content: { 
-        title: 'Fale Connosco', 
-        text: 'Estamos aqui para ajudar a esclarecer as suas dúvidas e encontrar o imóvel ideal para si.'
-      } 
-    },
-    { 
-      id: 'h5', 
-      type: 'cta', 
-      enabled: true, 
-      order: 4, 
-      content: { 
-        title: 'Pronto para valorizar o seu património?', 
-        subtitle: 'Venda o seu imóvel com quem entende do mercado.',
-        button_text: 'Agendar Consultoria' 
-      } 
     }
   ],
   menus: {
@@ -72,9 +51,9 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       { id: 'm4', label: 'Contactos', path: 'contactos', order: 3, is_external: false }
     ],
     footer: [
-      { id: 'f1', label: 'Política de Privacidade', path: 'privacidade', order: 0, is_external: false },
-      { id: 'f2', label: 'Resolução de Litígios', path: 'resolucao-de-litigios', order: 1, is_external: false },
-      { id: 'f3', label: 'Livro de Reclamações', path: 'https://www.livroreclamacoes.pt/Inicio/', order: 2, is_external: true }
+      { id: 'f1', label: 'Privacidade', path: 'privacidade', order: 0, is_external: false },
+      { id: 'f2', label: 'RAL - Litígios', path: 'resolucao-de-litigios', order: 1, is_external: false },
+      { id: 'f3', label: 'Livro Reclamações', path: 'https://www.livroreclamacoes.pt/Inicio/', order: 2, is_external: true }
     ]
   },
   pages: [
@@ -82,19 +61,13 @@ export const DEFAULT_TENANT_CMS: TenantCMS = {
       id: 'p1', 
       title: 'A Nossa Agência', 
       slug: 'quem-somos', 
-      content_md: 'Fundada com o propósito de simplificar o mercado imobiliário em Portugal, a nossa agência destaca-se pela transparência e eficácia. Acreditamos que cada casa conta uma história e estamos aqui para garantir que a sua seja de sucesso.', 
+      content_md: 'Fundada com o propósito de simplificar o mercado imobiliário em Portugal, a nossa agência destaca-se pela transparência e eficácia.', 
       enabled: true,
-      missao: 'Proporcionar um serviço de excelência na mediação imobiliária, focando na personalização e satisfação total do cliente.',
-      visao: 'Ser a agência de referência em Portugal pela inovação tecnológica e ética profissional.',
-      valores: ['Transparência', 'Integridade', 'Foco no Cliente', 'Inovação'],
-      galeria_fotos: [
-        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200',
-        'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800',
-        'https://images.unsplash.com/photo-1522071823991-b518ee7f1d98?w=800'
-      ],
-      equipa: []
+      missao: 'Proporcionar um serviço de excelência na mediação imobiliária.',
+      visao: 'Ser a agência de referência em Portugal.',
+      valores: ['Transparência', 'Integridade', 'Foco no Cliente']
     },
-    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber para um café e uma conversa sobre o seu próximo investimento.', enabled: true },
+    { id: 'p2', title: 'Contactos', slug: 'contactos', content_md: 'Estamos localizados no coração de Lisboa, prontos para o receber.', enabled: true },
     {
       id: 'p3',
       title: 'Resolução Alternativa de Litígios',
@@ -117,7 +90,7 @@ https://www.cniacc.pt/pt/
 Centro de Arbitragem de Conflitos de Consumo do Distrito de Coimbra
 http://www.centrodearbitragemdecoimbra.com
 
-Centro de Informação, Mediação e Arbitragem de Consumo do Algarve
+Centro de Informação, Mediação e Arbitragem de Conflitos de Consumo do Algarve
 http://www.consumoalgarve.pt
 
 Centro de Informação de Consumo e Arbitragem do Porto
@@ -130,12 +103,7 @@ Mais informações em Portal do Consumidor
 www.consumidor.pt`
     }
   ],
-  social: {
-    facebook: '',
-    instagram: '',
-    linkedin: '',
-    whatsapp: ''
-  }
+  social: { facebook: '', instagram: '', linkedin: '', whatsapp: '' }
 };
 
 export const DEFAULT_TENANT: Tenant = {
@@ -143,15 +111,10 @@ export const DEFAULT_TENANT: Tenant = {
   slug: 'demo-imosuite',
   nome: 'Heritage Real Estate',
   email: 'geral@heritage-demo.pt',
-  telefone: '+351 210 000 000',
   cor_primaria: '#1c2d51',
   cor_secundaria: '#357fb2',
   template_id: 'heritage',
-  subscription: {
-    status: 'active',
-    plan_id: 'business',
-    trial_ends_at: null,
-  },
+  subscription: { status: 'active', plan_id: 'business', trial_ends_at: null },
   cms: DEFAULT_TENANT_CMS,
   ativo: true,
   onboarding_completed: true,

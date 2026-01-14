@@ -3,10 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../lib/firebase';
 import { Tenant, Imovel } from '../types';
-import { Loader2, Building2, ChevronLeft, Menu, X, Search, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Menu, X, Building2, Search } from 'lucide-react';
 import ImovelCard from '../components/ImovelCard';
 import SEO from '../components/SEO';
-import { DEFAULT_TENANT, DEFAULT_TENANT_CMS } from '../constants';
+import { DEFAULT_TENANT_CMS, DEFAULT_TENANT } from '../constants';
 import { MOCK_IMOVEIS } from '../mocks';
 
 const PublicImoveis: React.FC = () => {
@@ -24,7 +24,6 @@ const PublicImoveis: React.FC = () => {
       try {
         let tData: Tenant | null = null;
         let pData: Imovel[] = [];
-
         if (slug === 'demo-imosuite') {
           tData = DEFAULT_TENANT;
           pData = MOCK_IMOVEIS;
@@ -36,7 +35,6 @@ const PublicImoveis: React.FC = () => {
             pData = pSnap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Imovel));
           }
         }
-
         if (tData) {
           setTenant(tData);
           setImoveis(pData);
@@ -49,7 +47,7 @@ const PublicImoveis: React.FC = () => {
   }, [slug]);
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[var(--primary)]" size={48} /></div>;
-  if (!tenant) return <div className="h-screen flex flex-col items-center justify-center p-10"><h2 className="text-xl font-black">Agência não encontrada.</h2><Link to="/" className="text-blue-500 mt-4 underline">Voltar</Link></div>;
+  if (!tenant) return <div className="h-screen flex items-center justify-center font-black">Agência não encontrada</div>;
 
   const cms = tenant.cms || DEFAULT_TENANT_CMS;
   const tid = tenant.template_id || 'heritage';
@@ -62,75 +60,53 @@ const PublicImoveis: React.FC = () => {
     return `/agencia/${tenant.slug}/p/${cleanPath}`;
   };
 
-  const filteredImoveis = imoveis.filter(i => 
-    i.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    i.localizacao.concelho.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const renderLink = (item: any, className: string) => {
+    if (item.path.startsWith('http')) return <a key={item.id} href={item.path} target="_blank" rel="noopener noreferrer" className={className}>{item.label}</a>;
+    return <Link key={item.id} to={getMenuLink(item.path)} className={className}>{item.label}</Link>;
+  };
+
+  const styles: Record<string, any> = {
+    heritage: { nav: "h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#1c2d51] text-white py-20 px-10" },
+    canvas: { nav: "h-24 bg-white/80 backdrop-blur-md border-b border-slate-50 flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-slate-50 text-[#1c2d51] py-20 px-10 border-t border-slate-100" },
+    prestige: { nav: "h-20 bg-black text-white flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-neutral-950 text-white/60 py-20 px-10" },
+    skyline: { nav: "h-20 bg-[#2563eb] text-white flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#1c2d51] text-white py-20 px-10" },
+    luxe: { nav: "h-28 bg-[#FDFBF7] flex items-center justify-between px-10 sticky top-0 z-50", footer: "bg-[#2D2926] text-[#EAE3D9] py-20 px-10" }
+  };
+  const s = styles[tid] || styles.heritage;
+
+  const filtered = imoveis.filter(i => i.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="font-brand min-h-screen flex flex-col bg-white overflow-x-hidden selection:bg-[var(--primary)] selection:text-white">
+    <div className="font-brand min-h-screen flex flex-col bg-white">
       <SEO title={`Imóveis - ${tenant.nome}`} overrideFullTitle={true} />
-      
-      <nav className="h-20 md:h-28 px-6 md:px-10 sticky top-0 z-50 bg-white border-b border-slate-100 flex items-center justify-between">
-         <Link to={`/agencia/${tenant.slug}`}>
-            {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 md:h-16 w-auto object-contain" alt={tenant.nome} /> : <span className="text-xl font-black">{tenant.nome}</span>}
-         </Link>
-         <div className="hidden lg:flex gap-8">
-            {cms.menus.main.map(m => (
-              <Link key={m.id} to={getMenuLink(m.path)} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[var(--primary)] transition-all">{m.label}</Link>
-            ))}
-         </div>
-         <button onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2 text-slate-400"><Menu size={28} /></button>
+      <nav className={s.nav}>
+         <Link to={`/agencia/${tenant.slug}`}>{tenant.logo_url ? <img src={tenant.logo_url} className="h-10 w-auto" alt={tenant.nome}/> : <span className="font-black">{tenant.nome}</span>}</Link>
+         <div className="hidden lg:flex gap-8">{cms.menus.main.map(m => renderLink(m, "text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition-all"))}</div>
+         <button onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2"><Menu size={28}/></button>
       </nav>
 
       {isMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-white p-8 flex flex-col animate-in slide-in-from-top duration-300">
-           <div className="flex justify-between items-center mb-16">
-              <span className="font-black text-[#1c2d51]">{tenant.nome}</span>
-              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#1c2d51]"><X size={32}/></button>
-           </div>
-           <div className="flex flex-col gap-8">
-              {cms.menus.main.map(m => (
-                <Link key={m.id} to={getMenuLink(m.path)} onClick={() => setIsMenuOpen(false)} className="text-3xl font-black text-[#1c2d51] uppercase tracking-tighter">{m.label}</Link>
-              ))}
-           </div>
+        <div className="fixed inset-0 z-[100] bg-white p-8 flex flex-col animate-in slide-in-from-top">
+           <div className="flex justify-between items-center mb-16"><span className="font-black">{tenant.nome}</span><button onClick={() => setIsMenuOpen(false)}><X size={32}/></button></div>
+           <div className="flex flex-col gap-8">{cms.menus.main.map(m => renderLink(m, "text-3xl font-black uppercase tracking-tighter"))}</div>
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-12 md:py-20 w-full animate-in fade-in">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-6xl font-black text-[#1c2d51] tracking-tighter mb-4">O Nosso Portfólio</h1>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Encontre a sua próxima morada</p>
-        </div>
-
-        <div className="bg-slate-50 p-4 rounded-3xl mb-12 flex flex-col md:flex-row gap-4">
-           <div className="flex-1 bg-white rounded-2xl px-6 py-4 flex items-center gap-4 shadow-sm border border-slate-100">
-              <Search className="text-slate-300" size={20} />
-              <input 
-                placeholder="Pesquise por localização ou título..." 
-                className="bg-transparent outline-none w-full font-bold text-[#1c2d51]"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-           </div>
-           <button className="bg-white px-8 py-4 rounded-2xl flex items-center gap-3 font-black text-[10px] uppercase text-[#1c2d51] border border-slate-100 shadow-sm">
-              <SlidersHorizontal size={16}/> Filtros
-           </button>
-        </div>
-
+      <main className="flex-1 max-w-7xl mx-auto px-6 py-12 w-full animate-in fade-in">
+        <h1 className="text-4xl md:text-6xl font-black text-[#1c2d51] tracking-tighter mb-12">Portfólio de Imóveis</h1>
+        <div className="bg-slate-50 p-6 rounded-[2rem] mb-12 flex items-center gap-4"><Search className="text-slate-300" size={20}/><input placeholder="Procurar imóveis..." className="bg-transparent outline-none w-full font-bold text-slate-700" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-           {filteredImoveis.map(i => <ImovelCard key={i.id} imovel={i} />)}
-           {filteredImoveis.length === 0 && (
-             <div className="col-span-full py-32 text-center">
-                <Building2 size={48} className="mx-auto text-slate-200 mb-6" />
-                <p className="text-slate-400 font-bold uppercase tracking-widest">Nenhum imóvel encontrado.</p>
-             </div>
-           )}
+           {filtered.map(i => <ImovelCard key={i.id} imovel={i} />)}
+           {filtered.length === 0 && <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest">Nenhum imóvel encontrado.</div>}
         </div>
       </main>
 
-      <footer className="py-20 bg-slate-50 text-center border-t border-slate-100 mt-20">
-         <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.4em]">© {new Date().getFullYear()} {tenant.nome}</p>
+      <footer className={s.footer}>
+         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
+            <div className="space-y-6"><h4 className="text-xl font-black uppercase">{tenant.nome}</h4><p className="text-sm opacity-60 leading-relaxed">{tenant.slogan}</p></div>
+            <div className="space-y-4"><p className="text-[10px] font-black uppercase tracking-widest opacity-40">Navegação</p><div className="flex flex-col gap-2">{cms.menus.main.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100"))}</div></div>
+            <div className="space-y-4"><p className="text-[10px] font-black uppercase tracking-widest opacity-40">Conformidade</p><div className="flex flex-col gap-2">{cms.menus.footer.map(m => renderLink(m, "text-sm font-bold opacity-70 hover:opacity-100"))}</div></div>
+         </div>
       </footer>
     </div>
   );
