@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from "@firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { Building2, ArrowRight, Loader2, AlertCircle, CheckCircle2, Globe, ShieldCheck } from 'lucide-react';
@@ -36,14 +35,9 @@ const Register: React.FC = () => {
     setError(null);
 
     try {
-      // 1. Gerar slug antes
       const uniqueSlug = await generateUniqueSlug(formData.agencyName);
-      
-      // 2. Criar utilizador na Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
-      
-      // 3. Atualizar perfil básico da Auth
       await updateProfile(user, { displayName: formData.agencyName });
 
       const tenantId = `tnt_${user.uid.slice(0, 12)}`;
@@ -51,7 +45,6 @@ const Register: React.FC = () => {
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
-      // 4. Gravar Tenant primeiro (Dono)
       const tenantDoc = {
         id: tenantId,
         nome: formData.agencyName,
@@ -72,8 +65,6 @@ const Register: React.FC = () => {
       };
 
       await setDoc(doc(db, 'tenants', tenantId), tenantDoc);
-
-      // 5. Gravar Perfil do Utilizador
       await setDoc(doc(db, 'users', user.uid), {
         id: user.uid,
         displayName: formData.agencyName,
@@ -92,7 +83,6 @@ const Register: React.FC = () => {
 
     } catch (err: any) {
       console.error("Erro no registo:", err);
-      
       let msg = 'Erro ao criar conta. Tente novamente.';
       if (err.code === 'permission-denied') {
         msg = 'Erro de permissão no Database. Verifique as Regras (Rules) no Firebase Console.';
@@ -101,7 +91,6 @@ const Register: React.FC = () => {
       } else if (err.code === 'auth/weak-password') {
         msg = 'A palavra-passe deve ter pelo menos 6 caracteres.';
       }
-      
       setError(msg);
       setIsLoading(false);
     }

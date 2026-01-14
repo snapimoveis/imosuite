@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where, addDoc, serverTimestamp } from "@firebase/firestore";
+import { collection, getDocs, query, where, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,8 +11,6 @@ const AdminUsers: React.FC = () => {
   const { profile } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Estados do Modal de Convite
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(false);
@@ -33,7 +30,6 @@ const AdminUsers: React.FC = () => {
       setIsLoading(false);
       return;
     }
-
     try {
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("tenantId", "==", profile.tenantId));
@@ -54,21 +50,16 @@ const AdminUsers: React.FC = () => {
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Verificações de segurança antes de tentar gravar
     if (!profile?.tenantId || profile.tenantId === 'pending' || profile.tenantId === 'default-tenant-uuid') {
       setInviteError("Erro de sessão: Agência não identificada. Recarregue a página.");
       return;
     }
-
     if (reachedLimit) {
       setInviteError("Limite de utilizadores atingido para o seu plano.");
       return;
     }
-
     setIsSendingInvite(true);
     setInviteError(null);
-
     try {
       const inviteData = {
         displayName: inviteForm.name.trim(),
@@ -80,22 +71,16 @@ const AdminUsers: React.FC = () => {
         created_at: serverTimestamp(),
         updated_at: serverTimestamp()
       };
-
-      // Alterado de setDoc para addDoc para evitar erros de permissão com IDs personalizados (inv_...)
       await addDoc(collection(db, 'users'), inviteData);
-      
       setInviteSuccess(true);
-      await fetchTeam(); // Atualiza a lista imediatamente
-      
+      await fetchTeam();
       setTimeout(() => {
         setIsInviteModalOpen(false);
         setInviteSuccess(false);
         setInviteForm({ name: '', email: '', role: 'user' });
       }, 2000);
-
     } catch (err: any) {
       console.error("Erro detalhado do convite:", err);
-      // Se o erro for permissão, pode ser necessário ajustar as regras no Firebase Console
       if (err.code === 'permission-denied') {
         setInviteError("Sem permissão para criar utilizadores nesta agência.");
       } else {
@@ -127,36 +112,16 @@ const AdminUsers: React.FC = () => {
              </span>
           </div>
         </div>
-
         {reachedLimit ? (
-          <Link 
-            to="/planos"
-            className="bg-amber-500 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-xl active:scale-95"
-          >
+          <Link to="/planos" className="bg-amber-500 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-xl active:scale-95">
             <Zap size={20} fill="currentColor" /> Limite Atingido - Upgrade
           </Link>
         ) : (
-          <button 
-            onClick={() => { setInviteError(null); setIsInviteModalOpen(true); }}
-            className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-xl active:scale-95"
-          >
+          <button onClick={() => { setInviteError(null); setIsInviteModalOpen(true); }} className="bg-[#1c2d51] text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-xl active:scale-95">
             <UserPlus size={20} /> Convidar Consultor
           </button>
         )}
       </div>
-
-      {!isBusiness && users.length >= 1 && (
-        <div className="bg-blue-50 border border-blue-100 p-6 rounded-[2rem] flex items-center justify-between gap-6">
-           <div className="flex items-center gap-4 text-blue-700">
-              <Zap size={24} fill="currentColor" />
-              <div>
-                <p className="text-xs font-black uppercase">Expanda a sua equipa comercial</p>
-                <p className="text-[10px] font-medium opacity-80 uppercase tracking-widest">O plano Business permite até 10 consultores com acessos independentes.</p>
-              </div>
-           </div>
-           <Link to="/planos" className="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-800 transition-all">Saber Mais</Link>
-        </div>
-      )}
 
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -220,7 +185,6 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL DE CONVITE */}
       {isInviteModalOpen && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
@@ -231,14 +195,10 @@ const AdminUsers: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-black text-[#1c2d51] tracking-tight">Novo Consultor</h3>
               </div>
-              <button 
-                onClick={() => setIsInviteModalOpen(false)} 
-                className="p-2 text-slate-300 hover:text-slate-900 transition-colors"
-              >
+              <button onClick={() => setIsInviteModalOpen(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-colors">
                 <X size={24}/>
               </button>
             </div>
-            
             <div className="p-10">
               {inviteSuccess ? (
                 <div className="text-center py-10 space-y-4 animate-in fade-in zoom-in-95">
@@ -255,53 +215,28 @@ const AdminUsers: React.FC = () => {
                       <AlertCircle size={16} /> {inviteError}
                     </div>
                   )}
-
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Nome do Consultor</label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                      <input 
-                        required 
-                        className="admin-invite-input pl-12" 
-                        placeholder="Ex: João Silva" 
-                        value={inviteForm.name}
-                        onChange={e => setInviteForm({...inviteForm, name: e.target.value})}
-                      />
+                      <input required className="admin-invite-input pl-12" placeholder="Ex: João Silva" value={inviteForm.name} onChange={e => setInviteForm({...inviteForm, name: e.target.value})} />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Email Profissional</label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                      <input 
-                        required 
-                        type="email"
-                        className="admin-invite-input pl-12" 
-                        placeholder="joao@agencia.pt" 
-                        value={inviteForm.email}
-                        onChange={e => setInviteForm({...inviteForm, email: e.target.value})}
-                      />
+                      <input required type="email" className="admin-invite-input pl-12" placeholder="joao@agencia.pt" value={inviteForm.email} onChange={e => setInviteForm({...inviteForm, email: e.target.value})} />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Cargo e Permissões</label>
-                    <select 
-                      className="admin-invite-input"
-                      value={inviteForm.role}
-                      onChange={e => setInviteForm({...inviteForm, role: e.target.value as any})}
-                    >
+                    <select className="admin-invite-input" value={inviteForm.role} onChange={e => setInviteForm({...inviteForm, role: e.target.value as any})}>
                       <option value="user">Consultor (Acesso Limitado)</option>
                       <option value="admin">Administrador (Acesso Total)</option>
                     </select>
                   </div>
-
-                  <button 
-                    type="submit" 
-                    disabled={isSendingInvite || reachedLimit}
-                    className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-[#1c2d51]/20 flex items-center justify-center gap-3 transition-all hover:-translate-y-1 disabled:opacity-50"
-                  >
+                  <button type="submit" disabled={isSendingInvite || reachedLimit} className="w-full bg-[#1c2d51] text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-[#1c2d51]/20 flex items-center justify-center gap-3 transition-all hover:-translate-y-1 disabled:opacity-50">
                     {isSendingInvite ? <Loader2 className="animate-spin" /> : <><Check size={18}/> Enviar Convite</>}
                   </button>
                 </form>
@@ -310,25 +245,9 @@ const AdminUsers: React.FC = () => {
           </div>
         </div>
       )}
-
       <style>{`
-        .admin-invite-input { 
-          width: 100%; 
-          padding: 1.15rem 1.4rem; 
-          background: #f8fafc; 
-          border: 2px solid transparent; 
-          border-radius: 1.25rem; 
-          outline: none; 
-          font-weight: 700; 
-          color: #1c2d51; 
-          transition: all 0.2s; 
-          font-size: 0.875rem; 
-        }
-        .admin-invite-input:focus { 
-          background: #fff; 
-          border-color: #357fb2; 
-          box-shadow: 0 4px 20px -5px rgba(53, 127, 178, 0.1); 
-        }
+        .admin-invite-input { width: 100%; padding: 1.15rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
+        .admin-invite-input:focus { background: #fff; border-color: #357fb2; box-shadow: 0 4px 20px -5px rgba(53, 127, 178, 0.1); }
       `}</style>
     </div>
   );

@@ -1,18 +1,16 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { doc, updateDoc, serverTimestamp } from "@firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   Globe, Layout, Type, List, Save, Loader2, 
   ChevronUp, ChevronDown, ToggleLeft, ToggleRight, 
   Plus, Trash2, Edit3, X, Navigation, Camera,
-  Image as ImageIcon, LayoutGrid, Clock, Star, Sparkles,
+  ImageIcon, LayoutGrid, Clock, Star, Sparkles,
   Facebook, Instagram, Linkedin, MessageCircle, FileText, Check,
-  Users, Target, Eye, ImagePlus, UserPlus, Phone, Mail, FileWarning, Zap, Lock,
-  Trash
+  Users, Target, Eye, ImagePlus, UserPlus, Phone, Mail, FileWarning, Zap, Lock
 } from 'lucide-react';
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { CMSSection, TenantCMS, MenuItem, CMSPage, TeamMember } from '../../types';
@@ -369,7 +367,6 @@ const AdminCMS: React.FC = () => {
           )}
       </div>
 
-      {/* MODAL DE EDIÇÃO DE PÁGINA */}
       {isPageModalOpen && editingPage && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
@@ -390,7 +387,6 @@ const AdminCMS: React.FC = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-10 bg-slate-50/30">
-              {/* TAB 1: CONTEÚDO BASE */}
               {pageModalTab === 'content' && (
                 <div className="space-y-8 animate-in fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -413,7 +409,6 @@ const AdminCMS: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 2: INSTITUCIONAL M/V/V */}
               {pageModalTab === 'institutional' && (
                 <div className="space-y-10 animate-in fade-in">
                    <div className="space-y-4">
@@ -437,6 +432,7 @@ const AdminCMS: React.FC = () => {
                                 next[idx] = e.target.value;
                                 setEditingPage({...editingPage, valores: next});
                               }} placeholder="Ex: Transparência" />
+                              {/* Fix: Changed Trash to Trash2 */}
                               <button onClick={() => setEditingPage({...editingPage, valores: editingPage.valores?.filter((_, i) => i !== idx)})} className="p-3 text-slate-300 hover:text-red-500"><Trash2 size={18}/></button>
                            </div>
                          ))}
@@ -445,7 +441,6 @@ const AdminCMS: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 3: EQUIPA */}
               {pageModalTab === 'team' && (
                 <div className="space-y-8 animate-in fade-in">
                    <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -513,7 +508,6 @@ const AdminCMS: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 4: GALERIA */}
               {pageModalTab === 'media' && (
                 <div className="space-y-8 animate-in fade-in">
                    <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -533,14 +527,11 @@ const AdminCMS: React.FC = () => {
                            <img src={photo} className="w-full h-full object-cover" alt={`Galeria ${i}`} />
                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <button onClick={() => setEditingPage({...editingPage, galeria_fotos: editingPage.galeria_fotos?.filter((_, idx) => idx !== i)})} className="p-2 bg-white text-red-500 rounded-xl hover:scale-110 transition-all shadow-lg">
-                                 <Trash size={18}/>
+                                 <Trash2 size={18}/>
                               </button>
                            </div>
                         </div>
                       ))}
-                      {(!editingPage.galeria_fotos || editingPage.galeria_fotos.length === 0) && (
-                        <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest italic border-2 border-dashed border-slate-100 rounded-[2rem]">A galeria está vazia.</div>
-                      )}
                    </div>
                 </div>
               )}
@@ -556,7 +547,6 @@ const AdminCMS: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL LINK MENU */}
       {isMenuModalOpen && editingMenuItem && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
@@ -586,7 +576,6 @@ const AdminCMS: React.FC = () => {
       )}
 
       <style>{`
-        .admin-label { display: block; font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-left: 0.5rem; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
         .admin-input-cms { width: 100%; padding: 1rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.875rem; }
         .admin-input-cms:focus { background: #fff; border-color: #357fb2; }
       `}</style>

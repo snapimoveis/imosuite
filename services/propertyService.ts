@@ -1,6 +1,5 @@
 
-// Fix: Using @firebase/firestore to resolve missing modular exports
-import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, writeBatch, Timestamp } from "@firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, writeBatch, Timestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Imovel, ImovelMedia } from "../types";
 
@@ -11,7 +10,7 @@ const prepareData = (obj: any, isUpdate: boolean = false): any => {
   if (typeof obj === 'object') {
     const cleaned: any = {};
     Object.keys(obj).forEach(key => {
-      if (key === 'id' || key === 'items') return; // IMPORTANTE: Não incluímos 'items' (fotos pesadas) no doc principal
+      if (key === 'id' || key === 'items') return; 
       if (isUpdate && (key === 'tenant_id' || key === 'owner_uid' || key === 'created_at' || key === 'tracking')) return;
       const value = obj[key];
       if (value !== undefined) {
@@ -69,7 +68,7 @@ export const PropertyService = {
       caracteristicas: propertyData.caracteristicas || [],
       media: {
         cover_media_id: coverImage?.id || null,
-        cover_url: coverImage?.url || null, // Guardamos apenas o URL da capa para economia de espaço
+        cover_url: coverImage?.url || null,
         total: mediaItems.length
       }
     }, false);

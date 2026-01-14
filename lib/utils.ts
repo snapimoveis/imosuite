@@ -1,6 +1,5 @@
-
 // Modular Firestore imports for Firebase v9+
-import { collection, query, where, getDocs, limit } from '@firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from './firebase';
 
 export function formatCurrency(value: number | null | undefined): string {

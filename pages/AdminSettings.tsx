@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
-// Fix: Use @firebase/firestore to ensure modular exports are correctly resolved for Firebase v9+
-import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "@firebase/firestore";
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../lib/firebase';
 import { 
   Palette, Globe, Mail, Phone, Save, Layout, Check, 
@@ -16,7 +14,6 @@ import { Tenant } from '../types';
 import { formatCurrency, generateSlug } from '../lib/utils';
 import { generateAgencySlogan } from '../services/geminiService';
 
-// Standardized template options
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
   { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Design Moderno e Limpo', color: '#357fb2' },
@@ -198,7 +195,6 @@ const AdminSettings: React.FC = () => {
   );
 };
 
-// Sub-component for navigation tabs
 const TabLink = ({ active, icon, label, tab }: { active: boolean, icon: any, label: string, tab: string }) => (
   <Link to={`/admin/settings?tab=${tab}`} className={`flex items-center gap-4 px-6 py-4 rounded-[2rem] transition-all border ${active ? 'bg-[#1c2d51] text-white border-[#1c2d51] shadow-xl' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
     <div className={active ? 'text-white' : 'text-slate-300'}>{icon}</div>
@@ -206,7 +202,6 @@ const TabLink = ({ active, icon, label, tab }: { active: boolean, icon: any, lab
   </Link>
 );
 
-// Modal for rendering template previews
 const TemplatePreviewModal = ({ templateId, onClose, onSelect, tenantData }: any) => {
   const [page, setPage] = useState('home');
   const template = TEMPLATE_OPTIONS.find(t => t.id === templateId);
@@ -231,7 +226,6 @@ const TemplatePreviewModal = ({ templateId, onClose, onSelect, tenantData }: any
   );
 };
 
-// Component for preview navigation tabs
 const PageTab = ({ active, onClick, label }: any) => (
   <button 
     onClick={onClick} 
@@ -241,7 +235,6 @@ const PageTab = ({ active, onClick, label }: any) => (
   </button>
 );
 
-// Engine to render dummy property data in various styles
 const PreviewEngine = ({ templateId, tenant }: any) => {
   const dummyProps = [
     { id: 1, title: 'Apartamento T3 com Vista Mar', price: 385000, loc: 'Cascais', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800' },

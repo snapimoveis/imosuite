@@ -1,31 +1,22 @@
-
-import { collection, addDoc, onSnapshot } from "@firebase/firestore";
+import { collection, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Tenant } from "../types";
 
 /**
  * CONFIGURAÇÃO DA EXTENSÃO STRIPE
- * Mantenha como 'customers' conforme configurado no seu Firebase Console.
  */
 const STRIPE_ROOT_COLLECTION = "customers"; 
 
 /**
  * IDs DE PREÇO DO STRIPE
- * IMPORTANTE: Substitua os IDs abaixo pelos Price IDs reais da sua conta Stripe.
- * Pode encontrá-los no Dashboard do Stripe > Produtos > [Seu Produto] > Preços.
- * Exemplo de formato: price_1Qx...
  */
 export const StripePlans = {
-  starter: "price_1SobVF9YE7qSVg1quKIHx0qM",  
-  business: "price_1SocAG9YE7qSVg1qMZW1jjcE"
+  starter: "price_1Qx_EXEMPLO_STARTER",  
+  business: "price_1Qx_EXEMPLO_BUSINESS"
 };
 
 export const SubscriptionService = {
-  /**
-   * Verifica se o tenant tem acesso às funcionalidades administrativas
-   */
   checkAccess: (tenant: Tenant, userEmail?: string | null): { hasAccess: boolean; isTrial: boolean; daysLeft: number } => {
-    // Bypass para conta mestre de suporte
     if (userEmail === 'snapimoveis@gmail.com') {
       return { hasAccess: true, isTrial: true, daysLeft: 999 };
     }
@@ -41,7 +32,6 @@ export const SubscriptionService = {
       createdAt = new Date();
     }
 
-    // Janela de cortesia de 1 hora para novos registos (evita bloqueio imediato)
     const diffCreationMs = now.getTime() - createdAt.getTime();
     if (diffCreationMs < 1000 * 60 * 60) {
       return { hasAccess: true, isTrial: true, daysLeft: 14 };
@@ -65,7 +55,6 @@ export const SubscriptionService = {
     const isTrial = tenant.subscription.status === 'trialing';
     const isActive = ['active', 'past_due'].includes(tenant.subscription.status);
     
-    // Fallback para trial inicial se os dados da subscrição ainda não sincronizaram
     if (isTrial && (!trialEnd || isNaN(trialEnd.getTime()))) {
       trialEnd = new Date(createdAt);
       trialEnd.setDate(trialEnd.getDate() + 14);
@@ -85,38 +74,31 @@ export const SubscriptionService = {
     return { hasAccess, isTrial, daysLeft: expired ? 0 : daysLeft };
   },
 
-  /**
-   * Inicia o processo de Checkout do Stripe
-   */
   createCheckoutSession: async (userId: string, priceId: string) => {
     if (!userId) throw new Error("Utilizador não autenticado.");
     
-    // Verificação básica: se o ID ainda for o placeholder, avisamos o usuário mas não travamos via código de string
-    if (!priceId || priceId.includes('placeholder')) {
-      console.warn("Aviso: Está a tentar usar um Price ID de exemplo. O Stripe irá retornar erro se este ID não existir na sua conta.");
+    if (!priceId || priceId.includes('placeholder') || priceId.includes('EXEMPLO')) {
+      const msg = "Erro de Configuração: O ID do plano no código ainda é um exemplo. Por favor, configure os Price IDs reais do Stripe no ficheiro subscriptionService.ts.";
+      console.error(msg);
+      throw new Error(msg);
     }
 
     const checkoutSessionsRef = collection(db, STRIPE_ROOT_COLLECTION, userId, "checkout_sessions");
     
     try {
-      // Criar o documento que a extensão do Stripe vai ler
       const docRef = await addDoc(checkoutSessionsRef, {
         price: priceId,
         success_url: window.location.origin + "/#/admin?session=success",
         cancel_url: window.location.origin + "/#/admin/settings?tab=billing&session=cancel",
         allow_promotion_codes: true,
         trial_from_plan: true,
-        metadata: {
-          user_id: userId,
-          source: 'imosuite_web'
-        }
+        metadata: { user_id: userId, source: 'imosuite_web' }
       });
 
-      // Aguardar que a extensão processe e adicione o campo 'url'
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           unsubscribe();
-          reject(new Error("O gateway de pagamento demorou demasiado a responder. Verifique se a Extensão 'Run Payments with Stripe' está instalada no seu Firebase."));
+          reject(new Error("O Stripe demorou demasiado tempo. Verifique a sua ligação ou a configuração da extensão no Firebase."));
         }, 30000);
 
         const unsubscribe = onSnapshot(docRef, (snap) => {
@@ -127,13 +109,15 @@ export const SubscriptionService = {
             clearTimeout(timeout);
             unsubscribe();
             console.error("[STRIPE ERROR]", data.error);
-            reject(new Error(`Erro Stripe: ${data.error.message}`));
+            const errorMsg = data.error.message.includes('No such price') 
+              ? "Este plano não existe na sua conta Stripe. Verifique o Price ID." 
+              : `Erro Stripe: ${data.error.message}`;
+            reject(new Error(errorMsg));
           }
           
           if (data.url) {
             clearTimeout(timeout);
             unsubscribe();
-            // Redirecionar para o Checkout do Stripe
             window.location.assign(data.url);
             resolve(true);
           }
@@ -144,7 +128,7 @@ export const SubscriptionService = {
         });
       });
     } catch (err: any) {
-      console.error("Erro ao iniciar sessão de pagamento:", err);
+      console.error("Erro ao iniciar checkout:", err);
       throw err;
     }
   }

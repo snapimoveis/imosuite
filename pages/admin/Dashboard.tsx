@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where, limit } from '@firebase/firestore';
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
@@ -91,7 +90,10 @@ const Dashboard: React.FC = () => {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={[{name: 'JAN', val: 0}, {name: 'FEV', val: 0}, {name: 'MAR', val: parseInt(stats[0].value) || 0}]}>
-                <defs><linearGradient id="color" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1c2d51" stopOpacity={0.05}/><stop offset="95%" stopColor="#1c2d51" stopOpacity={0}/></linearGradient></defs>
+                <defs>
+                  {/* Fix: Changed second x1="0" to y1="0" to resolve duplicate attribute error */}
+                  <linearGradient id="color" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1c2d51" stopOpacity={0.05}/><stop offset="95%" stopColor="#1c2d51" stopOpacity={0}/></linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 800, fill: '#cbd5e1'}} />
                 <Area type="monotone" dataKey="val" stroke="#1c2d51" strokeWidth={4} fillOpacity={1} fill="url(#color)" />

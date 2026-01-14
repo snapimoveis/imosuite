@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext.tsx';
@@ -7,7 +6,7 @@ import {
   LogOut, Bell, ChevronLeft, ChevronRight, LayoutDashboard, 
   Building2, MessageSquare, Users, Globe, Settings, Sparkles, Zap, User, ChevronDown
 } from 'lucide-react';
-import { collection, query, where, onSnapshot } from '@firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { SubscriptionService } from '../../services/subscriptionService';
 
@@ -127,68 +126,65 @@ const AdminShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 h-screen">
-        {/* Header - Widget de Perfil como Cartão Branco */}
-        <header className="h-24 flex items-center justify-between px-10 shrink-0 bg-transparent relative z-50">
+        {/* Header - Barra Superior com Widget de Perfil Fiel ao Screenshot */}
+        <header className="h-20 flex items-center justify-between px-10 shrink-0 bg-transparent relative z-50">
           <div className="text-[10px] font-black tracking-[0.15em] text-slate-300">
             {getBreadcrumb()}
           </div>
           
           <div className="flex items-center gap-6">
-            {/* Sino com Badge de Notificação Visual */}
-            <button className="relative w-12 h-12 flex items-center justify-center text-slate-300 hover:text-[#1c2d51] hover:bg-white rounded-full transition-all">
+            {/* Notificações Visual Badge */}
+            <button className="relative text-slate-300 hover:text-[#1c2d51] transition-all">
               <Bell size={22} />
               {unreadCount > 0 && (
-                <span className="absolute top-2.5 right-2.5 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-[#F4F7FA] animate-bounce">
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-[#F4F7FA] animate-bounce">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
             
-            {/* Widget de Perfil - Cartão Branco Estilo Screenshot */}
+            {/* Widget de Perfil: Cartão Branco Flutuante, Avatar à Direita */}
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-4 bg-white px-5 py-2.5 rounded-[1.75rem] shadow-sm border border-slate-100 hover:shadow-md transition-all group"
+                className="flex items-center gap-4 bg-white px-5 py-2 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-all group"
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-black text-[#1c2d51] tracking-tight">
-                    {profile?.displayName?.split(' ')[0] || tenant.nome || 'Agência'}
+                    {tenant.nome || 'Agência'}
                   </p>
                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
                     {profile?.role === 'admin' ? 'Administrador' : 'Consultor'}
                   </p>
                 </div>
                 
-                {/* Avatar / Logo à Direita */}
-                <div className="w-11 h-11 bg-slate-50 rounded-full flex items-center justify-center font-black text-xs text-[#1c2d51] border border-slate-100 relative overflow-hidden shadow-inner">
-                  {profile?.avatar_url || tenant.logo_url ? (
-                    <img src={profile?.avatar_url || tenant.logo_url} className="w-full h-full object-cover" alt="User" />
+                {/* Avatar / Logo da Agência à Direita */}
+                <div className="w-10 h-10 bg-[#1c2d51] text-white rounded-xl flex items-center justify-center font-black text-sm relative overflow-hidden shadow-lg shadow-[#1c2d51]/20">
+                  {tenant.logo_url || profile?.avatar_url ? (
+                    <img src={tenant.logo_url || profile?.avatar_url} className="w-full h-full object-cover" alt="Logo" />
                   ) : (
                     <span>{tenant.nome?.charAt(0) || 'D'}</span>
                   )}
                 </div>
                 
-                <ChevronDown size={14} className={`text-slate-200 group-hover:text-[#1c2d51] transition-transform duration-300 ${showProfileDropdown ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 ${showProfileDropdown ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Dropdown Flutuante */}
+              {/* Dropdown Menu */}
               {showProfileDropdown && (
                 <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="px-5 py-2 mb-2 border-b border-slate-50">
-                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Sessão Iniciada</p>
-                  </div>
                   <Link to="/admin/profile" onClick={() => setShowProfileDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-slate-600 hover:bg-slate-50 hover:text-[#1c2d51] transition-all">
-                    <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400"><User size={16} /></div>
+                    <User size={16} className="text-slate-400" />
                     <span className="text-sm font-bold">O Meu Perfil</span>
                   </Link>
                   <Link to="/admin/settings" onClick={() => setShowProfileDropdown(false)} className="flex items-center gap-3 px-5 py-3 text-slate-600 hover:bg-slate-50 hover:text-[#1c2d51] transition-all">
-                    <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400"><Settings size={16} /></div>
+                    <Settings size={16} className="text-slate-400" />
                     <span className="text-sm font-bold">Configurações</span>
                   </Link>
                   <div className="h-px bg-slate-50 my-2 mx-5"></div>
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-3 text-red-500 hover:bg-red-50 transition-all">
-                    <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center text-red-400"><LogOut size={16} /></div>
-                    <span className="text-sm font-bold">Sair</span>
+                    <LogOut size={16} className="text-red-400" />
+                    <span className="text-sm font-bold">Terminar Sessão</span>
                   </button>
                 </div>
               )}

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-// Fix: Using @firebase/firestore to resolve missing modular exports
-import { doc, setDoc, serverTimestamp } from "@firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { updateProfile } from 'firebase/auth';
-import { db, auth } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { User, Mail, Shield, Lock, Save, Loader2, CheckCircle2, Camera, Smartphone } from 'lucide-react';
 import { compressImage } from '../../lib/utils';
 
@@ -42,7 +41,6 @@ const AdminProfile: React.FC = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result as string;
-      // Otimizamos o avatar para ser pequeno (400x400 é suficiente) e leve
       const compressed = await compressImage(base64String, 400, 400, 0.8);
       setFormData(prev => ({ ...prev, avatar_url: compressed }));
       

@@ -1,10 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-// Fix: Using @firebase/firestore to resolve missing exported members
-import { doc, updateDoc, serverTimestamp } from "@firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   ArrowRight, Layout, Building2, Eye, Star, ChevronLeft,
@@ -62,7 +60,7 @@ const OnboardingFlow: React.FC = () => {
       
       await updateDoc(tenantRef, updates);
       setTenant({ ...tenant, ...updates } as any);
-      nextStep(); // Go to success step
+      nextStep();
     } catch (err) {
       console.error(err);
       alert("Erro ao finalizar configuração.");

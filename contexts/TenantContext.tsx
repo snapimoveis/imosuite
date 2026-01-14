@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 // Correct modular imports for Firestore
-import { doc, onSnapshot } from '@firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant } from '../types';
 import { DEFAULT_TENANT } from '../constants';

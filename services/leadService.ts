@@ -1,6 +1,5 @@
 
-// Fix: Using @firebase/firestore to resolve missing modular exports
-import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from "@firebase/firestore";
+import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, updateDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Lead } from "../types";
 
@@ -32,7 +31,6 @@ export const LeadService = {
     const ip = await this.fetchUserIp();
     const leadsRef = collection(db, "tenants", tenantId, "leads");
     
-    // Texto legal padrão caso não seja passado um específico pela UI
     const defaultConsentText = "Declaro que li e aceito a Política de Privacidade e autorizo o tratamento dos meus dados para fins de contacto comercial.";
 
     const finalLead = {

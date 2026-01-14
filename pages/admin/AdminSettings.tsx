@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, setDoc, serverTimestamp } from "@firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   Building2, Brush, Globe, CreditCard, Save, Loader2, Camera, Clock, ArrowRight, CheckCircle2
@@ -136,7 +135,7 @@ const AdminSettings: React.FC = () => {
                         <div className="absolute inset-0 bg-[#1c2d51]/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-black text-[9px] uppercase tracking-widest">Alterar Imagem</div>
                       </>
                     ) : <Camera className="text-slate-300" size={32} />}
-                    <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                    <input type="file" logoInputRef={logoInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                   </div>
                 </div>
               </div>
