@@ -51,12 +51,12 @@ export const MOCK_IMOVEIS: Imovel[] = [
       jardim: false
     },
     caracteristicas: ['Ar Condicionado', 'Varanda', 'Cozinha Equipada', 'Elevador'],
+    // Fix: Updated certificacao property names to match Imovel type in types.ts (Lines 56-61)
     certificacao: {
       certificado_energetico: 'A',
-      licenca_utilizacao: '123/2020',
-      licenca_utilizacao_numero: '123',
-      licenca_utilizacao_data: '2020-01-01',
-      isento_licenca_utilizacao: false,
+      licenca_util_numero: '123',
+      licenca_util_data: '2020-01-01',
+      isento_licenca: false,
       estado_licenca: 'sim'
     },
     financeiro: {
@@ -148,12 +148,12 @@ export const MOCK_IMOVEIS: Imovel[] = [
       jardim: true
     },
     caracteristicas: ['Piscina', 'Jardim', 'Lareira', 'Domótica'],
+    // Fix: Updated certificacao property names to match types.ts (Lines 153-158)
     certificacao: {
       certificado_energetico: 'A+',
-      licenca_utilizacao: '456/2023',
-      licenca_utilizacao_numero: '456',
-      licenca_utilizacao_data: '2023-05-01',
-      isento_licenca_utilizacao: false,
+      licenca_util_numero: '456',
+      licenca_util_data: '2023-05-01',
+      isento_licenca: false,
       estado_licenca: 'sim'
     },
     financeiro: {
@@ -245,12 +245,12 @@ export const MOCK_IMOVEIS: Imovel[] = [
       jardim: false
     },
     caracteristicas: ['Mobilado', 'Janelas Duplas', 'Metro à porta'],
+    // Fix: Updated certificacao property names to match types.ts (Lines 250-255)
     certificacao: {
       certificado_energetico: 'C',
-      licenca_utilizacao: '789/1950',
-      licenca_utilizacao_numero: '789',
-      licenca_utilizacao_data: '1950-10-10',
-      isento_licenca_utilizacao: false,
+      licenca_util_numero: '789',
+      licenca_util_data: '1950-10-10',
+      isento_licenca: false,
       estado_licenca: 'sim'
     },
     financeiro: {

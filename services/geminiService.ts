@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
 export const generatePropertyDescription = async (property: any, tone: string = 'formal'): Promise<{ curta: string; completa: string }> => {
-  // Inicialização conforme diretrizes: named parameter apiKey
+  // Inicialização rigorosa com process.env.API_KEY conforme diretrizes
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const toneInstructions = {
@@ -19,7 +19,7 @@ export const generatePropertyDescription = async (property: any, tone: string = 
   - Usa parágrafos (\n\n) para a descrição completa.
   Instrução de Estilo: ${toneInstructions}`;
 
-  const prompt = `Gera duas descrições para este imóvel: ${JSON.stringify({
+  const prompt = `Gera duas descrições (curta e completa) para este imóvel: ${JSON.stringify({
     titulo: property.titulo,
     tipo: property.tipo_imovel,
     tipologia: property.tipologia,
@@ -28,7 +28,7 @@ export const generatePropertyDescription = async (property: any, tone: string = 
     divisoes: property.divisoes,
     caracteristicas: property.caracteristicas
   })}. 
-  Retorna estritamente um objeto JSON com os campos "curta" e "completa".`;
+  Retorna estritamente um objeto JSON.`;
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
@@ -40,32 +40,25 @@ export const generatePropertyDescription = async (property: any, tone: string = 
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            curta: { type: Type.STRING, description: "Descrição curta até 300 caracteres" },
-            completa: { type: Type.STRING, description: "Descrição detalhada com parágrafos" }
+            curta: { type: Type.STRING, description: "Descrição curta (máx 200 carateres) para slogan de catálogo." },
+            completa: { type: Type.STRING, description: "Descrição detalhada com vários parágrafos realçando os pontos fortes." }
           },
           required: ["curta", "completa"],
         },
       },
     });
     
-    // Acesso direto à propriedade .text conforme diretrizes
-    const text = response.text || "";
-    
-    // Extração robusta de JSON
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      const jsonString = text.substring(firstBrace, lastBrace + 1);
-      return JSON.parse(jsonString);
-    }
-    
-    throw new Error("Formato de resposta inválido.");
+    const text = response.text;
+    if (!text) throw new Error("A IA não retornou texto.");
+
+    // Parse direto pois usamos responseMimeType e responseSchema
+    return JSON.parse(text);
   } catch (error) {
-    console.error("Erro Gemini:", error);
+    console.error("Erro Crítico Gemini:", error);
+    // Fallback amigável caso a API falhe por limites de quota ou rede
     return {
-      curta: "Imóvel de excelência com ótimas áreas e localização privilegiada.",
-      completa: "Este imóvel destaca-se pelo seu excelente estado de conservação e áreas generosas. Localizado numa zona calma e com bons acessos, oferece o conforto ideal para a sua família.\n\nComposto por divisões bem iluminadas e acabamentos de qualidade, esta é a oportunidade que procurava no mercado. Agende já a sua visita."
+      curta: `${property.titulo} em ${property.localizacao?.concelho || 'excelente localização'}.`,
+      completa: `Este excelente ${property.tipo_imovel} destaca-se pelas suas áreas generosas e localização privilegiada em ${property.localizacao?.concelho}.\n\nComposto por ${property.divisoes?.quartos || 0} quartos e ${property.divisoes?.casas_banho || 0} casas de banho, oferece o conforto ideal para a sua família. Agende já a sua visita para conhecer todos os detalhes deste imóvel.`
     };
   }
 };

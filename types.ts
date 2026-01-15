@@ -74,6 +74,13 @@ export interface TenantSubscription {
   cancel_at_period_end?: boolean;
 }
 
+export interface SEOSettings {
+  meta_title?: string;
+  meta_description?: string;
+  keywords?: string;
+  google_analytics_id?: string;
+}
+
 export interface Tenant {
   id: string;
   slug: string;
@@ -93,6 +100,8 @@ export interface Tenant {
   onboarding_completed?: boolean;
   subscription: TenantSubscription;
   cms: TenantCMS;
+  seo_settings?: SEOSettings;
+  custom_domain?: string;
   created_at: any;
   updated_at?: any;
 }
@@ -147,11 +156,11 @@ export interface Imovel {
   caracteristicas: string[];
   certificacao: {
     certificado_energetico: string;
-    licenca_utilizacao: string | null;
-    licenca_utilizacao_numero: string | null;
-    licenca_utilizacao_data: string | null;
-    isento_licenca_utilizacao: boolean;
+    licenca_util_numero: string | null;
+    licenca_util_data: string | null;
+    isento_licenca: boolean;
     estado_licenca: 'sim' | 'processo' | 'isento';
+    certificado_energetico_valido_ate?: any;
   };
   financeiro: {
     preco_venda: number | null;

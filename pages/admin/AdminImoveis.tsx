@@ -94,7 +94,8 @@ const AdminImoveis: React.FC = () => {
         financeiro: imovel.financeiro || { preco_venda: 0, preco_arrendamento: null, negociavel: true, comissao_incluida: true, condominio_mensal: null, imi_anual: null, caucao_meses: null, despesas_incluidas: [] },
         areas: imovel.areas || { area_util_m2: 0, area_bruta_m2: null, area_terreno_m2: null, pisos: 1, andar: null, elevador: false },
         divisoes: imovel.divisoes || { quartos: 2, casas_banho: 1, garagem: { tem: false, lugares: 0 }, varanda: false, arrecadacao: false, piscina: false, jardim: false },
-        certificacao: imovel.certificacao || { certificado_energetico: 'A', licenca_utilizacao: '', licenca_utilizacao_numero: '', licenca_utilizacao_data: '', isento_licenca_utilizacao: false, estado_licenca: 'sim' },
+        // Fix: Updated certificacao property names to match Imovel type in types.ts (Line 111)
+        certificacao: imovel.certificacao || { certificado_energetico: 'A', licenca_util_numero: '', licenca_util_data: '', isento_licenca: false, estado_licenca: 'sim' },
         publicacao: imovel.publicacao || { estado: 'publicado', publicar_no_site: true, destaque: false, badges: [], data_publicacao: new Date() }
       });
       const media = await PropertyService.getPropertyMedia(profile!.tenantId, imovel.id);
@@ -113,7 +114,8 @@ const AdminImoveis: React.FC = () => {
         financeiro: { preco_venda: 0, preco_arrendamento: null, negociavel: true, comissao_incluida: true, condominio_mensal: null, imi_anual: null, caucao_meses: null, despesas_incluidas: [] },
         divisoes: { quartos: 2, casas_banho: 1, garagem: { tem: false, lugares: 0 }, varanda: false, arrecadacao: false, piscina: false, jardim: false },
         areas: { area_util_m2: 0, area_bruta_m2: null, area_terreno_m2: null, pisos: 1, andar: null, elevador: false },
-        certificacao: { certificado_energetico: 'A', licenca_utilizacao: '', licenca_utilizacao_numero: '', licenca_utilizacao_data: '', isento_licenca_utilizacao: false, estado_licenca: 'sim' },
+        // Fix: Updated certificacao property names to match types.ts (Line 126)
+        certificacao: { certificado_energetico: 'A', licenca_util_numero: '', licenca_util_data: '', isento_licenca: false, estado_licenca: 'sim' },
         descricao: { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null },
         caracteristicas: []
       });
@@ -191,7 +193,6 @@ const AdminImoveis: React.FC = () => {
     setMediaItems(prev => [...prev, ...newMedia]);
   };
 
-  // Added handleImageUpload to handle the onChange event of the file input
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       processFiles(e.target.files);
@@ -497,7 +498,8 @@ const AdminImoveis: React.FC = () => {
                              {['Ar condicionado', 'Aquecimento central', 'Painéis solares', 'Lareira', 'Cozinha equipada', 'Mobilado', 'Vista mar', 'Vista rio', 'Vista cidade'].map(feat => (
                                <button key={feat} onClick={() => {
                                   const current = editingImovel.caracteristicas || [];
-                                  const next = current.includes(feat) ? current.filter(c => c !== feat) : [...current, f];
+                                  // Fix: Corrected typo 'f' to 'feat' (Line 500)
+                                  const next = current.includes(feat) ? current.filter(c => c !== feat) : [...current, feat];
                                   setEditingImovel({...editingImovel, caracteristicas: next});
                                }} className={`p-4 rounded-xl border text-[10px] font-black uppercase transition-all ${editingImovel.caracteristicas?.includes(feat) ? 'border-[#357fb2] bg-[#357fb2] text-white shadow-sm' : 'border-slate-100 text-slate-400 hover:border-blue-100'}`}>
                                   {feat}

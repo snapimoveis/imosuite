@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
@@ -6,14 +7,14 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   Building2, Brush, Globe, CreditCard, Save, Loader2, Camera, 
-  Layout, Star, Zap, CheckCircle2, Mail, Phone, MapPin, Hash, Building
+  Layout, Star, Zap, CheckCircle2, Search, Link as LinkIcon, BarChart3
 } from 'lucide-react';
 import { Tenant } from '../../types';
 import { compressImage } from '../../lib/utils';
 import { StorageService } from '../../services/storageService';
 
 const TEMPLATE_OPTIONS = [
-  { id: 'heritage', name: 'Heritage', icon: <Building size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
+  { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
   { id: 'canvas', name: 'Canvas', icon: <Layout size={20}/>, desc: 'Design Moderno e Limpo', color: '#357fb2' },
   { id: 'prestige', name: 'Prestige', icon: <Star size={20}/>, desc: 'Luxo e Minimalismo', color: '#000000' },
   { id: 'skyline', name: 'Skyline', icon: <Zap size={20}/>, desc: 'Urbano e Tecnológico', color: '#2563eb' },
@@ -22,7 +23,7 @@ const TEMPLATE_OPTIONS = [
 
 const AdminSettings: React.FC = () => {
   const { tenant, setTenant, isLoading: tenantLoading } = useTenant();
-  const { user } = useAuth();
+  const { profile, user } = useAuth();
   const location = useLocation();
   const [isSaving, setIsSaving] = useState(false);
   const [localTenant, setLocalTenant] = useState<Tenant>(tenant);
@@ -32,9 +33,14 @@ const AdminSettings: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
+  const isBusiness = tenant.subscription?.plan_id === 'business' || profile?.email === 'snapimoveis@gmail.com';
+
   useEffect(() => {
     if (!tenantLoading && tenant) {
-      setLocalTenant({ ...tenant });
+      setLocalTenant({ 
+        ...tenant,
+        seo_settings: tenant.seo_settings || { meta_title: '', meta_description: '', keywords: '', google_analytics_id: '' }
+      });
     }
   }, [tenant, tenantLoading]);
 
@@ -101,6 +107,7 @@ const AdminSettings: React.FC = () => {
             <TabLink active={activeTab === 'general'} id="general" label="A Agência" icon={<Building2 size={16}/>} />
             <TabLink active={activeTab === 'branding'} id="branding" label="Marca e Cores" icon={<Brush size={16}/>} />
             <TabLink active={activeTab === 'website'} id="website" label="Website" icon={<Globe size={16}/>} />
+            <TabLink active={activeTab === 'seo'} id="seo" label="SEO & Analytics" icon={<Search size={16}/>} />
             <TabLink active={activeTab === 'billing'} id="billing" label="Faturação" icon={<CreditCard size={16}/>} />
           </nav>
         </aside>
@@ -185,11 +192,33 @@ const AdminSettings: React.FC = () => {
               <div className="flex items-center gap-4 border-b border-slate-50 pb-6">
                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center"><Globe size={24}/></div>
                  <div>
-                    <h3 className="text-lg font-black text-[#1c2d51] uppercase tracking-tight">Template do Portal</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">Selecione o design base do seu website</p>
+                    <h3 className="text-lg font-black text-[#1c2d51] uppercase tracking-tight">Website & Domínio</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Gestão da presença online</p>
                  </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                 <div className="space-y-2">
+                    <label className="admin-label-sober">Subdomínio ImoSuite</label>
+                    <div className="flex items-center bg-slate-100 p-4 rounded-2xl border border-slate-200">
+                       <span className="font-bold text-slate-400 text-sm">{localTenant.slug}.imosuite.pt</span>
+                    </div>
+                 </div>
+                 {isBusiness && (
+                    <div className="space-y-2">
+                       <label className="admin-label-sober flex items-center gap-2">Domínio Próprio <Zap size={10} className="text-amber-500 fill-current"/></label>
+                       <input 
+                          className="admin-input-sober" 
+                          placeholder="ex: www.a-sua-agencia.pt" 
+                          value={localTenant.custom_domain || ''} 
+                          onChange={e => setLocalTenant({...localTenant, custom_domain: e.target.value})} 
+                       />
+                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest px-2">Aponte o CNAME para cname.imosuite.pt</p>
+                    </div>
+                 )}
+              </div>
+
+              <h4 className="text-[10px] font-black uppercase text-slate-300 tracking-[0.2em] mb-6">Catálogo de Templates</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {TEMPLATE_OPTIONS.map((tmpl) => (
                   <div key={tmpl.id} onClick={() => setLocalTenant({ ...localTenant, template_id: tmpl.id })} className={`p-8 rounded-[2.5rem] border-2 cursor-pointer transition-all ${localTenant.template_id === tmpl.id ? 'border-[#1c2d51] bg-[#1c2d51]/5 shadow-lg' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
@@ -201,6 +230,67 @@ const AdminSettings: React.FC = () => {
                 ))}
               </div>
             </div>
+          )}
+
+          {activeTab === 'seo' && (
+             <div className="space-y-10 animate-in fade-in duration-300">
+                <div className="flex items-center gap-4 border-b border-slate-50 pb-6">
+                   <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center"><Search size={24}/></div>
+                   <div>
+                      <h3 className="text-lg font-black text-[#1c2d51] uppercase tracking-tight">Otimização SEO & Analytics</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">Melhore a sua visibilidade no Google</p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-8">
+                   <div className="space-y-2">
+                      <label className="admin-label-sober">Título SEO da Homepage (Meta Title)</label>
+                      <input 
+                        className="admin-input-sober" 
+                        value={localTenant.seo_settings?.meta_title || ''} 
+                        onChange={e => setLocalTenant({...localTenant, seo_settings: {...(localTenant.seo_settings || {}), meta_title: e.target.value}})} 
+                        placeholder="Ex: A Melhor Imobiliária em Lisboa | Nome da Agência"
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="admin-label-sober">Descrição SEO (Meta Description)</label>
+                      <textarea 
+                        className="admin-input-sober" 
+                        rows={3}
+                        value={localTenant.seo_settings?.meta_description || ''} 
+                        onChange={e => setLocalTenant({...localTenant, seo_settings: {...(localTenant.seo_settings || {}), meta_description: e.target.value}})} 
+                        placeholder="Descreva a sua agência em poucas palavras para os motores de busca..."
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="admin-label-sober">Keywords (Separadas por vírgula)</label>
+                      <input 
+                        className="admin-input-sober" 
+                        value={localTenant.seo_settings?.keywords || ''} 
+                        onChange={e => setLocalTenant({...localTenant, seo_settings: {...(localTenant.seo_settings || {}), keywords: e.target.value}})} 
+                        placeholder="Imóveis, Venda, Apartamentos, Lisboa..."
+                      />
+                   </div>
+                   <div className="pt-6 border-t border-slate-50">
+                      <div className="flex items-center gap-4 mb-6">
+                         <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><BarChart3 size={20}/></div>
+                         <div>
+                            <h4 className="text-sm font-black text-[#1c2d51] uppercase tracking-tight">Google Analytics</h4>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase">Monitorize o tráfego do seu portal</p>
+                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="admin-label-sober">Measurement ID (G-XXXXXXXXXX)</label>
+                        <input 
+                           className="admin-input-sober" 
+                           value={localTenant.seo_settings?.google_analytics_id || ''} 
+                           onChange={e => setLocalTenant({...localTenant, seo_settings: {...(localTenant.seo_settings || {}), google_analytics_id: e.target.value}})} 
+                           placeholder="G-A1B2C3D4E5"
+                        />
+                      </div>
+                   </div>
+                </div>
+             </div>
           )}
 
           {activeTab === 'billing' && (

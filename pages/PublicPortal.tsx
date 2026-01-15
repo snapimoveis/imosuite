@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
@@ -40,6 +41,23 @@ const PublicPortal: React.FC = () => {
           setImoveis(pData);
           document.documentElement.style.setProperty('--primary', tData.cor_primaria);
           document.documentElement.style.setProperty('--secondary', tData.cor_secundaria || tData.cor_primaria);
+          
+          // Injeção do Google Analytics se configurado
+          if (tData.seo_settings?.google_analytics_id) {
+             const script1 = document.createElement('script');
+             script1.async = true;
+             script1.src = `https://www.googletagmanager.com/gtag/js?id=${tData.seo_settings.google_analytics_id}`;
+             document.head.appendChild(script1);
+
+             const script2 = document.createElement('script');
+             script2.innerHTML = `
+               window.dataLayer = window.dataLayer || [];
+               function gtag(){dataLayer.push(arguments);}
+               gtag('js', new Date());
+               gtag('config', '${tData.seo_settings.google_analytics_id}');
+             `;
+             document.head.appendChild(script2);
+          }
         }
       } catch (err) { console.error(err); } finally { setLoading(false); }
     };
@@ -76,7 +94,12 @@ const PublicPortal: React.FC = () => {
 
   return (
     <div className="font-brand min-h-screen flex flex-col bg-white selection:bg-[var(--primary)] selection:text-white">
-      <SEO title={tenant.nome} description={tenant.slogan} overrideFullTitle={true} />
+      <SEO 
+        title={tenant.seo_settings?.meta_title || tenant.nome} 
+        description={tenant.seo_settings?.meta_description || tenant.slogan} 
+        overrideFullTitle={true} 
+      />
+      
       <nav className={s.nav}>
          <Link to={`/agencia/${tenant.slug}`}>
             {tenant.logo_url ? <img src={tenant.logo_url} className="h-10 md:h-14 w-auto object-contain" alt={tenant.nome} /> : <span className="text-xl font-black">{tenant.nome}</span>}
@@ -84,7 +107,7 @@ const PublicPortal: React.FC = () => {
          <div className="hidden lg:flex gap-8">
             {cms.menus.main.map(m => renderLink(m, "text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition-all"))}
          </div>
-         <button onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2"><Menu size={28} /></button>
+         <button onClick={() => setIsMenuOpen(true)} className="lg:hidden p-2 text-slate-400"><Menu size={28} /></button>
       </nav>
 
       {isMenuOpen && (
