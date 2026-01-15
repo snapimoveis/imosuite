@@ -90,8 +90,10 @@ const AdminCMS: React.FC = () => {
     reader.onloadend = async () => {
       const compressed = await compressImage(reader.result as string, 400, 400, 0.7);
       const updatedEquipa = [...(editingPage.equipa || [])];
-      updatedEquipa[activeMemberIdx].avatar_url = compressed;
-      setEditingPage({ ...editingPage, equipa: updatedEquipa });
+      if (updatedEquipa[activeMemberIdx]) {
+        updatedEquipa[activeMemberIdx].avatar_url = compressed;
+        setEditingPage({ ...editingPage, equipa: updatedEquipa });
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -111,7 +113,7 @@ const AdminCMS: React.FC = () => {
       is_external: false
     };
     setCms({ ...cms, menus: { ...cms.menus, main: [...cms.menus.main, newItem] } });
-    alert(`"${page.title}" adicionada ao menu principal! Guarde as alterações para publicar.`);
+    alert(`"${page.title}" adicionada à lista do menu principal! Clique em "Publicar no Website" para salvar.`);
   };
 
   const TabButton = ({ active, onClick, label, icon }: any) => (
@@ -229,7 +231,7 @@ const AdminCMS: React.FC = () => {
                       </div>
                       <div className="flex flex-col gap-3 mt-8 pt-6 border-t border-slate-50">
                         <button onClick={() => handleAddPageToMenu(page)} className="w-full flex items-center justify-center gap-2 py-2 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-black uppercase hover:bg-blue-100 transition-colors">
-                          <Link2 size={12}/> Adicionar ao Menu
+                          <Link2 size={12}/> Adicionar ao Menu Navbar
                         </button>
                         <div className="flex justify-end gap-2">
                           <button onClick={() => { setEditingPage(page); setPageModalTab('content'); setIsPageModalOpen(true); }} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-[#1c2d51]"><Edit3 size={18}/></button>

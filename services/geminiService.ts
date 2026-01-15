@@ -1,223 +1,77 @@
+
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 
-/* ============================================================
-   CONFIGURAÇÃO GEMINI (VITE / FRONTEND)
-============================================================ */
+export const generatePropertyDescription = async (property: any, tone: string = 'formal'): Promise<{ curta: string; completa: string }> => {
+  // Inicialização rigorosa com process.env.API_KEY conforme diretrizes
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const toneInstructions = {
+    formal: "Usa um tom sério, profissional e focado em factos técnicos.",
+    casual: "Usa um tom leve, acolhedor e focado no estilo de vida.",
+    luxo: "Usa um tom sofisticado, exclusivo e aspiracional."
+  }[tone] || "Usa um tom profissional.";
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+  const systemInstruction = `És um especialista em marketing imobiliário em Portugal. Escreves exclusivamente em Português de Portugal (PT-PT). 
+  Regras: 
+  - Usa 'casa de banho' em vez de 'banheiro'.
+  - Usa 'arrendamento' em vez de 'aluguel'.
+  - Usa 'rés-do-chão' em vez de 'térreo'.
+  - Usa parágrafos (\n\n) para a descrição completa.
+  Instrução de Estilo: ${toneInstructions}`;
 
-if (!GEMINI_API_KEY) {
-  throw new Error(
-    "VITE_GEMINI_API_KEY não encontrada. Verifique o .env ou o Vercel."
-  );
-}
-
-const gemini = new GoogleGenAI({
-  apiKey: GEMINI_API_KEY,
-});
-
-/* ============================================================
-   TIPOS
-============================================================ */
-
-type Tone = "formal" | "casual" | "luxo";
-
-interface PropertyInput {
-  titulo?: string;
-  tipo_imovel?: string;
-  tipologia?: string;
-  estado?: string;
-  localizacao?: {
-    concelho?: string;
-    distrito?: string;
-    zona?: string;
-  };
-  areas?: {
-    area_total?: number;
-    area_util?: number;
-  };
-  divisoes?: {
-    quartos?: number;
-    casas_banho?: number;
-  };
-  caracteristicas?: string[];
-}
-
-/* ============================================================
-   CTA PADRÃO (GARANTIDO)
-============================================================ */
-
-const CTA_PADRAO =
-  "Não perca esta oportunidade. Contacte-nos e agende já a sua visita.";
-
-/* ============================================================
-   DESCRIÇÃO DE IMÓVEL (PROMPT ROBUSTO + CTA)
-============================================================ */
-
-export const generatePropertyDescription = async (
-  property: PropertyInput,
-  tone: Tone = "formal"
-): Promise<{ curta: string; completa: string }> => {
-  const toneMap: Record<Tone, string> = {
-    formal: `
-Tom profissional, informativo e objetivo.
-Adequado para portais imobiliários e investidores.
-`,
-    casual: `
-Tom acolhedor e próximo.
-Foco no conforto, estilo de vida e bem-estar.
-`,
-    luxo: `
-Tom sofisticado, exclusivo e aspiracional.
-Vocabulário premium e foco na diferenciação.
-`,
-  };
-
-  const systemInstruction = `
-És um especialista sénior em marketing imobiliário em Portugal.
-
-REGRAS OBRIGATÓRIAS:
-1. Escreve exclusivamente em Português de Portugal (PT-PT)
-2. Nunca uses Português do Brasil
-3. Usa sempre:
-   - "casa de banho"
-   - "arrendamento"
-   - "rés-do-chão"
-4. Não inventes dados
-5. Se faltar informação, omite
-6. Texto natural, humano e comercial
-7. Não uses emojis nem listas
-8. Usa parágrafos com espaçamento (\n\n)
-
-REGRA OBRIGATÓRIA DE FECHO:
-- O ÚLTIMO parágrafo da descrição completa DEVE ser um call to action.
-- O call to action deve convidar explicitamente a contactar ou marcar visita.
-- Usa apenas UM call to action.
-
-Exemplos de call to action válidos:
-- "Não perca esta oportunidade. Contacte-nos e agende já a sua visita."
-- "Descubra pessoalmente este imóvel. Agende a sua visita."
-- "Entre em contacto connosco e marque a sua visita."
-
-ESTILO:
-${toneMap[tone]}
-`.trim();
-
-  const prompt = `
-IMÓVEL:
-${JSON.stringify(
-  {
+  const prompt = `Gera duas descrições (curta e completa) para este imóvel: ${JSON.stringify({
     titulo: property.titulo,
     tipo: property.tipo_imovel,
     tipologia: property.tipologia,
-    estado: property.estado,
     localizacao: property.localizacao,
     areas: property.areas,
     divisoes: property.divisoes,
-    caracteristicas: property.caracteristicas,
-  },
-  null,
-  2
-)}
-
-OBJETIVO:
-Criar uma descrição imobiliária clara, realista e persuasiva para publicação online.
-
-RETORNA ESTRITAMENTE UM OBJETO JSON VÁLIDO.
-`.trim();
+    caracteristicas: property.caracteristicas
+  })}. 
+  Retorna estritamente um objeto JSON.`;
 
   try {
-    const response: GenerateContentResponse =
-      await gemini.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              curta: {
-                type: Type.STRING,
-                description:
-                  "Descrição curta (máx. 200 caracteres).",
-              },
-              completa: {
-                type: Type.STRING,
-                description:
-                  "Descrição completa com vários parágrafos e CTA final.",
-              },
-            },
-            required: ["curta", "completa"],
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            curta: { type: Type.STRING, description: "Descrição curta (máx 200 carateres) para slogan de catálogo." },
+            completa: { type: Type.STRING, description: "Descrição detalhada com vários parágrafos realçando os pontos fortes." }
           },
+          required: ["curta", "completa"],
         },
-      });
+      },
+    });
+    
+    const text = response.text;
+    if (!text) throw new Error("A IA não retornou texto.");
 
-    if (!response.text) {
-      throw new Error("Resposta vazia do Gemini.");
-    }
-
-    const result = JSON.parse(response.text) as {
-      curta: string;
-      completa: string;
-    };
-
-    /* ========================================================
-       BLINDAGEM FINAL — GARANTE CTA
-    ======================================================== */
-
-    if (!result.completa.toLowerCase().includes("visita")) {
-      result.completa = `${result.completa.trim()}\n\n${CTA_PADRAO}`;
-    }
-
-    return result;
+    // Parse direto pois usamos responseMimeType e responseSchema
+    return JSON.parse(text);
   } catch (error) {
-    console.error("Erro Gemini (descrição imóvel):", error);
-
-    // Fallback seguro com CTA
+    console.error("Erro Crítico Gemini:", error);
+    // Fallback amigável caso a API falhe por limites de quota ou rede
     return {
-      curta: `${property.titulo ?? "Imóvel"} em ${
-        property.localizacao?.concelho ?? "localização atrativa"
-      }.`,
-      completa: `Este ${property.tipo_imovel ?? "imóvel"} situa-se em ${
-        property.localizacao?.concelho ?? "zona de elevada procura"
-      }, oferecendo uma solução equilibrada entre conforto e funcionalidade.
-
-Com ${property.divisoes?.quartos ?? 0} quartos e ${
-        property.divisoes?.casas_banho ?? 0
-      } casas de banho, adapta-se a diferentes perfis de utilização.
-
-${CTA_PADRAO}`,
+      curta: `${property.titulo} em ${property.localizacao?.concelho || 'excelente localização'}.`,
+      completa: `Este excelente ${property.tipo_imovel} destaca-se pelas suas áreas generosas e localização privilegiada em ${property.localizacao?.concelho}.\n\nComposto por ${property.divisoes?.quartos || 0} quartos e ${property.divisoes?.casas_banho || 0} casas de banho, oferece o conforto ideal para a sua família. Agende já a sua visita para conhecer todos os detalhes deste imóvel.`
     };
   }
 };
 
-/* ============================================================
-   SLOGAN IMOBILIÁRIA
-============================================================ */
-
-export const generateAgencySlogan = async (
-  agencyName: string
-): Promise<string> => {
+export const generateAgencySlogan = async (agencyName: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
-    const response = await gemini.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `
-Cria um slogan curto, profissional e memorável em Português de Portugal (PT-PT)
-para a imobiliária "${agencyName}".
-
-Regras:
-- Máximo 8 palavras
-- Tom institucional
-- Não uses aspas
-`,
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Gera um slogan curto e memorável em PT-PT para a imobiliária "${agencyName}". Retorna apenas o texto do slogan sem aspas.`,
     });
-
-    return (
-      response.text?.trim().replace(/^"|"$/g, "") ||
-      "A sua imobiliária de confiança."
-    );
-  } catch {
-    return "Excelência no mercado imobiliário.";
+    return response.text?.trim().replace(/^"|"$/g, '') || "A sua agência de confiança.";
+  } catch { 
+    return "Excelência no mercado imobiliário."; 
   }
 };

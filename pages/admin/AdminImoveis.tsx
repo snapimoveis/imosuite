@@ -38,8 +38,8 @@ const DISTRICTS_DATA: Record<string, string[]> = {
 };
 
 const PHOTO_TAGS = [
-  "Sala", "Cozinha", "Quarto", "Suite", "Casa de Banho", 
-  "Varanda", "Terraço", "Exterior", "Vistas", "Planta", "Garagem", "Outro"
+  "Quarto", "Cozinha", "Sala de Estar", "Sala de Jantar", "Casa de Banho", 
+  "Varanda", "Terraço", "Exterior", "Vistas", "Garagem", "Jardim", "Planta", "Outro"
 ];
 
 const DivBox = ({ label, val, icon, onInc, onDec }: any) => (
@@ -637,33 +637,31 @@ const AdminImoveis: React.FC = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                        {mediaItems.map((item, idx) => (
-                         <div key={item.id} className="group relative aspect-square bg-slate-50 rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm flex flex-col">
-                            <img src={item.url} className="w-full h-full object-cover flex-1" alt={item.alt} />
+                         <div key={item.id} className="group flex flex-col bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-lg">
+                            <div className="relative aspect-square overflow-hidden bg-slate-50">
+                               <img src={item.url} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={item.alt} />
+                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                                  <button onClick={() => setMediaItems(prev => prev.map((m, i) => ({...m, is_cover: i === idx})))} className={`p-2 rounded-lg transition-all ${item.is_cover ? 'bg-amber-400 text-white' : 'bg-white text-slate-400 hover:text-amber-400'}`}>
+                                     <Star size={16} fill={item.is_cover ? 'currentColor' : 'none'} />
+                                  </button>
+                                  <button onClick={() => setMediaItems(prev => prev.filter((_, i) => i !== idx))} className="p-2 bg-red-500 text-white rounded-lg hover:scale-110 transition-transform">
+                                     <Trash2 size={16} />
+                                  </button>
+                               </div>
+                               {item.is_cover && <div className="absolute top-3 left-3 bg-amber-400 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase">Capa</div>}
+                            </div>
                             
-                            {/* Etiqueta da Foto */}
-                            <div className="absolute top-2 left-2 right-2">
+                            {/* Seletor de Etiquetas Abaixo da Foto */}
+                            <div className="p-3 border-t border-slate-50 space-y-1">
+                               <p className="text-[7px] font-black uppercase text-slate-300 ml-1">Etiqueta da Foto</p>
                                <select 
                                  value={item.tag || 'Outro'} 
                                  onChange={(e) => setMediaItems(prev => prev.map((m, i) => i === idx ? { ...m, tag: e.target.value } : m))}
-                                 className="w-full bg-white/90 backdrop-blur-sm text-[8px] font-black uppercase py-1 px-2 rounded-lg border-none shadow-sm focus:ring-1 focus:ring-blue-400 outline-none"
+                                 className="w-full bg-slate-50 text-[9px] font-black uppercase py-2 px-2 rounded-lg border-none focus:ring-1 focus:ring-[#1c2d51] outline-none text-[#1c2d51]"
                                >
                                   {PHOTO_TAGS.map(tag => <option key={tag} value={tag}>{tag}</option>)}
                                </select>
                             </div>
-
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                               <button onClick={() => setMediaItems(prev => prev.map((m, i) => ({...m, is_cover: i === idx})))} className={`p-2 rounded-lg transition-all ${item.is_cover ? 'bg-amber-400 text-white' : 'bg-white text-slate-400 hover:text-amber-400'}`}>
-                                  <Star size={16} fill={item.is_cover ? 'currentColor' : 'none'} />
-                               </button>
-                               <div className="flex gap-2">
-                                 <button onClick={() => { if(idx > 0) setMediaItems(prev => { const n = [...prev]; [n[idx-1], n[idx]] = [n[idx], n[idx-1]]; return n; }) }} className="p-2 bg-white text-slate-400 rounded-lg"><ChevronLeft size={16}/></button>
-                                 <button onClick={() => { if(idx < mediaItems.length - 1) setMediaItems(prev => { const n = [...prev]; [n[idx+1], n[idx]] = [n[idx], n[idx+1]]; return n; }) }} className="p-2 bg-white text-slate-400 rounded-lg"><ChevronRight size={16}/></button>
-                               </div>
-                               <button onClick={() => setMediaItems(prev => prev.filter((_, i) => i !== idx))} className="p-2 bg-red-500 text-white rounded-lg hover:scale-110 transition-transform">
-                                  <Trash2 size={16} />
-                                </button>
-                            </div>
-                            {item.is_cover && <div className="absolute bottom-2 right-2 bg-amber-400 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase">Capa</div>}
                          </div>
                        ))}
                     </div>
