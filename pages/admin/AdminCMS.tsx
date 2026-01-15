@@ -15,6 +15,7 @@ import {
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { TenantCMS, MenuItem, CMSPage } from '../../types';
 import { generateSlug, compressImage } from '../../lib/utils';
+import { StorageService } from '../../services/storageService';
 
 const AdminCMS: React.FC = () => {
   const { tenant, setTenant } = useTenant();
@@ -56,12 +57,43 @@ const AdminCMS: React.FC = () => {
     if (!profile?.tenantId || profile.tenantId === 'pending') return;
     setIsSaving(true);
     try {
-      const tenantRef = doc(db, 'tenants', profile.tenantId);
-      await updateDoc(tenantRef, { cms, updated_at: serverTimestamp() });
-      setTenant({ ...tenant, cms });
+      const tenantId = profile.tenantId;
+      const updatedCms = JSON.parse(JSON.stringify(cms)) as TenantCMS;
+
+      // Processamento de Imagens antes de gravar para evitar estouro de 1MB do Firestore
+      for (const page of updatedCms.pages) {
+        // 1. Fotos da Equipa
+        if (page.equipa) {
+          for (const member of page.equipa) {
+            if (member.avatar_url?.startsWith('data:image')) {
+              const path = `tenants/${tenantId}/cms/pages/${page.id}/team/${member.id}.jpg`;
+              member.avatar_url = await StorageService.uploadBase64(path, member.avatar_url);
+            }
+          }
+        }
+        // 2. Fotos da Galeria
+        if (page.galeria_fotos) {
+          for (let i = 0; i < page.galeria_fotos.length; i++) {
+            if (page.galeria_fotos[i].startsWith('data:image')) {
+              const path = `tenants/${tenantId}/cms/pages/${page.id}/gallery/img_${i}_${Date.now()}.jpg`;
+              page.galeria_fotos[i] = await StorageService.uploadBase64(path, page.galeria_fotos[i]);
+            }
+          }
+        }
+      }
+
+      const tenantRef = doc(db, 'tenants', tenantId);
+      await updateDoc(tenantRef, { cms: updatedCms, updated_at: serverTimestamp() });
+      setTenant({ ...tenant, cms: updatedCms });
+      setCms(updatedCms);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) { alert("Erro ao guardar: " + err.message); } finally { setIsSaving(false); }
+    } catch (err: any) { 
+      console.error(err);
+      alert("Erro ao guardar: " + err.message); 
+    } finally { 
+      setIsSaving(false); 
+    }
   };
 
   const handlePageImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
