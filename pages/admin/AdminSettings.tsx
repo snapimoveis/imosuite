@@ -3,15 +3,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs, limit } from "firebase/firestore";
 import { db } from '../../lib/firebase';
 import { 
   Building2, Brush, Globe, CreditCard, Save, Loader2, Camera, 
-  Layout, Star, Zap, CheckCircle2, Search, Link as LinkIcon, BarChart3
+  Layout, Star, Zap, CheckCircle2, Search, Link as LinkIcon, BarChart3,
+  Check, AlertTriangle, Copy, ShieldCheck, RefreshCw
 } from 'lucide-react';
 import { Tenant } from '../../types';
 import { compressImage } from '../../lib/utils';
 import { StorageService } from '../../services/storageService';
+import { DomainService, DNS_RECORDS } from '../../services/domainService';
 
 const TEMPLATE_OPTIONS = [
   { id: 'heritage', name: 'Heritage', icon: <Building2 size={20}/>, desc: 'Clássico e Formal', color: '#1c2d51' },
@@ -30,6 +32,10 @@ const AdminSettings: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   
+  // Custom Domain States
+  const [verifying, setVerifying] = useState(false);
+  const [dnsResults, setDnsResults] = useState<{rootOk: boolean, wwwOk: boolean} | null>(null);
+
   const queryParams = new URLSearchParams(location.search);
   const activeTab = queryParams.get('tab') || 'general';
 
@@ -84,6 +90,48 @@ const AdminSettings: React.FC = () => {
       console.error(err);
       alert("Erro ao guardar definições.");
     } finally { setIsSaving(false); }
+  };
+
+  const handleVerifyDomain = async () => {
+    const domain = localTenant.custom_domain;
+    if (!domain || !DomainService.isValidFormat(domain)) {
+      alert("Por favor, insira um domínio válido (ex: www.oseudominio.com)");
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const results = await DomainService.verifyDNS(domain);
+      setDnsResults(results);
+      
+      const newStatus = results.status === 'verified' ? 'verified' : 'pending';
+      setLocalTenant(prev => ({ 
+        ...prev, 
+        domain_status: newStatus,
+        domain_checked_at: new Date()
+      }));
+
+      // Se verificado, oferecemos ativação automática
+      if (results.status === 'verified') {
+        const autoActivate = window.confirm("DNS verificado com sucesso! Deseja ativar este domínio agora?");
+        if (autoActivate) {
+           const updated = { ...localTenant, domain_status: 'active' as const, domain_checked_at: serverTimestamp() };
+           await setDoc(doc(db, 'tenants', localTenant.id), updated, { merge: true });
+           setTenant(updated);
+           alert("Domínio ativado! Pode demorar alguns minutos até que o SSL seja propagado pela Vercel.");
+        }
+      }
+    } catch (err) {
+      alert("Erro ao verificar DNS. Tente novamente.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const copyDnsInstructions = () => {
+    const text = `Configuração DNS ImoSuite:\n1. Tipo: A | Nome: @ | Valor: ${DNS_RECORDS.A_ROOT}\n2. Tipo: CNAME | Nome: www | Valor: ${DNS_RECORDS.CNAME_WWW}`;
+    navigator.clipboard.writeText(text);
+    alert("Instruções copiadas!");
   };
 
   if (tenantLoading) return <div className="h-40 flex items-center justify-center"><Loader2 className="animate-spin text-[#1c2d51]" /></div>;
@@ -197,23 +245,93 @@ const AdminSettings: React.FC = () => {
                  </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+              <div className="space-y-8 mb-12">
                  <div className="space-y-2">
-                    <label className="admin-label-sober">Subdomínio ImoSuite</label>
+                    <label className="admin-label-sober">Endereço ImoSuite (Padrão)</label>
                     <div className="flex items-center bg-slate-100 p-4 rounded-2xl border border-slate-200">
                        <span className="font-bold text-slate-400 text-sm">{localTenant.slug}.imosuite.pt</span>
+                       <LinkIcon size={14} className="ml-auto text-slate-300" />
                     </div>
                  </div>
+
+                 {/* Domínio Personalizado - Apenas se for Plano Business ou demo específica */}
                  {isBusiness && (
-                    <div className="space-y-2">
-                       <label className="admin-label-sober flex items-center gap-2">Domínio Próprio <Zap size={10} className="text-amber-500 fill-current"/></label>
-                       <input 
-                          className="admin-input-sober" 
-                          placeholder="ex: www.a-sua-agencia.pt" 
-                          value={localTenant.custom_domain || ''} 
-                          onChange={e => setLocalTenant({...localTenant, custom_domain: e.target.value})} 
-                       />
-                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest px-2">Aponte o CNAME para cname.imosuite.pt</p>
+                    <div className="bg-slate-50 rounded-[2.5rem] p-8 md:p-10 border border-slate-200 space-y-8">
+                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                          <div>
+                             <h4 className="font-black text-[#1c2d51] uppercase text-xs tracking-widest flex items-center gap-2">
+                               Domínio Próprio <Zap size={14} className="text-amber-500 fill-current"/>
+                             </h4>
+                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Ligue a sua própria marca (ex: www.suaimobiliaria.pt)</p>
+                          </div>
+                          
+                          {localTenant.domain_status && (
+                            <span className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-2 border ${
+                              localTenant.domain_status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              localTenant.domain_status === 'verified' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                              'bg-amber-50 text-amber-600 border-amber-100'
+                            }`}>
+                              {localTenant.domain_status === 'active' ? <ShieldCheck size={10}/> : <RefreshCw size={10} className="animate-spin-slow"/>}
+                              Status: {localTenant.domain_status}
+                            </span>
+                          )}
+                       </div>
+
+                       <div className="flex flex-col md:flex-row gap-4">
+                          <input 
+                             className="flex-1 admin-input-sober" 
+                             placeholder="ex: www.a-sua-agencia.pt" 
+                             value={localTenant.custom_domain || ''} 
+                             onChange={e => setLocalTenant({...localTenant, custom_domain: e.target.value.toLowerCase().trim()})} 
+                          />
+                          <button 
+                            onClick={handleVerifyDomain} 
+                            disabled={verifying || !localTenant.custom_domain}
+                            className="bg-white border-2 border-slate-200 text-[#1c2d51] px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-50"
+                          >
+                            {verifying ? <Loader2 size={14} className="animate-spin" /> : "Verificar DNS"}
+                          </button>
+                       </div>
+
+                       {/* Instruções DNS */}
+                       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-inner space-y-4">
+                          <div className="flex justify-between items-center">
+                             <p className="text-[10px] font-black uppercase text-slate-500">Instruções de Configuração</p>
+                             <button onClick={copyDnsInstructions} className="text-[9px] font-black text-blue-500 uppercase flex items-center gap-1 hover:underline">
+                                <Copy size={12}/> Copiar Instruções
+                             </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className={`p-4 rounded-2xl border ${dnsResults?.rootOk ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+                                <p className="text-[8px] font-black text-slate-400 uppercase mb-2">Registo A (Raiz)</p>
+                                <div className="flex justify-between font-mono text-[10px] font-bold">
+                                   <span>@</span>
+                                   <span className="text-[#1c2d51]">{DNS_RECORDS.A_ROOT}</span>
+                                </div>
+                                {dnsResults && (
+                                   <div className={`mt-2 flex items-center gap-1 text-[8px] font-black uppercase ${dnsResults.rootOk ? 'text-emerald-600' : 'text-red-500'}`}>
+                                      {dnsResults.rootOk ? <Check size={10}/> : <AlertTriangle size={10}/>}
+                                      {dnsResults.rootOk ? 'Configurado' : 'Não detetado'}
+                                   </div>
+                                )}
+                             </div>
+                             <div className={`p-4 rounded-2xl border ${dnsResults?.wwwOk ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+                                <p className="text-[8px] font-black text-slate-400 uppercase mb-2">Registo CNAME (WWW)</p>
+                                <div className="flex justify-between font-mono text-[10px] font-bold">
+                                   <span>www</span>
+                                   <span className="text-[#1c2d51] truncate ml-4">{DNS_RECORDS.CNAME_WWW}</span>
+                                </div>
+                                {dnsResults && (
+                                   <div className={`mt-2 flex items-center gap-1 text-[8px] font-black uppercase ${dnsResults.wwwOk ? 'text-emerald-600' : 'text-red-500'}`}>
+                                      {dnsResults.wwwOk ? <Check size={10}/> : <AlertTriangle size={10}/>}
+                                      {dnsResults.wwwOk ? 'Configurado' : 'Não detetado'}
+                                   </div>
+                                )}
+                             </div>
+                          </div>
+                          <p className="text-[9px] text-slate-400 italic">A propagação de novas configurações DNS pode demorar até 24 horas.</p>
+                       </div>
                     </div>
                  )}
               </div>
@@ -319,6 +437,8 @@ const AdminSettings: React.FC = () => {
         .admin-label-sober { display: block; font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-left: 0.5rem; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
         .admin-input-sober { width: 100%; padding: 1.15rem 1.4rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1.25rem; outline: none; font-weight: 700; color: #1c2d51; transition: all 0.2s; font-size: 0.95rem; }
         .admin-input-sober:focus { background: #fff; border-color: #357fb2; }
+        .animate-spin-slow { animation: spin 3s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );

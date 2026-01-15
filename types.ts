@@ -102,6 +102,8 @@ export interface Tenant {
   cms: TenantCMS;
   seo_settings?: SEOSettings;
   custom_domain?: string;
+  domain_status?: 'pending' | 'verified' | 'active';
+  domain_checked_at?: any;
   created_at: any;
   updated_at?: any;
 }

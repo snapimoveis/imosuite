@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 // Correct modular imports for Firestore
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Tenant } from '../types';
 import { DEFAULT_TENANT } from '../constants';
@@ -19,7 +20,68 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [tenant, setTenant] = useState<Tenant>(DEFAULT_TENANT);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Efeito para resolução de Tenant via Domínio/Hostname (Public Facing)
   useEffect(() => {
+    const resolveTenantByHost = async () => {
+      const hostname = window.location.hostname;
+      
+      // Lista expandida de domínios que NÃO devem disparar consulta de Tenant (SaaS Principal ou Dev)
+      const isMainDomain = 
+        hostname === 'imosuite.pt' || 
+        hostname === 'www.imosuite.pt' ||
+        hostname === 'localhost' || 
+        hostname === '127.0.0.1' ||
+        hostname.includes('vercel.app') || 
+        hostname.includes('firebaseapp.com') || 
+        hostname.includes('web.app');
+
+      const isSystemSubdomain = hostname.endsWith('.imosuite.pt');
+
+      if (!isMainDomain) {
+        try {
+          let q;
+          if (isSystemSubdomain) {
+            const slug = hostname.split('.')[0];
+            if (slug === 'demo' || slug === 'www' || slug === 'app') return; 
+            q = query(collection(db, 'tenants'), where('slug', '==', slug), limit(1));
+          } else {
+            // Domínio Personalizado
+            q = query(collection(db, 'tenants'), where('custom_domain', '==', hostname), where('domain_status', '==', 'active'), limit(1));
+          }
+
+          const snapshot = await getDocs(q);
+          if (!snapshot.empty) {
+            const tenantData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Tenant;
+            applyBranding(tenantData);
+            setTenant(tenantData);
+          }
+        } catch (err: any) {
+          // Silenciamos erros de permissão na resolução de host para não quebrar o carregamento inicial
+          // em domínios de preview ou se as regras de Firestore ainda não permitirem leitura pública.
+          if (err.code !== 'permission-denied') {
+            console.debug("Info: Resolução de host ignorada ou sem permissão pública.");
+          }
+        }
+      }
+    };
+
+    resolveTenantByHost();
+  }, []);
+
+  const applyBranding = (tenantData: Tenant) => {
+    const root = document.documentElement;
+    if (tenantData.cor_primaria) {
+      root.style.setProperty('--primary', tenantData.cor_primaria);
+    }
+    if (tenantData.cor_secundaria) {
+      root.style.setProperty('--secondary', tenantData.cor_secundaria);
+    } else {
+      root.style.setProperty('--secondary', tenantData.cor_primaria);
+    }
+  };
+
+  useEffect(() => {
+    // Lógica para Admin (Baseada no Perfil/Login)
     let effectiveTenantId = profile?.tenantId;
     
     if ((!effectiveTenantId || effectiveTenantId === 'pending') && user) {
@@ -44,17 +106,7 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (docSnap.exists()) {
         const tenantData = { id: docSnap.id, ...(docSnap.data() as any) } as Tenant;
         setTenant(tenantData);
-        
-        // Aplicação dinâmica do Branding no Root
-        const root = document.documentElement;
-        if (tenantData.cor_primaria) {
-          root.style.setProperty('--primary', tenantData.cor_primaria);
-        }
-        if (tenantData.cor_secundaria) {
-          root.style.setProperty('--secondary', tenantData.cor_secundaria);
-        } else {
-          root.style.setProperty('--secondary', tenantData.cor_primaria);
-        }
+        applyBranding(tenantData);
       }
       setIsLoading(false);
     }, (error) => {
