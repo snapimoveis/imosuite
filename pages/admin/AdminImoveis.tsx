@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import { 
   Plus, X, Loader2, Sparkles, Check, ChevronRight, ChevronLeft, 
   Trash, UploadCloud, Building2, Star, MapPin, Edit3, Trash2, Camera, Info, Globe, 
-  FileText, Bed, Bath, Square, Home, Shield, Euro, LayoutList, Zap, Lock, Eye, Calendar
+  FileText, Bed, Bath, Square, Home, Shield, Euro, LayoutList, Zap, Lock, Eye, Calendar,
+  Tag
 } from 'lucide-react';
 import { formatCurrency, generateSlug, compressImage } from '../../lib/utils';
 import { generatePropertyDescription } from '../../services/geminiService';
@@ -35,6 +36,11 @@ const DISTRICTS_DATA: Record<string, string[]> = {
   "Açores": ["Angra do Heroísmo", "Calheta", "Corvo", "Horta", "Lagoa", "Lajes das Flores", "Lajes do Pico", "Madalena", "Nordeste", "Ponta Delgada", "Povoação", "Praia da Vitória", "Ribeira Grande", "Santa Cruz da Graciosa", "Santa Cruz das Flores", "São Roque do Pico", "Velas", "Vila do Porto", "Vila Franca do Campo"],
   "Madeira": ["Funchal", "Calheta", "Câmara de Lobos", "Machico", "Ponta do Sol", "Porto Moniz", "Porto Santo", "Ribeira Brava", "Santa Cruz", "Santana", "São Vicente"]
 };
+
+const PHOTO_TAGS = [
+  "Sala", "Cozinha", "Quarto", "Suite", "Casa de Banho", 
+  "Varanda", "Terraço", "Exterior", "Vistas", "Planta", "Garagem", "Outro"
+];
 
 const DivBox = ({ label, val, icon, onInc, onDec }: any) => (
   <div className="bg-white p-6 rounded-[2rem] border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm">
@@ -94,7 +100,6 @@ const AdminImoveis: React.FC = () => {
         financeiro: imovel.financeiro || { preco_venda: 0, preco_arrendamento: null, negociavel: true, comissao_incluida: true, condominio_mensal: null, imi_anual: null, caucao_meses: null, despesas_incluidas: [] },
         areas: imovel.areas || { area_util_m2: 0, area_bruta_m2: null, area_terreno_m2: null, pisos: 1, andar: null, elevador: false },
         divisoes: imovel.divisoes || { quartos: 2, casas_banho: 1, garagem: { tem: false, lugares: 0 }, varanda: false, arrecadacao: false, piscina: false, jardim: false },
-        // Fix: Updated certificacao property names to match Imovel type in types.ts (Line 111)
         certificacao: imovel.certificacao || { certificado_energetico: 'A', licenca_util_numero: '', licenca_util_data: '', isento_licenca: false, estado_licenca: 'sim' },
         publicacao: imovel.publicacao || { estado: 'publicado', publicar_no_site: true, destaque: false, badges: [], data_publicacao: new Date() }
       });
@@ -114,7 +119,6 @@ const AdminImoveis: React.FC = () => {
         financeiro: { preco_venda: 0, preco_arrendamento: null, negociavel: true, comissao_incluida: true, condominio_mensal: null, imi_anual: null, caucao_meses: null, despesas_incluidas: [] },
         divisoes: { quartos: 2, casas_banho: 1, garagem: { tem: false, lugares: 0 }, varanda: false, arrecadacao: false, piscina: false, jardim: false },
         areas: { area_util_m2: 0, area_bruta_m2: null, area_terreno_m2: null, pisos: 1, andar: null, elevador: false },
-        // Fix: Updated certificacao property names to match types.ts (Line 126)
         certificacao: { certificado_energetico: 'A', licenca_util_numero: '', licenca_util_data: '', isento_licenca: false, estado_licenca: 'sim' },
         descricao: { curta: '', completa_md: '', gerada_por_ia: false, ultima_geracao_ia_at: null },
         caracteristicas: []
@@ -182,6 +186,7 @@ const AdminImoveis: React.FC = () => {
             order: mediaItems.length + newMedia.length,
             is_cover: mediaItems.length === 0 && newMedia.length === 0,
             alt: editingImovel?.titulo || 'Imagem do imóvel',
+            tag: 'Outro',
             created_at: new Date()
           });
           resolve();
@@ -498,7 +503,6 @@ const AdminImoveis: React.FC = () => {
                              {['Ar condicionado', 'Aquecimento central', 'Painéis solares', 'Lareira', 'Cozinha equipada', 'Mobilado', 'Vista mar', 'Vista rio', 'Vista cidade'].map(feat => (
                                <button key={feat} onClick={() => {
                                   const current = editingImovel.caracteristicas || [];
-                                  // Fix: Corrected typo 'f' to 'feat' (Line 500)
                                   const next = current.includes(feat) ? current.filter(c => c !== feat) : [...current, feat];
                                   setEditingImovel({...editingImovel, caracteristicas: next});
                                }} className={`p-4 rounded-xl border text-[10px] font-black uppercase transition-all ${editingImovel.caracteristicas?.includes(feat) ? 'border-[#357fb2] bg-[#357fb2] text-white shadow-sm' : 'border-slate-100 text-slate-400 hover:border-blue-100'}`}>
@@ -633,17 +637,33 @@ const AdminImoveis: React.FC = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                        {mediaItems.map((item, idx) => (
-                         <div key={item.id} className="group relative aspect-square bg-slate-50 rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm">
-                            <img src={item.url} className="w-full h-full object-cover" alt={item.alt} />
+                         <div key={item.id} className="group relative aspect-square bg-slate-50 rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm flex flex-col">
+                            <img src={item.url} className="w-full h-full object-cover flex-1" alt={item.alt} />
+                            
+                            {/* Etiqueta da Foto */}
+                            <div className="absolute top-2 left-2 right-2">
+                               <select 
+                                 value={item.tag || 'Outro'} 
+                                 onChange={(e) => setMediaItems(prev => prev.map((m, i) => i === idx ? { ...m, tag: e.target.value } : m))}
+                                 className="w-full bg-white/90 backdrop-blur-sm text-[8px] font-black uppercase py-1 px-2 rounded-lg border-none shadow-sm focus:ring-1 focus:ring-blue-400 outline-none"
+                               >
+                                  {PHOTO_TAGS.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                               </select>
+                            </div>
+
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
                                <button onClick={() => setMediaItems(prev => prev.map((m, i) => ({...m, is_cover: i === idx})))} className={`p-2 rounded-lg transition-all ${item.is_cover ? 'bg-amber-400 text-white' : 'bg-white text-slate-400 hover:text-amber-400'}`}>
                                   <Star size={16} fill={item.is_cover ? 'currentColor' : 'none'} />
                                </button>
+                               <div className="flex gap-2">
+                                 <button onClick={() => { if(idx > 0) setMediaItems(prev => { const n = [...prev]; [n[idx-1], n[idx]] = [n[idx], n[idx-1]]; return n; }) }} className="p-2 bg-white text-slate-400 rounded-lg"><ChevronLeft size={16}/></button>
+                                 <button onClick={() => { if(idx < mediaItems.length - 1) setMediaItems(prev => { const n = [...prev]; [n[idx+1], n[idx]] = [n[idx], n[idx+1]]; return n; }) }} className="p-2 bg-white text-slate-400 rounded-lg"><ChevronRight size={16}/></button>
+                               </div>
                                <button onClick={() => setMediaItems(prev => prev.filter((_, i) => i !== idx))} className="p-2 bg-red-500 text-white rounded-lg hover:scale-110 transition-transform">
                                   <Trash2 size={16} />
-                               </button>
+                                </button>
                             </div>
-                            {item.is_cover && <div className="absolute top-3 left-3 bg-amber-400 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase">Capa</div>}
+                            {item.is_cover && <div className="absolute bottom-2 right-2 bg-amber-400 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase">Capa</div>}
                          </div>
                        ))}
                     </div>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -9,7 +10,7 @@ import {
   Navigation, Sparkles, Star,
   Facebook, Instagram, Linkedin, MessageCircle, FileText,
   Target, Users, Image as ImageIcon, Camera, Phone, Mail,
-  GripVertical, Check
+  GripVertical, Check, Link2
 } from 'lucide-react';
 import { DEFAULT_TENANT_CMS } from '../../constants';
 import { TenantCMS, MenuItem, CMSPage } from '../../types';
@@ -32,7 +33,9 @@ const AdminCMS: React.FC = () => {
   const [editingPage, setEditingPage] = useState<CMSPage | null>(null);
   const [pageModalTab, setPageModalTab] = useState<'content' | 'mission' | 'team' | 'gallery'>('content');
 
-  // Sincronizar estado local com o tenant quando este carregar
+  const memberPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [activeMemberIdx, setActiveMemberIdx] = useState<number | null>(null);
+
   useEffect(() => {
     if (tenant.cms) {
       setCms(prev => ({
@@ -78,6 +81,37 @@ const AdminCMS: React.FC = () => {
       await p;
     }
     setEditingPage({ ...editingPage, galeria_fotos: [...(editingPage.galeria_fotos || []), ...newPhotos] });
+  };
+
+  const handleMemberPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingPage || activeMemberIdx === null) return;
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const compressed = await compressImage(reader.result as string, 400, 400, 0.7);
+      const updatedEquipa = [...(editingPage.equipa || [])];
+      updatedEquipa[activeMemberIdx].avatar_url = compressed;
+      setEditingPage({ ...editingPage, equipa: updatedEquipa });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddPageToMenu = (page: CMSPage) => {
+    const path = `/p/${page.slug}`;
+    const alreadyExists = cms.menus.main.some(m => m.path === path || m.path === page.slug);
+    if (alreadyExists) {
+      alert("Esta página já está no menu principal.");
+      return;
+    }
+    const newItem: MenuItem = {
+      id: crypto.randomUUID(),
+      label: page.title,
+      path: page.slug,
+      order: cms.menus.main.length,
+      is_external: false
+    };
+    setCms({ ...cms, menus: { ...cms.menus, main: [...cms.menus.main, newItem] } });
+    alert(`"${page.title}" adicionada ao menu principal! Guarde as alterações para publicar.`);
   };
 
   const TabButton = ({ active, onClick, label, icon }: any) => (
@@ -193,9 +227,14 @@ const AdminCMS: React.FC = () => {
                         <h4 className="font-black text-[#1c2d51] text-base mb-1 uppercase tracking-tight">{page.title}</h4>
                         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] truncate">/p/{page.slug}</p>
                       </div>
-                      <div className="flex justify-end gap-2 mt-8 pt-6 border-t border-slate-50">
-                        <button onClick={() => { setEditingPage(page); setPageModalTab('content'); setIsPageModalOpen(true); }} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-[#1c2d51]"><Edit3 size={18}/></button>
-                        <button onClick={() => setCms({...cms, pages: cms.pages.filter(p => p.id !== page.id)})} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
+                      <div className="flex flex-col gap-3 mt-8 pt-6 border-t border-slate-50">
+                        <button onClick={() => handleAddPageToMenu(page)} className="w-full flex items-center justify-center gap-2 py-2 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-black uppercase hover:bg-blue-100 transition-colors">
+                          <Link2 size={12}/> Adicionar ao Menu
+                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => { setEditingPage(page); setPageModalTab('content'); setIsPageModalOpen(true); }} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-[#1c2d51]"><Edit3 size={18}/></button>
+                          <button onClick={() => setCms({...cms, pages: cms.pages.filter(p => p.id !== page.id)})} className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-red-500"><Trash2 size={18}/></button>
+                        </div>
                       </div>
                    </div>
                  ))}
@@ -260,6 +299,8 @@ const AdminCMS: React.FC = () => {
                </aside>
 
                <div className="flex-1 overflow-y-auto p-10">
+                  <input type="file" ref={memberPhotoInputRef} onChange={handleMemberPhotoUpload} className="hidden" accept="image/*" />
+                  
                   {pageModalTab === 'content' && (
                     <div className="space-y-8 animate-in fade-in">
                        <div className="grid grid-cols-2 gap-8">
@@ -285,10 +326,10 @@ const AdminCMS: React.FC = () => {
                           {(editingPage.equipa || []).map((member, idx) => (
                             <div key={member.id} className="p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-8 items-center relative group hover:bg-white hover:shadow-lg transition-all duration-500">
                                <div className="md:col-span-1 flex flex-col items-center gap-3">
-                                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm">
-                                     {member.avatar_url ? <img src={member.avatar_url} className="w-full h-full object-cover" /> : <Camera className="text-slate-300" size={32} />}
+                                  <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-slate-100 shadow-sm relative">
+                                     {member.avatar_url ? <img src={member.avatar_url} className="w-full h-full object-cover" /> : <Camera className="text-slate-200" size={32} />}
                                   </div>
-                                  <button className="text-[9px] font-black uppercase text-blue-500 tracking-widest border-b border-current pb-0.5">Alterar Foto</button>
+                                  <button onClick={() => { setActiveMemberIdx(idx); memberPhotoInputRef.current?.click(); }} className="text-[9px] font-black uppercase text-blue-500 tracking-widest border-b border-current pb-0.5">Alterar Foto</button>
                                </div>
                                <div className="md:col-span-2 space-y-4">
                                   <input placeholder="Nome Completo" className="admin-input-cms py-3 text-sm" value={member.name} onChange={e => { const eq = [...(editingPage.equipa || [])]; eq[idx].name = e.target.value; setEditingPage({...editingPage, equipa: eq}); }} />

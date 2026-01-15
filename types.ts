@@ -205,6 +205,7 @@ export interface ImovelMedia {
   order: number;
   is_cover: boolean;
   alt: string;
+  tag?: string;
   created_at: any;
 }
 
