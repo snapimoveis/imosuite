@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
@@ -160,12 +161,36 @@ const PublicImovelDetails: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16">
           <div className="lg:col-span-8 space-y-10">
-            <div className={`relative aspect-video overflow-hidden shadow-2xl group ${tid === 'luxe' ? 'rounded-[2rem] md:rounded-[4rem]' : tid === 'canvas' ? 'rounded-[1.5rem] md:rounded-[3rem]' : 'rounded-none'}`}>
-               <img src={displayImages[activeImage]?.url} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={imovel.titulo} />
+            {/* CARROUSEL PRINCIPAL */}
+            <div className={`relative aspect-video overflow-hidden shadow-2xl group bg-slate-100 ${tid === 'luxe' ? 'rounded-[2rem] md:rounded-[4rem]' : tid === 'canvas' ? 'rounded-[1.5rem] md:rounded-[3rem]' : 'rounded-none'}`}>
+               <div className="w-full h-full flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${activeImage * 100}%)` }}>
+                  {displayImages.map((img, idx) => (
+                    <img key={img.id || idx} src={img.url} className="w-full h-full object-cover flex-shrink-0" alt={`${imovel.titulo} - Foto ${idx + 1}`} />
+                  ))}
+               </div>
+               
                {displayImages.length > 1 && (
                  <>
-                   <button onClick={(e) => prevPhoto(e)} className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md text-white p-3 md:p-4 rounded-full transition-all hover:bg-white hover:text-[#1c2d51]"><ChevronLeft size={24}/></button>
-                   <button onClick={(e) => nextPhoto(e)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md text-white p-3 md:p-4 rounded-full transition-all hover:bg-white hover:text-[#1c2d51]"><ChevronRight size={24}/></button>
+                   <button onClick={prevPhoto} className="absolute left-6 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-md text-white p-3 md:p-5 rounded-full transition-all hover:bg-white hover:text-[#1c2d51] z-10 opacity-0 group-hover:opacity-100">
+                     <ChevronLeft size={28}/>
+                   </button>
+                   <button onClick={nextPhoto} className="absolute right-6 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-md text-white p-3 md:p-5 rounded-full transition-all hover:bg-white hover:text-[#1c2d51] z-10 opacity-0 group-hover:opacity-100">
+                     <ChevronRight size={28}/>
+                   </button>
+                   
+                   {/* INDICADORES DO CARROUSEL */}
+                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                      {displayImages.map((_, idx) => (
+                        <button key={idx} onClick={() => setActiveImage(idx)} className={`w-2 h-2 rounded-full transition-all ${activeImage === idx ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/60'}`} />
+                      ))}
+                   </div>
+
+                   {/* ETIQUETA DA FOTO ATIVA */}
+                   {displayImages[activeImage]?.tag && (
+                     <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
+                        {displayImages[activeImage].tag}
+                     </div>
+                   )}
                  </>
                )}
             </div>

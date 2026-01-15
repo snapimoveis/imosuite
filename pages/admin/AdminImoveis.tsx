@@ -478,7 +478,7 @@ const AdminImoveis: React.FC = () => {
                     <h4 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Home size={16} className="text-blue-500"/> Passo 5: Características</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                        <DivBox label="Quartos" val={editingImovel.divisoes?.quartos || 0} icon={<Bed size={18}/>} onInc={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, quartos: (editingImovel.divisoes?.quartos || 0) + 1}})} onDec={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, quartos: Math.max(0, (editingImovel.divisoes?.quartos || 0) - 1)}})} />
-                       <DivBox label="Casas de Banho" val={editingImovel.divisoes?.casas_banho || 0} icon={<Bath size={18}/>} onInc={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, casas_banho: (editingImovel.divisoes?.casas_banho || 0) + 1}})} onDec={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, casas_banho: Math.max(0, (editingImovel.divisoes?.casas_banho || 0) - 1)}})} />
+                       <DivBox label="Casas de Banho" val={editingImovel.divisoes?.casas_banho || 0} icon={<Bath size={18}/>} onInc={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, casas_banho: (editingImovel.divisoes?.casas_banho || 0) + 1}})} onDec={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, casas_banho: Math.max(0, (editingImovel.divisoes?.quartos || 0) - 1)}})} />
                        <DivBox label="Lugares Garagem" val={editingImovel.divisoes?.garagem?.lugares || 0} icon={<div className="w-5 h-5 border-2 border-current rounded-md"></div>} onInc={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, garagem: { tem: true, lugares: (editingImovel.divisoes?.garagem?.lugares || 0) + 1 }}})} onDec={() => setEditingImovel({...editingImovel, divisoes: {...editingImovel.divisoes!, garagem: { tem: (editingImovel.divisoes?.garagem?.lugares || 0) > 1, lugares: Math.max(0, (editingImovel.divisoes?.garagem?.lugares || 0) - 1) }}})} />
                     </div>
 
@@ -651,13 +651,13 @@ const AdminImoveis: React.FC = () => {
                                {item.is_cover && <div className="absolute top-3 left-3 bg-amber-400 text-white px-2 py-0.5 rounded text-[8px] font-black uppercase">Capa</div>}
                             </div>
                             
-                            {/* Seletor de Etiquetas Abaixo da Foto */}
-                            <div className="p-3 border-t border-slate-50 space-y-1">
+                            {/* Seletor de Etiquetas Abaixo da Foto - Fora da imagem */}
+                            <div className="p-4 border-t border-slate-50 space-y-2">
                                <p className="text-[7px] font-black uppercase text-slate-300 ml-1">Etiqueta da Foto</p>
                                <select 
                                  value={item.tag || 'Outro'} 
                                  onChange={(e) => setMediaItems(prev => prev.map((m, i) => i === idx ? { ...m, tag: e.target.value } : m))}
-                                 className="w-full bg-slate-50 text-[9px] font-black uppercase py-2 px-2 rounded-lg border-none focus:ring-1 focus:ring-[#1c2d51] outline-none text-[#1c2d51]"
+                                 className="w-full bg-slate-50 text-[9px] font-black uppercase py-2.5 px-3 rounded-xl border-none focus:ring-1 focus:ring-[#1c2d51] outline-none text-[#1c2d51] appearance-none"
                                >
                                   {PHOTO_TAGS.map(tag => <option key={tag} value={tag}>{tag}</option>)}
                                </select>
@@ -726,7 +726,7 @@ const AdminImoveis: React.FC = () => {
                     </button>
                   ) : (
                     <button onClick={handleSave} disabled={isSaving} className="bg-emerald-500 text-white px-12 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 shadow-xl hover:scale-105 transition-all">
-                       {isSaving ? <Loader2 className="animate-spin" /> : <><Check size={20}/> Guardar e Concluir</>}
+                       {isSaving ? <Loader2 className="animate-spin" /> : <><><Check size={20}/> Guardar e Concluir</></>}
                     </button>
                   )}
                </div>
