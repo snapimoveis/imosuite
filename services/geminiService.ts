@@ -44,7 +44,14 @@ interface PropertyInput {
 }
 
 /* ============================================================
-   DESCRIÇÃO DE IMÓVEL (PROMPT ROBUSTO)
+   CTA PADRÃO (GARANTIDO)
+============================================================ */
+
+const CTA_PADRAO =
+  "Não perca esta oportunidade. Contacte-nos e agende já a sua visita.";
+
+/* ============================================================
+   DESCRIÇÃO DE IMÓVEL (PROMPT ROBUSTO + CTA)
 ============================================================ */
 
 export const generatePropertyDescription = async (
@@ -54,41 +61,43 @@ export const generatePropertyDescription = async (
   const toneMap: Record<Tone, string> = {
     formal: `
 Tom profissional, informativo e objetivo.
-Adequado para portais imobiliários, investidores e documentação técnica.
+Adequado para portais imobiliários e investidores.
 `,
     casual: `
-Tom acessível, acolhedor e emocional.
-Foco no estilo de vida, conforto e bem-estar.
+Tom acolhedor e próximo.
+Foco no conforto, estilo de vida e bem-estar.
 `,
     luxo: `
-Tom sofisticado, aspiracional e exclusivo.
-Vocabulário premium, foco em diferenciação e valor percebido.
+Tom sofisticado, exclusivo e aspiracional.
+Vocabulário premium e foco na diferenciação.
 `,
   };
 
   const systemInstruction = `
-És um especialista sénior em marketing imobiliário em Portugal, com experiência em:
-- Portais imobiliários (Idealista, Imovirtual, Casa Sapo)
-- Conversão comercial e copywriting
-- SEO imobiliário em Português de Portugal (PT-PT)
+És um especialista sénior em marketing imobiliário em Portugal.
 
 REGRAS OBRIGATÓRIAS:
-1. Escreve EXCLUSIVAMENTE em Português de Portugal (PT-PT)
+1. Escreve exclusivamente em Português de Portugal (PT-PT)
 2. Nunca uses Português do Brasil
-3. Termos obrigatórios:
-   - "casa de banho" (nunca "banheiro")
-   - "arrendamento" (nunca "aluguel")
-   - "rés-do-chão" (nunca "térreo")
-4. Não inventes dados técnicos
-5. Se alguma informação não existir, simplesmente omite
-6. Texto natural, humano e comercial (não robótico)
-7. Evita repetições
-8. Não uses emojis
-9. Não uses listas com bullets na descrição completa
+3. Usa sempre:
+   - "casa de banho"
+   - "arrendamento"
+   - "rés-do-chão"
+4. Não inventes dados
+5. Se faltar informação, omite
+6. Texto natural, humano e comercial
+7. Não uses emojis nem listas
+8. Usa parágrafos com espaçamento (\n\n)
 
-ESTRUTURA DA RESPOSTA:
-- "curta": frase de impacto com no máximo 200 caracteres
-- "completa": texto estruturado em 3 a 5 parágrafos, com espaçamento (\n\n)
+REGRA OBRIGATÓRIA DE FECHO:
+- O ÚLTIMO parágrafo da descrição completa DEVE ser um call to action.
+- O call to action deve convidar explicitamente a contactar ou marcar visita.
+- Usa apenas UM call to action.
+
+Exemplos de call to action válidos:
+- "Não perca esta oportunidade. Contacte-nos e agende já a sua visita."
+- "Descubra pessoalmente este imóvel. Agende a sua visita."
+- "Entre em contacto connosco e marque a sua visita."
 
 ESTILO:
 ${toneMap[tone]}
@@ -112,7 +121,7 @@ ${JSON.stringify(
 )}
 
 OBJETIVO:
-Criar uma descrição comercial realista, clara e persuasiva para publicação online.
+Criar uma descrição imobiliária clara, realista e persuasiva para publicação online.
 
 RETORNA ESTRITAMENTE UM OBJETO JSON VÁLIDO.
 `.trim();
@@ -131,12 +140,12 @@ RETORNA ESTRITAMENTE UM OBJETO JSON VÁLIDO.
               curta: {
                 type: Type.STRING,
                 description:
-                  "Descrição curta (máx. 200 caracteres) para destaque em listagens.",
+                  "Descrição curta (máx. 200 caracteres).",
               },
               completa: {
                 type: Type.STRING,
                 description:
-                  "Descrição detalhada com vários parágrafos, tom comercial e foco nos pontos fortes.",
+                  "Descrição completa com vários parágrafos e CTA final.",
               },
             },
             required: ["curta", "completa"],
@@ -148,32 +157,43 @@ RETORNA ESTRITAMENTE UM OBJETO JSON VÁLIDO.
       throw new Error("Resposta vazia do Gemini.");
     }
 
-    return JSON.parse(response.text);
-  } catch (error) {
-    console.error("Erro Gemini (descrição de imóvel):", error);
+    const result = JSON.parse(response.text) as {
+      curta: string;
+      completa: string;
+    };
 
-    // Fallback seguro
+    /* ========================================================
+       BLINDAGEM FINAL — GARANTE CTA
+    ======================================================== */
+
+    if (!result.completa.toLowerCase().includes("visita")) {
+      result.completa = `${result.completa.trim()}\n\n${CTA_PADRAO}`;
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Erro Gemini (descrição imóvel):", error);
+
+    // Fallback seguro com CTA
     return {
       curta: `${property.titulo ?? "Imóvel"} em ${
         property.localizacao?.concelho ?? "localização atrativa"
       }.`,
       completa: `Este ${property.tipo_imovel ?? "imóvel"} situa-se em ${
         property.localizacao?.concelho ?? "zona de elevada procura"
-      }, oferecendo uma solução equilibrada entre funcionalidade e conforto.
+      }, oferecendo uma solução equilibrada entre conforto e funcionalidade.
 
-Com ${
-        property.divisoes?.quartos ?? 0
-      } quartos e ${
+Com ${property.divisoes?.quartos ?? 0} quartos e ${
         property.divisoes?.casas_banho ?? 0
-      } casas de banho, adapta-se a diferentes perfis de utilização, seja para habitação própria ou investimento.
+      } casas de banho, adapta-se a diferentes perfis de utilização.
 
-Uma excelente oportunidade para quem procura qualidade, localização e potencial de valorização.`,
+${CTA_PADRAO}`,
     };
   }
 };
 
 /* ============================================================
-   SLOGAN IMOBILIÁRIA (PROMPT ROBUSTO)
+   SLOGAN IMOBILIÁRIA
 ============================================================ */
 
 export const generateAgencySlogan = async (
@@ -188,8 +208,7 @@ para a imobiliária "${agencyName}".
 
 Regras:
 - Máximo 8 palavras
-- Tom institucional e credível
-- Fácil de memorizar
+- Tom institucional
 - Não uses aspas
 `,
     });
@@ -198,8 +217,7 @@ Regras:
       response.text?.trim().replace(/^"|"$/g, "") ||
       "A sua imobiliária de confiança."
     );
-  } catch (error) {
-    console.error("Erro Gemini (slogan):", error);
+  } catch {
     return "Excelência no mercado imobiliário.";
   }
 };
