@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Shield, Zap, TrendingUp, Globe, Smartphone, ArrowRight, Star, Building2, Users, MessageSquare, ShieldCheck } from 'lucide-react';
@@ -131,8 +132,8 @@ const Marketing: React.FC = () => {
         </div>
       </section>
 
-      {/* Contact Section - Agora no final da página para melhor fluxo de conversão */}
-      <div className="bg-slate-50 border-t border-slate-100">
+      {/* Contact Section - Background escurecido para destaque e contraste premium */}
+      <div className="bg-[#1c2d51] border-t border-white/5">
         <ContactSection 
           tenantId="imosuite-hq" 
           title="Fale com os nossos especialistas" 
