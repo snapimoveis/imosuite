@@ -203,10 +203,13 @@ const PublicImovelDetails: React.FC = () => {
                  </div>
                </div>
 
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   <SpecBox icon={<Bed size={20}/>} label="Quartos" val={imovel.divisoes.quartos || 'N/A'} tid={tid} />
                   <SpecBox icon={<Bath size={20}/>} label="Banhos" val={imovel.divisoes.casas_banho || 'N/A'} tid={tid} />
                   <SpecBox icon={<Square size={20}/>} label="Área Útil" val={imovel.areas.area_util_m2 ? `${imovel.areas.area_util_m2}m²` : '---'} tid={tid} />
+                  {imovel.areas.area_terreno_m2 && (
+                    <SpecBox icon={<Maximize2 size={20}/>} label="Área Terreno" val={`${imovel.areas.area_terreno_m2}m²`} tid={tid} />
+                  )}
                   <SpecBox icon={<Building2 size={20}/>} label="Tipologia" val={imovel.tipologia} tid={tid} />
                </div>
 
