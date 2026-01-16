@@ -1,3 +1,4 @@
+
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { Tenant } from "../types";
@@ -8,7 +9,7 @@ import { Tenant } from "../types";
 const STRIPE_ROOT_COLLECTION = "customers"; 
 
 /**
- * IDs DE PREÇO DO STRIPE
+ * IDs DE PREÇO DO STRIPE REAIS
  */
 export const StripePlans = {
   starter: "price_1SobVF9YE7qSVg1quKIHx0qM",  
